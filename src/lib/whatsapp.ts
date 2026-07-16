@@ -32,6 +32,35 @@ export function buildReminderMessage(params: { matchLabel: string; names: string
   return `⏰ ${params.names.join(", ")} : pensez à répondre pour le match ${params.matchLabel} !`;
 }
 
+export function buildSeasonRecapMessage(params: {
+  seasonName: string;
+  played: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  topScorer: { name: string; value: number } | null;
+  topAssist: { name: string; value: number } | null;
+  mostMatches: { name: string; value: number } | null;
+  biggestWin: { teamScore: number; opponentScore: number; opponentName: string } | null;
+}): string {
+  const lines = ["🏆 Bilan de saison — Charenton FC", params.seasonName, ""];
+  lines.push(
+    `${params.played} matchs · ${params.wins}V ${params.draws}N ${params.losses}D`
+  );
+  lines.push(`⚽ ${params.goalsFor} buts marqués — ${params.goalsAgainst} encaissés`);
+  if (params.topScorer) lines.push(`👟 Meilleur buteur : ${params.topScorer.name} (${params.topScorer.value})`);
+  if (params.topAssist) lines.push(`🎯 Meilleur passeur : ${params.topAssist.name} (${params.topAssist.value})`);
+  if (params.mostMatches) lines.push(`💪 Plus assidu : ${params.mostMatches.name} (${params.mostMatches.value} matchs)`);
+  if (params.biggestWin) {
+    lines.push(
+      `🔥 Plus grosse victoire : ${params.biggestWin.teamScore}–${params.biggestWin.opponentScore} vs ${params.biggestWin.opponentName}`
+    );
+  }
+  return lines.join("\n");
+}
+
 export function buildResultMessage(params: {
   opponentLabel: string;
   isHome: boolean;

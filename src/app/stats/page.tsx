@@ -38,6 +38,9 @@ export default async function StatsPage() {
           <Link href="/records" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
             Records
           </Link>
+          <Link href="/season-recap" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+            Bilan
+          </Link>
           <Link href="/team/compare" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
             Comparer
           </Link>

@@ -10,3 +10,13 @@ export async function getActiveSeasonId(): Promise<string | null> {
   if (error) throw new Error(error.message);
   return data?.id ?? null;
 }
+
+export async function getActiveSeason(): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await supabaseAdmin
+    .from("seasons")
+    .select("id, name")
+    .eq("is_active", true)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}
