@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { getCurrentUser } from "@/lib/auth/current-user";
@@ -17,6 +17,16 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Charenton FC",
   description: "Statistiques et convocations de Charenton FC",
+  appleWebApp: {
+    title: "Charenton FC",
+    statusBarStyle: "black-translucent",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1c3762",
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default async function RootLayout({

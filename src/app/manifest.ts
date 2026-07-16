@@ -1,0 +1,25 @@
+import type { MetadataRoute } from "next";
+
+export default function manifest(): MetadataRoute.Manifest {
+  return {
+    name: "Charenton FC",
+    short_name: "Charenton FC",
+    description: "Statistiques et convocations de Charenton FC",
+    start_url: "/",
+    display: "standalone",
+    background_color: "#ffffff",
+    theme_color: "#1c3762",
+    icons: [
+      {
+        src: "/icons/192",
+        sizes: "192x192",
+        type: "image/png",
+      },
+      {
+        src: "/icons/512",
+        sizes: "512x512",
+        type: "image/png",
+      },
+    ],
+  };
+}
