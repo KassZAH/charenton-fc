@@ -8,7 +8,8 @@ import {
   getPlayerAwardWins,
   getPlayerMatchHistory,
 } from "@/lib/data/player-stats";
-import { formatMatchDate } from "@/lib/format";
+import { getPlayerMeasurements } from "@/lib/data/measurements";
+import { formatMatchDate, formatShortDate } from "@/lib/format";
 
 function initials(firstName: string, lastName: string | null) {
   return (firstName[0] + (lastName?.[0] ?? "")).toUpperCase();
@@ -27,6 +28,16 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     getPlayerAwardWins(player.id),
     getPlayerMatchHistory(player.id),
   ]);
+
+  const canSeeMeasurements =
+    user.role === "admin" || user.playerId === player.id || player.share_measurements;
+  const measurements = canSeeMeasurements ? await getPlayerMeasurements(player.id) : [];
+  const latestMeasurement = measurements[0] ?? null;
+  const earliestWeight = [...measurements].reverse().find((m) => m.weight_kg != null)?.weight_kg ?? null;
+  const weightEvolution =
+    latestMeasurement?.weight_kg != null && earliestWeight != null && earliestWeight !== latestMeasurement.weight_kg
+      ? Math.round((latestMeasurement.weight_kg - earliestWeight) * 10) / 10
+      : null;
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -65,6 +76,23 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
         <p className="mb-6 rounded-xl border border-navy/10 bg-white p-3 text-sm italic text-navy/70">
           « {player.quote} »
         </p>
+      )}
+
+      {latestMeasurement && (latestMeasurement.weight_kg != null || latestMeasurement.height_cm != null) && (
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-navy/10 bg-white p-3 text-sm text-navy">
+          <span>
+            {latestMeasurement.weight_kg != null && `${latestMeasurement.weight_kg} kg`}
+            {latestMeasurement.height_cm != null && ` · ${latestMeasurement.height_cm} cm`}
+            {weightEvolution != null && (
+              <span className={weightEvolution > 0 ? "text-red-500" : "text-emerald-600"}>
+                {" "}
+                ({weightEvolution > 0 ? "+" : ""}
+                {weightEvolution} depuis le début)
+              </span>
+            )}
+          </span>
+          <span className="text-xs text-navy/50">{formatShortDate(latestMeasurement.recorded_at)}</span>
+        </div>
       )}
 
       <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4">

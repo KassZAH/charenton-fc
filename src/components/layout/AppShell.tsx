@@ -12,7 +12,9 @@ export function AppShell({ user, children }: { user: SessionPayload; children: R
           Charenton FC
         </Link>
         <form action={logout} className="flex items-center gap-3">
-          <span className="text-sm text-white/80">{user.name}</span>
+          <Link href="/profile" className="text-sm text-white/80 underline-offset-2 hover:underline">
+            {user.name}
+          </Link>
           <button
             type="submit"
             className="rounded-full border border-white/20 px-3 py-1 text-xs font-medium text-white/90"

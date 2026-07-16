@@ -10,3 +10,8 @@ export function formatTime(timeStr: string | null) {
   if (!timeStr) return null;
   return timeStr.slice(0, 5);
 }
+
+/** Pour un timestamp complet (ex: player_measurements.recorded_at) — pas de décalage à gérer, c'est déjà un instant précis. */
+export function formatShortDate(isoString: string) {
+  return new Date(isoString).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}

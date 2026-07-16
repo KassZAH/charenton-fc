@@ -3,7 +3,7 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/current-user";
+import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/types/database";
 
@@ -107,4 +107,41 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   revalidatePath("/team");
   revalidatePath(`/team/${playerId}`);
   redirect(`/team/${playerId}`);
+}
+
+/**
+ * Auto-édition par le joueur lui-même : uniquement ses infos de profil.
+ * Le numéro de maillot, le rôle et le PIN restent réservés à l'admin.
+ */
+export async function updateOwnProfile(formData: FormData) {
+  const user = await requireUser();
+
+  const firstName = String(formData.get("first_name") ?? "").trim();
+  const lastName = String(formData.get("last_name") ?? "").trim() || null;
+  const nickname = String(formData.get("nickname") ?? "").trim() || null;
+  const primaryPosition = String(formData.get("primary_position") ?? "").trim() || null;
+  const strongFoot = String(formData.get("strong_foot") ?? "").trim() || null;
+  const quote = String(formData.get("quote") ?? "").trim() || null;
+
+  if (!firstName) {
+    throw new Error("Le prénom est obligatoire.");
+  }
+
+  const { error } = await supabaseAdmin
+    .from("players")
+    .update({
+      first_name: firstName,
+      last_name: lastName,
+      nickname,
+      primary_position: primaryPosition,
+      strong_foot: strongFoot,
+      quote,
+    })
+    .eq("id", user.playerId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/profile");
+  revalidatePath(`/team/${user.playerId}`);
+  revalidatePath("/team");
+  redirect("/profile");
 }
