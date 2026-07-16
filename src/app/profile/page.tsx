@@ -4,7 +4,9 @@ import { getPlayerById } from "@/lib/data/players";
 import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { updateOwnProfile } from "@/lib/data/players-actions";
 import { addMeasurement, deleteMeasurement, setShareMeasurements } from "@/lib/data/measurements-actions";
+import { resetSeasonData } from "@/lib/data/reset-actions";
 import { formatShortDate } from "@/lib/format";
+import { ResetButton } from "./ResetButton";
 
 export default async function ProfilePage() {
   const user = await requireUser();
@@ -148,6 +150,19 @@ export default async function ProfilePage() {
           </ul>
         )}
       </section>
+
+      {player.first_name === "Amine" && (
+        <section className="mt-8 border-t border-navy/10 pt-6">
+          <h2 className="mb-2 text-sm font-semibold text-red-600">Zone dangereuse</h2>
+          <p className="mb-3 text-xs text-navy/50">
+            Supprime définitivement tous les matchs, buts, cartons, présences, votes et badges.
+            L&apos;effectif et les adversaires restent intacts.
+          </p>
+          <form action={resetSeasonData}>
+            <ResetButton />
+          </form>
+        </section>
+      )}
     </div>
   );
 }

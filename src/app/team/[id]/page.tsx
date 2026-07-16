@@ -9,6 +9,7 @@ import {
   getPlayerMatchHistory,
 } from "@/lib/data/player-stats";
 import { getPlayerMeasurements } from "@/lib/data/measurements";
+import { getPlayerBadges } from "@/lib/data/badges";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
 
 function initials(firstName: string, lastName: string | null) {
@@ -22,11 +23,12 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, advanced, awardWins, history] = await Promise.all([
+  const [stats, advanced, awardWins, history, badges] = await Promise.all([
     getPlayerStats(player.id),
     getPlayerAdvancedStats(player.id),
     getPlayerAwardWins(player.id),
     getPlayerMatchHistory(player.id),
+    getPlayerBadges(player.id),
   ]);
 
   const canSeeMeasurements =
@@ -46,18 +48,19 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           {initials(player.first_name, player.last_name)}
         </span>
         <div className="flex-1">
-          <h1 className="text-lg font-bold text-navy">
+          <h1 className="flex items-center gap-2 text-lg font-bold text-navy">
             {player.nickname || player.first_name}
             {player.shirt_number != null && (
-              <span className="ml-2 text-sm font-normal text-navy/50">#{player.shirt_number}</span>
+              <span className="text-sm font-normal text-navy/50">#{player.shirt_number}</span>
+            )}
+            {player.role === "admin" && (
+              <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy">
+                Admin
+              </span>
             )}
           </h1>
           <p className="text-sm text-navy/50">
-            {[
-              player.primary_position,
-              player.role === "admin" ? "Admin" : null,
-              player.status === "archived" ? "Archivé" : null,
-            ]
+            {[player.primary_position, player.status === "archived" ? "Archivé" : null]
               .filter(Boolean)
               .join(" · ") || "—"}
           </p>
@@ -146,6 +149,23 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           </ul>
         )}
       </section>
+
+      {badges.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold text-navy/60">Badges</h2>
+          <ul className="space-y-1.5">
+            {badges.map((b) => (
+              <li
+                key={b.badgeKey}
+                className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2"
+              >
+                <span className="text-sm text-navy">{b.label}</span>
+                <span className="text-xs text-navy/50">{formatShortDate(b.earnedAt)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section>
         <h2 className="mb-2 text-sm font-semibold text-navy/60">Matchs joués</h2>

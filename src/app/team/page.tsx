@@ -59,17 +59,18 @@ function PlayerRow({
       }`}
     >
       <Link href={`/team/${player.id}`} className="flex-1">
-        <p className="text-sm font-semibold text-navy">
+        <p className="flex items-center gap-1.5 text-sm font-semibold text-navy">
           {player.nickname || player.first_name}
           {player.shirt_number != null && (
-            <span className="ml-2 text-xs font-normal text-navy/50">#{player.shirt_number}</span>
+            <span className="text-xs font-normal text-navy/50">#{player.shirt_number}</span>
+          )}
+          {player.role === "admin" && (
+            <span className="rounded-full bg-gold px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy">
+              Admin
+            </span>
           )}
         </p>
-        <p className="text-xs text-navy/50">
-          {[player.primary_position, player.role === "admin" ? "Admin" : null]
-            .filter(Boolean)
-            .join(" · ") || "—"}
-        </p>
+        <p className="text-xs text-navy/50">{player.primary_position || "—"}</p>
       </Link>
       {isAdmin && (
         <div className="flex items-center gap-2">

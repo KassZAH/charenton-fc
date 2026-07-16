@@ -392,6 +392,45 @@ export type Database = {
         }
         Relationships: []
       }
+      player_badges: {
+        Row: {
+          id: string
+          player_id: string
+          badge_key: string
+          match_id: string | null
+          earned_at: string
+        }
+        Insert: {
+          id?: string
+          player_id: string
+          badge_key: string
+          match_id?: string | null
+          earned_at?: string
+        }
+        Update: {
+          id?: string
+          player_id?: string
+          badge_key?: string
+          match_id?: string | null
+          earned_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_badges_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "player_badges_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       players: {
         Row: {
           archived_at: string | null

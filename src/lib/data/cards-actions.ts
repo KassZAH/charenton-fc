@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { checkAndAwardBadges } from "./badges";
 
 export async function addCard(matchId: string, formData: FormData) {
   await requireAdmin();
@@ -27,6 +28,12 @@ export async function addCard(matchId: string, formData: FormData) {
     comment,
   });
   if (error) throw new Error(error.message);
+
+  try {
+    await checkAndAwardBadges(playerId);
+  } catch {
+    // les badges sont secondaires — une erreur ici ne doit pas faire échouer l'ajout du carton
+  }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/stats");
