@@ -10,6 +10,7 @@ import {
   type PlayerCount,
 } from "@/lib/data/stats";
 import { getAwardLeaderboards } from "@/lib/data/awards";
+import { isElevatedRole } from "@/types/models";
 
 const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
   wins: "victoire(s)",
@@ -18,7 +19,7 @@ const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
 };
 
 export default async function StatsPage() {
-  await requireUser();
+  const user = await requireUser();
   const [scorers, assists, presences, carded, team, highlights, awardLeaderboards] = await Promise.all([
     getTopScorers(),
     getTopAssists(),
@@ -40,6 +41,11 @@ export default async function StatsPage() {
           <Link href="/team/compare" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
             Comparer
           </Link>
+          {isElevatedRole(user.role) && (
+            <Link href="/history" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+              Historique
+            </Link>
+          )}
         </div>
       </div>
 

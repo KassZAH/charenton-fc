@@ -4,9 +4,10 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkAndAwardBadges } from "./badges";
+import { logChange } from "./audit";
 
 export async function addCard(matchId: string, formData: FormData) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const playerId = String(formData.get("player_id") ?? "") || null;
   const cardType = String(formData.get("card_type") ?? "");
@@ -20,14 +21,27 @@ export async function addCard(matchId: string, formData: FormData) {
     throw new Error("Type de carton invalide.");
   }
 
-  const { error } = await supabaseAdmin.from("cards").insert({
-    match_id: matchId,
-    player_id: playerId,
-    card_type: cardType,
-    minute: minuteRaw ? Number(minuteRaw) : null,
-    comment,
-  });
+  const { data: card, error } = await supabaseAdmin
+    .from("cards")
+    .insert({
+      match_id: matchId,
+      player_id: playerId,
+      card_type: cardType,
+      minute: minuteRaw ? Number(minuteRaw) : null,
+      comment,
+    })
+    .select("*")
+    .single();
   if (error) throw new Error(error.message);
+
+  await logChange({
+    tableName: "cards",
+    recordId: card.id,
+    action: "insert",
+    newData: card,
+    changedByPlayerId: user.playerId,
+    changedByName: user.name,
+  });
 
   try {
     await checkAndAwardBadges(playerId);
@@ -40,13 +54,26 @@ export async function addCard(matchId: string, formData: FormData) {
 }
 
 export async function deleteCard(matchId: string, cardId: string) {
-  await requireAdmin();
+  const user = await requireAdmin();
+
+  const { data: before } = await supabaseAdmin.from("cards").select("*").eq("id", cardId).maybeSingle();
 
   const { error } = await supabaseAdmin
     .from("cards")
     .update({ deleted_at: new Date().toISOString() })
     .eq("id", cardId);
   if (error) throw new Error(error.message);
+
+  if (before) {
+    await logChange({
+      tableName: "cards",
+      recordId: cardId,
+      action: "delete",
+      oldData: before,
+      changedByPlayerId: user.playerId,
+      changedByName: user.name,
+    });
+  }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/stats");

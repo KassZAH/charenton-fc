@@ -520,6 +520,53 @@ export type Database = {
           },
         ]
       }
+      audit_log: {
+        Row: {
+          id: string
+          table_name: string
+          record_id: string
+          action: string
+          old_data: Json | null
+          new_data: Json | null
+          changed_by_player_id: string | null
+          changed_by_name: string
+          restored_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          table_name: string
+          record_id: string
+          action: string
+          old_data?: Json | null
+          new_data?: Json | null
+          changed_by_player_id?: string | null
+          changed_by_name: string
+          restored_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          table_name?: string
+          record_id?: string
+          action?: string
+          old_data?: Json | null
+          new_data?: Json | null
+          changed_by_player_id?: string | null
+          changed_by_name?: string
+          restored_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_log_changed_by_player_id_fkey"
+            columns: ["changed_by_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_lineups: {
         Row: {
           id: string

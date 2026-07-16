@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { logChange } from "./audit";
 import type { TablesUpdate } from "@/types/database";
 import { pinLengthForRole } from "@/types/models";
 
@@ -64,7 +65,7 @@ export async function setPlayerStatus(playerId: string, status: "active" | "arch
 }
 
 export async function updatePlayer(playerId: string, formData: FormData) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim() || null;
@@ -102,8 +103,20 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     update.pin_hash = await bcrypt.hash(newPin, 10);
   }
 
+  const { data: before } = await supabaseAdmin.from("players").select("*").eq("id", playerId).maybeSingle();
+
   const { error } = await supabaseAdmin.from("players").update(update).eq("id", playerId);
   if (error) throw new Error(error.message);
+
+  await logChange({
+    tableName: "players",
+    recordId: playerId,
+    action: "update",
+    oldData: before,
+    newData: { ...before, ...update },
+    changedByPlayerId: user.playerId,
+    changedByName: user.name,
+  });
 
   revalidatePath("/team");
   revalidatePath(`/team/${playerId}`);

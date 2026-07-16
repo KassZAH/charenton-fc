@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { logChange } from "./audit";
 import type { AvailabilityStatus } from "@/types/models";
 
 async function resolveOpponentId(formData: FormData): Promise<string | null> {
@@ -170,7 +171,7 @@ export async function deleteMatch(matchId: string) {
 }
 
 export async function updateMatchResult(matchId: string, formData: FormData) {
-  await requireAdmin();
+  const user = await requireAdmin();
 
   const teamScore = Number(formData.get("team_score"));
   const opponentScore = Number(formData.get("opponent_score"));
@@ -178,11 +179,27 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
     throw new Error("Scores invalides.");
   }
 
+  const { data: before } = await supabaseAdmin
+    .from("matches")
+    .select("team_score, opponent_score, status")
+    .eq("id", matchId)
+    .maybeSingle();
+
   const { error } = await supabaseAdmin
     .from("matches")
     .update({ team_score: teamScore, opponent_score: opponentScore, status: "completed" })
     .eq("id", matchId);
   if (error) throw new Error(error.message);
+
+  await logChange({
+    tableName: "matches",
+    recordId: matchId,
+    action: "update",
+    oldData: before,
+    newData: { team_score: teamScore, opponent_score: opponentScore, status: "completed" },
+    changedByPlayerId: user.playerId,
+    changedByName: user.name,
+  });
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/matches");
