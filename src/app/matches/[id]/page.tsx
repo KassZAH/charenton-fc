@@ -4,12 +4,17 @@ import { requireUser } from "@/lib/auth/current-user";
 import { getMatchById } from "@/lib/data/matches";
 import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
 import { updateMatchResult } from "@/lib/data/matches-actions";
+import { getMatchGoals } from "@/lib/data/goals";
+import { getMatchAwardResults } from "@/lib/data/awards";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
+import { buildConvocationMessage, buildReminderMessage, buildResultMessage, whatsappShareUrl } from "@/lib/whatsapp";
 import type { AvailabilityStatus } from "@/types/models";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
+import { CardsSection } from "./CardsSection";
 import { AwardsSection } from "./AwardsSection";
+import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 
 const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "unsure", "absent", "injured", "none"];
 
@@ -48,9 +53,16 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {match.location && <p className="text-sm text-navy/70">{match.location}</p>}
 
       {match.status === "completed" ? (
-        <p className="mt-4 text-3xl font-bold text-navy">
-          {match.team_score} – {match.opponent_score}
-        </p>
+        <>
+          <p className="mt-4 text-3xl font-bold text-navy">
+            {match.team_score} – {match.opponent_score}
+          </p>
+          {match.description && (
+            <p className="mt-3 rounded-xl border border-navy/10 bg-white p-3 text-sm italic text-navy/70">
+              {match.description}
+            </p>
+          )}
+        </>
       ) : (
         <section className="mt-6">
           <h2 className="mb-3 text-sm font-semibold text-navy">Ta présence</h2>
@@ -61,6 +73,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {match.status === "completed" && (
         <>
           <GoalsSection matchId={match.id} isAdmin={user.role === "admin"} />
+          <CardsSection matchId={match.id} isAdmin={user.role === "admin"} />
           <AwardsSection matchId={match.id} myPlayerId={user.playerId} />
         </>
       )}
@@ -71,6 +84,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           isCompleted={match.status === "completed"}
           teamScore={match.team_score}
           opponentScore={match.opponent_score}
+          opponentLabel={opponentLabel}
+          isHome={isHome}
+          dateLabel={formatMatchDate(match.match_date)}
+          timeLabel={formatTime(match.kickoff_time)}
+          location={match.location}
         />
       )}
     </div>
@@ -82,11 +100,21 @@ async function AdminSection({
   isCompleted,
   teamScore,
   opponentScore,
+  opponentLabel,
+  isHome,
+  dateLabel,
+  timeLabel,
+  location,
 }: {
   matchId: string;
   isCompleted: boolean;
   teamScore: number | null;
   opponentScore: number | null;
+  opponentLabel: string;
+  isHome: boolean;
+  dateLabel: string;
+  timeLabel: string | null;
+  location: string | null;
 }) {
   const summary = await getMatchAvailabilitySummary(matchId);
 
@@ -101,20 +129,105 @@ async function AdminSection({
     grouped[item.status ?? "none"].push(item);
   }
 
+  const nameOf = (g: (typeof summary)[number]) => g.player.nickname || g.player.first_name;
+  const convocationText = buildConvocationMessage({
+    opponentLabel,
+    isHome,
+    dateLabel,
+    timeLabel,
+    location,
+    present: grouped.present.map(nameOf),
+    unsure: grouped.unsure.map(nameOf),
+    absent: [...grouped.absent, ...grouped.injured].map(nameOf),
+    noResponse: grouped.none.map(nameOf),
+  });
+  const reminderText =
+    grouped.none.length > 0
+      ? buildReminderMessage({
+          matchLabel: `${isHome ? "vs" : "@"} ${opponentLabel} (${dateLabel})`,
+          names: grouped.none.map(nameOf),
+        })
+      : null;
+
+  let resultText: string | null = null;
+  if (isCompleted) {
+    const [goals, awardResults] = await Promise.all([getMatchGoals(matchId), getMatchAwardResults(matchId)]);
+    resultText = buildResultMessage({
+      opponentLabel,
+      isHome,
+      teamScore,
+      opponentScore,
+      scorers: goals
+        .filter((g) => g.scorer_player_id || g.is_unknown_scorer)
+        .map((g) => g.scorer_name ?? "Buteur inconnu"),
+      assists: goals.filter((g) => g.assist_name).map((g) => g.assist_name!),
+      awards: awardResults
+        .filter((r) => r.winners.length > 0)
+        .map((r) => ({
+          emoji: r.award.emoji,
+          name: r.award.name,
+          winner: r.winners.map((w) => w.name).join(" / "),
+        })),
+    });
+  }
+
   return (
     <section className="mt-8 border-t border-navy/10 pt-6">
       <h2 className="mb-3 text-sm font-semibold text-navy">Réponses de l&apos;équipe</h2>
-      <div className="space-y-3">
+      <div className="space-y-4">
         {GROUP_ORDER.map((key) => (
           <div key={key}>
-            <p className="text-xs font-semibold uppercase text-navy/50">
+            <p className="mb-1.5 text-xs font-semibold uppercase text-navy/50">
               {key === "none" ? "Pas encore répondu" : AVAILABILITY_LABELS[key]} ({grouped[key].length})
             </p>
-            <p className="text-sm text-navy">
-              {grouped[key].map((g) => g.player.nickname || g.player.first_name).join(", ") || "—"}
-            </p>
+            {grouped[key].length === 0 ? (
+              <p className="text-sm text-navy/40">—</p>
+            ) : (
+              <div className="space-y-1.5">
+                {grouped[key].map((g) => (
+                  <AdminAvailabilityRow
+                    key={g.player.id}
+                    matchId={matchId}
+                    playerId={g.player.id}
+                    playerName={nameOf(g)}
+                    initialStatus={g.status}
+                  />
+                ))}
+              </div>
+            )}
           </div>
         ))}
+      </div>
+
+      <div className="mt-4 flex flex-wrap gap-2">
+        <a
+          href={whatsappShareUrl(convocationText)}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+        >
+          Partager la convocation
+        </a>
+        {reminderText && (
+          <a
+            href={whatsappShareUrl(reminderText)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+          >
+            Relancer les sans-réponse
+          </a>
+        )}
+        {resultText && (
+          <a
+            href={whatsappShareUrl(resultText)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+          >
+            Partager le résultat
+          </a>
+        )}
       </div>
 
       <form action={updateMatchResult.bind(null, matchId)} className="mt-6 flex items-end gap-3">

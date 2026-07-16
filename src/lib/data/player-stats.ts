@@ -8,11 +8,13 @@ export type PlayerStats = {
   matchesPlayed: number;
   goals: number;
   assists: number;
+  yellowCards: number;
+  redCards: number;
 };
 
-/** Recalculé à la volée depuis goals et match_players — jamais stocké. */
+/** Recalculé à la volée depuis goals, cards et match_players — jamais stocké. */
 export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
-  const [goalsRes, assistsRes, presenceRes] = await Promise.all([
+  const [goalsRes, assistsRes, presenceRes, yellowRes, redRes] = await Promise.all([
     supabaseAdmin
       .from("goals")
       .select("*", { count: "exact", head: true })
@@ -28,16 +30,32 @@ export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
       .select("*", { count: "exact", head: true })
       .eq("player_id", playerId)
       .eq("was_present", true),
+    supabaseAdmin
+      .from("cards")
+      .select("*", { count: "exact", head: true })
+      .eq("player_id", playerId)
+      .eq("card_type", "yellow")
+      .is("deleted_at", null),
+    supabaseAdmin
+      .from("cards")
+      .select("*", { count: "exact", head: true })
+      .eq("player_id", playerId)
+      .eq("card_type", "red")
+      .is("deleted_at", null),
   ]);
 
   if (goalsRes.error) throw new Error(goalsRes.error.message);
   if (assistsRes.error) throw new Error(assistsRes.error.message);
   if (presenceRes.error) throw new Error(presenceRes.error.message);
+  if (yellowRes.error) throw new Error(yellowRes.error.message);
+  if (redRes.error) throw new Error(redRes.error.message);
 
   return {
     goals: goalsRes.count ?? 0,
     assists: assistsRes.count ?? 0,
     matchesPlayed: presenceRes.count ?? 0,
+    yellowCards: yellowRes.count ?? 0,
+    redCards: redRes.count ?? 0,
   };
 }
 

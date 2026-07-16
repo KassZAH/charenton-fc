@@ -120,6 +120,20 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           </select>
         </div>
 
+        <div>
+          <label className="block text-sm font-medium text-navy" htmlFor="description">
+            Anecdote du match
+          </label>
+          <textarea
+            id="description"
+            name="description"
+            rows={3}
+            defaultValue={match.description ?? ""}
+            placeholder="Un truc marrant/mémorable à retenir de ce match..."
+            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+          />
+        </div>
+
         <button
           type="submit"
           className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-gold"

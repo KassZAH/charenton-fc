@@ -71,6 +71,12 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           <Stat label="Buts" value={stats.goals} />
           <Stat label="Passes déc." value={stats.assists} />
         </div>
+        {(stats.yellowCards > 0 || stats.redCards > 0) && (
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-navy/10 pt-3 text-center">
+            <Stat label="Jaunes" value={stats.yellowCards} />
+            <Stat label="Rouges" value={stats.redCards} />
+          </div>
+        )}
       </section>
 
       <section className="mb-6">

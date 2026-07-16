@@ -22,6 +22,60 @@ async function resolveOpponentId(formData: FormData): Promise<string | null> {
   return newOpponent.id;
 }
 
+export type BulkMatchRow = { opponentId: string | null; newOpponentName: string; date: string };
+
+/** Création rapide de plusieurs matchs (adversaire + date seulement) ; heure/lieu se complètent plus tard. */
+export async function createMatchesBulk(rows: BulkMatchRow[]) {
+  await requireAdmin();
+
+  const valid = rows.filter((r) => r.date && (r.opponentId || r.newOpponentName.trim()));
+  if (valid.length === 0) {
+    throw new Error("Ajoute au moins un match avec une date et un adversaire.");
+  }
+
+  const { data: activeSeason } = await supabaseAdmin
+    .from("seasons")
+    .select("id")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  const newOpponentCache = new Map<string, string>();
+
+  for (const row of valid) {
+    let opponentId = row.opponentId;
+    const name = row.newOpponentName.trim();
+
+    if (!opponentId && name) {
+      if (newOpponentCache.has(name)) {
+        opponentId = newOpponentCache.get(name)!;
+      } else {
+        const { data: newOpponent, error } = await supabaseAdmin
+          .from("opponents")
+          .insert({ name })
+          .select("id")
+          .single();
+        if (error) throw new Error(error.message);
+        opponentId = newOpponent.id;
+        newOpponentCache.set(name, opponentId);
+      }
+    }
+
+    const { error } = await supabaseAdmin.from("matches").insert({
+      match_date: row.date,
+      opponent_id: opponentId,
+      season_id: activeSeason?.id ?? null,
+      status: "scheduled",
+      match_type: "championnat",
+      home_or_away: "home",
+    });
+    if (error) throw new Error(error.message);
+  }
+
+  revalidatePath("/matches");
+  revalidatePath("/");
+  redirect("/matches");
+}
+
 export async function createMatch(formData: FormData) {
   await requireAdmin();
 
@@ -73,6 +127,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
   const location = String(formData.get("location") ?? "") || null;
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
+  const description = String(formData.get("description") ?? "").trim() || null;
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
@@ -89,6 +144,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
       home_or_away: homeOrAway,
       match_type: matchType,
       opponent_id: opponentId,
+      description,
     })
     .eq("id", matchId);
   if (error) throw new Error(error.message);
@@ -135,9 +191,7 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
 
 const VALID_STATUSES: AvailabilityStatus[] = ["present", "unsure", "absent", "injured"];
 
-export async function setAvailability(matchId: string, status: AvailabilityStatus) {
-  const user = await requireUser();
-
+async function upsertAvailability(matchId: string, playerId: string, status: AvailabilityStatus) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Statut invalide.");
   }
@@ -146,7 +200,7 @@ export async function setAvailability(matchId: string, status: AvailabilityStatu
     .from("availability")
     .select("id")
     .eq("match_id", matchId)
-    .eq("player_id", user.playerId)
+    .eq("player_id", playerId)
     .maybeSingle();
   if (findError) throw new Error(findError.message);
 
@@ -159,10 +213,25 @@ export async function setAvailability(matchId: string, status: AvailabilityStatu
   } else {
     const { error } = await supabaseAdmin
       .from("availability")
-      .insert({ match_id: matchId, player_id: user.playerId, status });
+      .insert({ match_id: matchId, player_id: playerId, status });
     if (error) throw new Error(error.message);
   }
 
   revalidatePath(`/matches/${matchId}`);
   revalidatePath("/");
+}
+
+export async function setAvailability(matchId: string, status: AvailabilityStatus) {
+  const user = await requireUser();
+  await upsertAvailability(matchId, user.playerId, status);
+}
+
+/** Permet à l'admin de corriger la réponse d'un autre joueur (désistement, erreur, etc.). */
+export async function setAvailabilityAsAdmin(
+  matchId: string,
+  playerId: string,
+  status: AvailabilityStatus
+) {
+  await requireAdmin();
+  await upsertAvailability(matchId, playerId, status);
 }

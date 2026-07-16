@@ -53,6 +53,17 @@ export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
   return countBy(mapped, nameById).slice(0, limit);
 }
 
+export async function getMostCarded(limit = 10): Promise<PlayerCount[]> {
+  const [players, { data: cards, error }] = await Promise.all([
+    getActivePlayers(),
+    supabaseAdmin.from("cards").select("player_id").is("deleted_at", null),
+  ]);
+  if (error) throw new Error(error.message);
+  const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
+  const rows = (cards ?? []).map((c) => ({ id: c.player_id }));
+  return countBy(rows, nameById).slice(0, limit);
+}
+
 export type TeamStats = {
   played: number;
   wins: number;

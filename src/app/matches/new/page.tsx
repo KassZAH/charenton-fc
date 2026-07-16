@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getOpponents } from "@/lib/data/opponents";
 import { createMatch } from "@/lib/data/matches-actions";
@@ -8,7 +9,12 @@ export default async function NewMatchPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold text-navy">Nouveau match</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-lg font-bold text-navy">Nouveau match</h1>
+        <Link href="/matches/new-bulk" className="text-xs font-medium text-navy/60 underline underline-offset-2">
+          Plusieurs matchs d&apos;un coup →
+        </Link>
+      </div>
 
       <form action={createMatch} className="space-y-4">
         <div>
