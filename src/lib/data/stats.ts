@@ -73,15 +73,21 @@ export type TeamStats = {
   goalsFor: number;
   goalsAgainst: number;
   goalDiff: number;
+  yellowCards: number;
+  redCards: number;
 };
 
 export async function getTeamStats(): Promise<TeamStats> {
-  const { data: matches, error } = await supabaseAdmin
-    .from("matches")
-    .select("team_score, opponent_score")
-    .eq("status", "completed")
-    .is("deleted_at", null);
+  const [{ data: matches, error }, { data: cards, error: cardsError }] = await Promise.all([
+    supabaseAdmin
+      .from("matches")
+      .select("team_score, opponent_score")
+      .eq("status", "completed")
+      .is("deleted_at", null),
+    supabaseAdmin.from("cards").select("card_type").is("deleted_at", null),
+  ]);
   if (error) throw new Error(error.message);
+  if (cardsError) throw new Error(cardsError.message);
 
   const played = matches ?? [];
   let wins = 0;
@@ -100,10 +106,15 @@ export async function getTeamStats(): Promise<TeamStats> {
     else losses++;
   }
 
+  const yellowCards = (cards ?? []).filter((c) => c.card_type === "yellow").length;
+  const redCards = (cards ?? []).filter((c) => c.card_type === "red").length;
+
   return {
     played: played.length,
     wins,
     draws,
+    yellowCards,
+    redCards,
     losses,
     goalsFor,
     goalsAgainst,

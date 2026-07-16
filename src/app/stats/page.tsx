@@ -51,10 +51,15 @@ export default async function StatsPage() {
           <Stat label="Nuls" value={team.draws} />
           <Stat label="Perdus" value={team.losses} />
         </div>
-        <p className="mt-3 text-sm text-navy/70">
-          {team.goalsFor} buts marqués · {team.goalsAgainst} encaissés · diff{" "}
-          {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
-        </p>
+        <table className="mt-4 w-full border-t border-navy/10 text-sm">
+          <tbody>
+            <TeamStatRow label="Buts marqués" value={team.goalsFor} />
+            <TeamStatRow label="Buts encaissés" value={team.goalsAgainst} />
+            <TeamStatRow label="Diff. de buts" value={team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff} />
+            <TeamStatRow label="Cartons jaunes" value={team.yellowCards} />
+            <TeamStatRow label="Cartons rouges" value={team.redCards} last />
+          </tbody>
+        </table>
 
         {highlights.currentStreak && (
           <p className="mt-1 text-sm text-navy/70">
@@ -96,6 +101,15 @@ function Stat({ label, value }: { label: string; value: number }) {
       <p className="text-lg font-bold text-navy">{value}</p>
       <p className="text-xs text-navy/50">{label}</p>
     </div>
+  );
+}
+
+function TeamStatRow({ label, value, last = false }: { label: string; value: number | string; last?: boolean }) {
+  return (
+    <tr className={last ? "" : "border-b border-navy/5"}>
+      <td className="py-1.5 text-navy/60">{label}</td>
+      <td className="py-1.5 text-right font-semibold tabular-nums text-navy">{value}</td>
+    </tr>
   );
 }
 
