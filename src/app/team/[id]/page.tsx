@@ -12,6 +12,7 @@ import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { getPlayerBadges } from "@/lib/data/badges";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
+import { PlayerCardButton } from "./PlayerCardButton";
 
 function initials(firstName: string, lastName: string | null) {
   return (firstName[0] + (lastName?.[0] ?? "")).toUpperCase();
@@ -71,14 +72,27 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               .join(" · ") || "—"}
           </p>
         </div>
-        {isElevatedRole(user.role) && (
-          <Link
-            href={`/team/${player.id}/edit`}
-            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
-          >
-            Modifier
-          </Link>
-        )}
+        <div className="flex shrink-0 flex-col items-end gap-2">
+          <PlayerCardButton
+            player={{
+              name: player.nickname || player.first_name,
+              shirtNumber: player.shirt_number,
+              position: player.primary_position,
+              goals: stats.goals,
+              assists: stats.assists,
+              matchesPlayed: stats.matchesPlayed,
+              badgeCount: badges.length,
+            }}
+          />
+          {isElevatedRole(user.role) && (
+            <Link
+              href={`/team/${player.id}/edit`}
+              className="text-xs font-medium text-navy/50 underline underline-offset-2"
+            >
+              Modifier
+            </Link>
+          )}
+        </div>
       </div>
 
       {player.quote && (
