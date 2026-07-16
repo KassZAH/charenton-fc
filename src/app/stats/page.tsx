@@ -1,14 +1,16 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getTopScorers, getTopAssists, getTopPresences, getTeamStats, type PlayerCount } from "@/lib/data/stats";
+import { getAwardLeaderboards } from "@/lib/data/awards";
 
 export default async function StatsPage() {
   await requireUser();
-  const [scorers, assists, presences, team] = await Promise.all([
+  const [scorers, assists, presences, team, awardLeaderboards] = await Promise.all([
     getTopScorers(),
     getTopAssists(),
     getTopPresences(),
     getTeamStats(),
+    getAwardLeaderboards(),
   ]);
 
   return (
@@ -31,6 +33,10 @@ export default async function StatsPage() {
       <StatList title="Buteurs" rows={scorers} />
       <StatList title="Passeurs" rows={assists} />
       <StatList title="Présences" rows={presences} />
+
+      {awardLeaderboards.map(({ award, leaders }) => (
+        <StatList key={award.id} title={`${award.emoji ?? ""} ${award.name}`.trim()} rows={leaders} />
+      ))}
     </div>
   );
 }

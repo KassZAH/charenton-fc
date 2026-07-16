@@ -2,12 +2,18 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getNextMatch } from "@/lib/data/matches";
 import { getMyAvailability } from "@/lib/data/availability";
+import { getPlayerStats } from "@/lib/data/player-stats";
+import { getTeamStats } from "@/lib/data/stats";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
 
 export default async function HomePage() {
   const user = await requireUser();
-  const nextMatch = await getNextMatch();
+  const [nextMatch, myStats, teamStats] = await Promise.all([
+    getNextMatch(),
+    getPlayerStats(user.playerId),
+    getTeamStats(),
+  ]);
   const myStatus = nextMatch ? await getMyAvailability(nextMatch.id, user.playerId) : null;
 
   const isHome = nextMatch?.home_or_away === "home";
@@ -44,6 +50,29 @@ export default async function HomePage() {
           Aucun match à venir pour le moment.
         </p>
       )}
+
+      <Link
+        href={`/team/${user.playerId}`}
+        className="mt-4 block rounded-2xl border border-navy/10 bg-white p-4 shadow-sm active:scale-[0.99] transition"
+      >
+        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gold">
+          Ta saison
+        </p>
+        <div className="grid grid-cols-3 gap-2 text-center">
+          <MiniStat label="Buts" value={myStats.goals} />
+          <MiniStat label="Passes déc." value={myStats.assists} />
+          <MiniStat label="Présences" value={`${myStats.matchesPlayed}/${teamStats.played}`} />
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div>
+      <p className="text-lg font-bold text-navy">{value}</p>
+      <p className="text-xs text-navy/50">{label}</p>
     </div>
   );
 }

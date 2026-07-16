@@ -15,7 +15,7 @@ function initials(firstName: string, lastName: string | null) {
 
 export default async function PlayerDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  await requireUser();
+  const user = await requireUser();
 
   const player = await getPlayerById(id);
   if (!player) notFound();
@@ -32,7 +32,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
         <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-navy text-xl font-bold text-gold">
           {initials(player.first_name, player.last_name)}
         </span>
-        <div>
+        <div className="flex-1">
           <h1 className="text-lg font-bold text-navy">
             {player.nickname || player.first_name}
             {player.shirt_number != null && (
@@ -49,6 +49,14 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               .join(" · ") || "—"}
           </p>
         </div>
+        {user.role === "admin" && (
+          <Link
+            href={`/team/${player.id}/edit`}
+            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+          >
+            Modifier
+          </Link>
+        )}
       </div>
 
       {player.quote && (

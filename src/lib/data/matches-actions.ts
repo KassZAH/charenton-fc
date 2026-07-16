@@ -6,6 +6,22 @@ import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { AvailabilityStatus } from "@/types/models";
 
+async function resolveOpponentId(formData: FormData): Promise<string | null> {
+  const existingOpponentId = String(formData.get("opponent_id") ?? "") || null;
+  const newOpponentName = String(formData.get("new_opponent_name") ?? "").trim();
+
+  if (existingOpponentId) return existingOpponentId;
+  if (!newOpponentName) return null;
+
+  const { data: newOpponent, error } = await supabaseAdmin
+    .from("opponents")
+    .insert({ name: newOpponentName })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+  return newOpponent.id;
+}
+
 export async function createMatch(formData: FormData) {
   await requireAdmin();
 
@@ -14,24 +30,12 @@ export async function createMatch(formData: FormData) {
   const location = String(formData.get("location") ?? "") || null;
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
-  const existingOpponentId = String(formData.get("opponent_id") ?? "") || null;
-  const newOpponentName = String(formData.get("new_opponent_name") ?? "").trim();
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
   }
 
-  let opponentId = existingOpponentId;
-
-  if (!opponentId && newOpponentName) {
-    const { data: newOpponent, error: opponentError } = await supabaseAdmin
-      .from("opponents")
-      .insert({ name: newOpponentName })
-      .select("id")
-      .single();
-    if (opponentError) throw new Error(opponentError.message);
-    opponentId = newOpponent.id;
-  }
+  const opponentId = await resolveOpponentId(formData);
 
   const { data: activeSeason } = await supabaseAdmin
     .from("seasons")
@@ -59,6 +63,54 @@ export async function createMatch(formData: FormData) {
   revalidatePath("/matches");
   revalidatePath("/");
   redirect(`/matches/${match.id}`);
+}
+
+export async function updateMatchDetails(matchId: string, formData: FormData) {
+  await requireAdmin();
+
+  const matchDate = String(formData.get("match_date") ?? "");
+  const kickoffTime = String(formData.get("kickoff_time") ?? "") || null;
+  const location = String(formData.get("location") ?? "") || null;
+  const homeOrAway = String(formData.get("home_or_away") ?? "home");
+  const matchType = String(formData.get("match_type") ?? "") || null;
+
+  if (!matchDate) {
+    throw new Error("La date du match est obligatoire.");
+  }
+
+  const opponentId = await resolveOpponentId(formData);
+
+  const { error } = await supabaseAdmin
+    .from("matches")
+    .update({
+      match_date: matchDate,
+      kickoff_time: kickoffTime,
+      location,
+      home_or_away: homeOrAway,
+      match_type: matchType,
+      opponent_id: opponentId,
+    })
+    .eq("id", matchId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/matches/${matchId}`);
+  revalidatePath("/matches");
+  revalidatePath("/");
+  redirect(`/matches/${matchId}`);
+}
+
+export async function deleteMatch(matchId: string) {
+  await requireAdmin();
+
+  const { error } = await supabaseAdmin
+    .from("matches")
+    .update({ deleted_at: new Date().toISOString() })
+    .eq("id", matchId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/matches");
+  revalidatePath("/");
+  redirect("/matches");
 }
 
 export async function updateMatchResult(matchId: string, formData: FormData) {

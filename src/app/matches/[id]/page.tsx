@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/current-user";
 import { getMatchById } from "@/lib/data/matches";
@@ -24,9 +25,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-gold">
-        {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
-      </p>
+      <div className="flex items-start justify-between">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gold">
+          {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
+        </p>
+        {user.role === "admin" && (
+          <Link
+            href={`/matches/${match.id}/edit`}
+            className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
+          >
+            Modifier
+          </Link>
+        )}
+      </div>
       <h1 className="mt-1 text-xl font-bold text-navy">
         {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
       </h1>
@@ -54,12 +65,29 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </>
       )}
 
-      {user.role === "admin" && <AdminSection matchId={match.id} isCompleted={match.status === "completed"} />}
+      {user.role === "admin" && (
+        <AdminSection
+          matchId={match.id}
+          isCompleted={match.status === "completed"}
+          teamScore={match.team_score}
+          opponentScore={match.opponent_score}
+        />
+      )}
     </div>
   );
 }
 
-async function AdminSection({ matchId, isCompleted }: { matchId: string; isCompleted: boolean }) {
+async function AdminSection({
+  matchId,
+  isCompleted,
+  teamScore,
+  opponentScore,
+}: {
+  matchId: string;
+  isCompleted: boolean;
+  teamScore: number | null;
+  opponentScore: number | null;
+}) {
   const summary = await getMatchAvailabilitySummary(matchId);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
@@ -89,33 +117,33 @@ async function AdminSection({ matchId, isCompleted }: { matchId: string; isCompl
         ))}
       </div>
 
-      {!isCompleted && (
-        <form action={updateMatchResult.bind(null, matchId)} className="mt-6 flex items-end gap-3">
-          <label className="flex-1 text-sm text-navy">
-            Score Charenton
-            <input
-              type="number"
-              name="team_score"
-              required
-              min={0}
-              className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
-            />
-          </label>
-          <label className="flex-1 text-sm text-navy">
-            Score adverse
-            <input
-              type="number"
-              name="opponent_score"
-              required
-              min={0}
-              className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
-            />
-          </label>
-          <button type="submit" className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-gold">
-            Valider
-          </button>
-        </form>
-      )}
+      <form action={updateMatchResult.bind(null, matchId)} className="mt-6 flex items-end gap-3">
+        <label className="flex-1 text-sm text-navy">
+          Score Charenton
+          <input
+            type="number"
+            name="team_score"
+            required
+            min={0}
+            defaultValue={teamScore ?? ""}
+            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+          />
+        </label>
+        <label className="flex-1 text-sm text-navy">
+          Score adverse
+          <input
+            type="number"
+            name="opponent_score"
+            required
+            min={0}
+            defaultValue={opponentScore ?? ""}
+            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+          />
+        </label>
+        <button type="submit" className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-gold">
+          {isCompleted ? "Corriger" : "Valider"}
+        </button>
+      </form>
     </section>
   );
 }

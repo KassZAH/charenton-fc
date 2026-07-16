@@ -57,6 +57,58 @@ export async function getMatchAwardResults(matchId: string): Promise<AwardResult
   });
 }
 
+export type AwardLeaderboard = {
+  award: Award;
+  leaders: { playerId: string; name: string; count: number }[];
+};
+
+/**
+ * Classement saison de chaque récompense : pour chaque match, le(s)
+ * gagnant(s) (le plus voté, égalités comptées pour tous) marquent un point
+ * dans le classement de leur catégorie. Calculé à la volée depuis les votes.
+ */
+export async function getAwardLeaderboards(limit = 5): Promise<AwardLeaderboard[]> {
+  const [awards, players, { data: votes, error }] = await Promise.all([
+    getActiveAwards(),
+    getActivePlayers(),
+    supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id"),
+  ]);
+  if (error) throw new Error(error.message);
+
+  const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
+
+  const groups = new Map<string, Map<string, number>>();
+  for (const v of votes ?? []) {
+    if (!v.voted_player_id) continue;
+    const key = `${v.match_id}::${v.award_id}`;
+    const counts = groups.get(key) ?? new Map<string, number>();
+    counts.set(v.voted_player_id, (counts.get(v.voted_player_id) ?? 0) + 1);
+    groups.set(key, counts);
+  }
+
+  const winsByAward = new Map<string, Map<string, number>>();
+  for (const [key, counts] of groups) {
+    const awardId = key.split("::")[1];
+    const max = Math.max(...counts.values());
+    const winsForAward = winsByAward.get(awardId) ?? new Map<string, number>();
+    for (const [playerId, count] of counts) {
+      if (count === max) {
+        winsForAward.set(playerId, (winsForAward.get(playerId) ?? 0) + 1);
+      }
+    }
+    winsByAward.set(awardId, winsForAward);
+  }
+
+  return awards.map((award) => {
+    const winsMap = winsByAward.get(award.id) ?? new Map<string, number>();
+    const leaders = [...winsMap.entries()]
+      .map(([playerId, count]) => ({ playerId, name: nameById.get(playerId) ?? "Joueur", count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, limit);
+    return { award, leaders };
+  });
+}
+
 /** award_id -> voted_player_id pour le joueur connecté, sur ce match. */
 export async function getMyVotes(matchId: string, voterPlayerId: string): Promise<Map<string, string>> {
   const { data, error } = await supabaseAdmin
