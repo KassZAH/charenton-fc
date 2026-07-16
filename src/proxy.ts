@@ -20,6 +20,6 @@ export const config = {
      * - /login (page de connexion)
      * - fichiers statiques Next.js et assets
      */
-    "/((?!login|api/tmp-audit-test|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!login|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
