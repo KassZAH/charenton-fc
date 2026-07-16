@@ -22,6 +22,6 @@ export const config = {
      * - manifest PWA et icônes (doivent rester accessibles sans session,
      *   sinon le navigateur ne peut pas proposer "Ajouter à l'écran d'accueil")
      */
-    "/((?!login|manifest\\.webmanifest|icon$|apple-icon$|icons/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!login|api/tmp-diag|manifest\\.webmanifest|icon$|apple-icon$|icons/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
