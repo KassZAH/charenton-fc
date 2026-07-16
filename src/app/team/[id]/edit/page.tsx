@@ -71,6 +71,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
           >
             <option value="player">Joueur (PIN à 4 chiffres)</option>
             <option value="admin">Admin (PIN à 6 chiffres)</option>
+            <option value="coach">Coach (PIN à 6 chiffres)</option>
           </select>
           <p className="mt-1 text-xs text-navy/50">
             Un changement de rôle ne prend effet qu&apos;à la prochaine connexion de ce joueur.

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { login } from "@/lib/auth/actions";
-import type { PlayerRole } from "@/types/models";
+import { pinLengthForRole, type PlayerRole } from "@/types/models";
 
 type LoginPlayer = {
   id: string;
@@ -81,7 +81,7 @@ function PinStep({
   player: LoginPlayer;
   onBack: () => void;
 }) {
-  const expectedLength = player.role === "admin" ? 6 : 4;
+  const expectedLength = pinLengthForRole(player.role);
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();

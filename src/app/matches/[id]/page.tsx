@@ -9,7 +9,7 @@ import { getMatchAwardResults } from "@/lib/data/awards";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
 import { buildConvocationMessage, buildReminderMessage, buildResultMessage, whatsappShareUrl } from "@/lib/whatsapp";
-import type { AvailabilityStatus } from "@/types/models";
+import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
@@ -35,13 +35,21 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <p className="text-xs font-semibold uppercase tracking-wide text-gold">
           {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
         </p>
-        {user.role === "admin" && (
-          <Link
-            href={`/matches/${match.id}/edit`}
-            className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
-          >
-            Modifier
-          </Link>
+        {isElevatedRole(user.role) && (
+          <div className="flex gap-2">
+            <Link
+              href={`/matches/${match.id}/lineup`}
+              className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
+            >
+              Feuille tactique
+            </Link>
+            <Link
+              href={`/matches/${match.id}/edit`}
+              className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
+            >
+              Modifier
+            </Link>
+          </div>
         )}
       </div>
       <h1 className="mt-1 text-xl font-bold text-navy">
@@ -73,14 +81,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {match.status === "completed" && (
         <>
-          {user.role === "admin" && <RosterSection matchId={match.id} />}
-          <GoalsSection matchId={match.id} isAdmin={user.role === "admin"} />
-          <CardsSection matchId={match.id} isAdmin={user.role === "admin"} />
+          {isElevatedRole(user.role) && <RosterSection matchId={match.id} />}
+          <GoalsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
+          <CardsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
           <AwardsSection matchId={match.id} myPlayerId={user.playerId} />
         </>
       )}
 
-      {user.role === "admin" && (
+      {isElevatedRole(user.role) && (
         <AdminSection
           matchId={match.id}
           isCompleted={match.status === "completed"}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getUpcomingMatches, getPastMatches, type MatchWithOpponent } from "@/lib/data/matches";
 import { formatMatchDate, formatTime } from "@/lib/format";
+import { isElevatedRole } from "@/types/models";
 
 export default async function MatchesPage() {
   const user = await requireUser();
@@ -11,7 +12,7 @@ export default async function MatchesPage() {
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-navy">Matchs</h1>
-        {user.role === "admin" && (
+        {isElevatedRole(user.role) && (
           <Link
             href="/matches/new"
             className="rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-gold"

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import type { TablesUpdate } from "@/types/database";
+import { pinLengthForRole } from "@/types/models";
 
 export async function createPlayer(formData: FormData) {
   await requireAdmin();
@@ -21,11 +22,11 @@ export async function createPlayer(formData: FormData) {
   if (!firstName) {
     throw new Error("Le prénom est obligatoire.");
   }
-  if (role !== "player" && role !== "admin") {
+  if (role !== "player" && role !== "admin" && role !== "coach") {
     throw new Error("Rôle invalide.");
   }
 
-  const expectedLength = role === "admin" ? 6 : 4;
+  const expectedLength = pinLengthForRole(role);
   if (pin.length !== expectedLength || !/^\d+$/.test(pin)) {
     throw new Error(`Le PIN doit contenir ${expectedLength} chiffres.`);
   }
@@ -78,7 +79,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   if (!firstName) {
     throw new Error("Le prénom est obligatoire.");
   }
-  if (role !== "player" && role !== "admin") {
+  if (role !== "player" && role !== "admin" && role !== "coach") {
     throw new Error("Rôle invalide.");
   }
 
@@ -94,7 +95,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   };
 
   if (newPin) {
-    const expectedLength = role === "admin" ? 6 : 4;
+    const expectedLength = pinLengthForRole(role);
     if (newPin.length !== expectedLength || !/^\d+$/.test(newPin)) {
       throw new Error(`Le nouveau PIN doit contenir ${expectedLength} chiffres.`);
     }

@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { signSession, SESSION_COOKIE_NAME } from "./session";
+import { pinLengthForRole } from "@/types/models";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 180; // 180 jours
 
@@ -21,11 +22,11 @@ export async function login(playerId: string, pin: string): Promise<LoginResult>
     return { error: "Profil introuvable." };
   }
 
-  if (player.role !== "player" && player.role !== "admin") {
+  if (player.role !== "player" && player.role !== "admin" && player.role !== "coach") {
     return { error: "Profil invalide." };
   }
 
-  const expectedLength = player.role === "admin" ? 6 : 4;
+  const expectedLength = pinLengthForRole(player.role);
   if (pin.length !== expectedLength || !/^\d+$/.test(pin)) {
     return { error: `Le PIN doit contenir ${expectedLength} chiffres.` };
   }

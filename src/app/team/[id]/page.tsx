@@ -11,6 +11,7 @@ import {
 import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { getPlayerBadges } from "@/lib/data/badges";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
+import { isElevatedRole } from "@/types/models";
 
 function initials(firstName: string, lastName: string | null) {
   return (firstName[0] + (lastName?.[0] ?? "")).toUpperCase();
@@ -32,7 +33,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   ]);
 
   const canSeeMeasurements =
-    user.role === "admin" || user.playerId === player.id || player.share_measurements;
+    isElevatedRole(user.role) || user.playerId === player.id || player.share_measurements;
   const measurements = canSeeMeasurements ? await getPlayerMeasurements(player.id) : [];
   const latestMeasurement = measurements[0] ?? null;
   const earliestWeight = [...measurements].reverse().find((m) => m.weight_kg != null)?.weight_kg ?? null;
@@ -58,6 +59,11 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
                 Admin
               </span>
             )}
+            {player.role === "coach" && (
+              <span className="rounded-full bg-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold">
+                Coach
+              </span>
+            )}
           </h1>
           <p className="text-sm text-navy/50">
             {[player.primary_position, player.status === "archived" ? "Archivé" : null]
@@ -65,7 +71,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               .join(" · ") || "—"}
           </p>
         </div>
-        {user.role === "admin" && (
+        {isElevatedRole(user.role) && (
           <Link
             href={`/team/${player.id}/edit`}
             className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"

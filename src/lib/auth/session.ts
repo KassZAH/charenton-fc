@@ -19,7 +19,7 @@ function getSecretKey() {
 
 export type SessionPayload = {
   playerId: string;
-  role: "player" | "admin";
+  role: "player" | "admin" | "coach";
   name: string;
 };
 
@@ -36,7 +36,7 @@ export async function verifySessionToken(token: string): Promise<SessionPayload 
     const { payload } = await jwtVerify(token, getSecretKey());
     if (
       typeof payload.playerId !== "string" ||
-      (payload.role !== "player" && payload.role !== "admin") ||
+      (payload.role !== "player" && payload.role !== "admin" && payload.role !== "coach") ||
       typeof payload.name !== "string"
     ) {
       return null;

@@ -77,6 +77,11 @@ const ADMIN_ITEMS: Item[] = [
     text: "Bouton « Modifier » sur la fiche du match : date, heure, lieu, adversaire, type, anecdote. Bouton rouge en bas pour le supprimer.",
   },
   {
+    emoji: "🧩",
+    title: "Feuille tactique",
+    text: "Bouton « Feuille tactique » sur la fiche du match : choisis une formation (4-4-2, 4-3-3, 3-5-2, 4-2-3-1) et place un joueur par poste, parmi ceux qui ont répondu « Présent ».",
+  },
+  {
     emoji: "🧑‍🤝‍🧑",
     title: "Gérer l'équipe",
     text: "Depuis Équipe : ajouter un joueur, le modifier (y compris changer son rôle ou réinitialiser son PIN), l'archiver/réactiver.",
@@ -133,9 +138,13 @@ export default async function HelpPage() {
       </section>
 
       <section>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold">
+        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gold">
           🔒 Réservé aux admins
         </h2>
+        <p className="mb-3 text-xs text-navy/50">
+          Le rôle coach a exactement les mêmes droits, plus la feuille tactique (formation et placement des
+          joueurs) sur chaque match.
+        </p>
         <ul className="space-y-3">
           {ADMIN_ITEMS.map((item) => (
             <HelpCard key={item.title} item={item} admin />

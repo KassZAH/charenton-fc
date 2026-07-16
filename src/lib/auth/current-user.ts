@@ -18,9 +18,13 @@ export async function requireUser(): Promise<SessionPayload> {
   return user;
 }
 
-/** À utiliser dans les Server Components/Actions réservés aux admins. */
+/**
+ * À utiliser dans les Server Components/Actions réservés aux admins.
+ * Le rôle coach a exactement les mêmes droits qu'admin, donc il passe aussi
+ * (y compris pour la feuille tactique, réservée à coach + admin).
+ */
 export async function requireAdmin(): Promise<SessionPayload> {
   const user = await requireUser();
-  if (user.role !== "admin") redirect("/");
+  if (user.role !== "admin" && user.role !== "coach") redirect("/");
   return user;
 }

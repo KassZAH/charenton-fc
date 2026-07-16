@@ -30,6 +30,7 @@ export default async function NewPlayerPage() {
           >
             <option value="player">Joueur (PIN à 4 chiffres)</option>
             <option value="admin">Admin (PIN à 6 chiffres)</option>
+            <option value="coach">Coach (PIN à 6 chiffres)</option>
           </select>
         </div>
 

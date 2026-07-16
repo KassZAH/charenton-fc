@@ -520,6 +520,38 @@ export type Database = {
           },
         ]
       }
+      match_lineups: {
+        Row: {
+          id: string
+          match_id: string
+          formation: string
+          positions: Json
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          match_id: string
+          formation: string
+          positions?: Json
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          match_id?: string
+          formation?: string
+          positions?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_lineups_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           created_at: string | null

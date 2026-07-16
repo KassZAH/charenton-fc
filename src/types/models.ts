@@ -13,9 +13,20 @@ export type Season = Tables<"seasons">;
 export type Opponent = Tables<"opponents">;
 export type TeamSettings = Tables<"team_settings">;
 export type PlayerMeasurement = Tables<"player_measurements">;
+export type MatchLineup = { formation: string; positions: Record<string, string> };
 
-/** players.role — confirmé sur les données de démo */
-export type PlayerRole = "player" | "admin";
+/** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
+export type PlayerRole = "player" | "admin" | "coach";
+
+/** PIN à 4 chiffres pour un joueur, 6 pour un admin ou un coach. */
+export function pinLengthForRole(role: PlayerRole): 4 | 6 {
+  return role === "player" ? 4 : 6;
+}
+
+/** Coach a exactement les mêmes droits qu'admin dans toute l'interface. */
+export function isElevatedRole(role: PlayerRole): boolean {
+  return role === "admin" || role === "coach";
+}
 
 /** players.status — confirmé sur les données de démo (archivage = status "archived" + archived_at renseigné) */
 export type PlayerStatus = "active" | "archived";

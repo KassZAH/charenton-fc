@@ -2,18 +2,19 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getActivePlayers, getArchivedPlayers } from "@/lib/data/players";
 import { setPlayerStatus } from "@/lib/data/players-actions";
-import type { Player } from "@/types/models";
+import { isElevatedRole, type Player } from "@/types/models";
 
 export default async function TeamPage() {
   const user = await requireUser();
   const players = await getActivePlayers();
-  const archivedPlayers = user.role === "admin" ? await getArchivedPlayers() : [];
+  const isAdmin = isElevatedRole(user.role);
+  const archivedPlayers = isAdmin ? await getArchivedPlayers() : [];
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-navy">Équipe</h1>
-        {user.role === "admin" && (
+        {isAdmin && (
           <Link
             href="/team/new"
             className="rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-gold"
@@ -25,11 +26,11 @@ export default async function TeamPage() {
 
       <ul className="space-y-2">
         {players.map((player) => (
-          <PlayerRow key={player.id} player={player} isAdmin={user.role === "admin"} />
+          <PlayerRow key={player.id} player={player} isAdmin={isAdmin} />
         ))}
       </ul>
 
-      {user.role === "admin" && archivedPlayers.length > 0 && (
+      {isAdmin && archivedPlayers.length > 0 && (
         <div className="mt-8">
           <h2 className="mb-2 text-sm font-semibold text-navy/60">Joueurs archivés</h2>
           <ul className="space-y-2">
@@ -67,6 +68,11 @@ function PlayerRow({
           {player.role === "admin" && (
             <span className="rounded-full bg-gold px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy">
               Admin
+            </span>
+          )}
+          {player.role === "coach" && (
+            <span className="rounded-full bg-navy px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
+              Coach
             </span>
           )}
         </p>
