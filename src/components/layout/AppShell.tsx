@@ -12,6 +12,13 @@ export function AppShell({ user, children }: { user: SessionPayload; children: R
           Charenton FC
         </Link>
         <form action={logout} className="flex items-center gap-3">
+          <Link
+            href="/help"
+            aria-label="Aide"
+            className="flex h-6 w-6 items-center justify-center rounded-full border border-white/30 text-xs font-bold text-white/80"
+          >
+            ?
+          </Link>
           <Link href="/profile" className="text-sm text-white/80 underline-offset-2 hover:underline">
             {user.name}
           </Link>
