@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getNextMatch } from "@/lib/data/matches";
-import { getMyAvailability } from "@/lib/data/availability";
+import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
 import { getPlayerStats } from "@/lib/data/player-stats";
 import { getTeamStats } from "@/lib/data/stats";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { getFunnyLine } from "@/lib/funny-lines";
+import { buildReminderMessage, whatsappShareUrl } from "@/lib/whatsapp";
+import { isElevatedRole } from "@/types/models";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
 export default async function HomePage() {
@@ -19,6 +21,14 @@ export default async function HomePage() {
 
   const isHome = nextMatch?.home_or_away === "home";
   const opponentLabel = nextMatch?.opponent_name ?? "Adversaire à confirmer";
+
+  let noResponseNames: string[] = [];
+  if (nextMatch && isElevatedRole(user.role)) {
+    const summary = await getMatchAvailabilitySummary(nextMatch.id);
+    noResponseNames = summary
+      .filter((s) => s.status === null)
+      .map((s) => s.player.nickname || s.player.first_name);
+  }
 
   const funnyLine = getFunnyLine({
     goals: myStats.goals,
@@ -54,6 +64,27 @@ export default async function HomePage() {
             <p className="mb-2 text-sm font-semibold text-navy">Ta présence</p>
             <AvailabilityButtons matchId={nextMatch.id} initialStatus={myStatus} />
           </div>
+
+          {noResponseNames.length > 0 && (
+            <div className="mt-4 flex items-center justify-between gap-2 rounded-xl bg-gold/10 px-3 py-2">
+              <p className="text-xs text-navy/70">
+                {noResponseNames.length} joueur{noResponseNames.length > 1 ? "s" : ""} sans réponse pour ce match.
+              </p>
+              <a
+                href={whatsappShareUrl(
+                  buildReminderMessage({
+                    matchLabel: `${isHome ? "vs" : "@"} ${opponentLabel} (${formatMatchDate(nextMatch.match_date)})`,
+                    names: noResponseNames,
+                  })
+                )}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 rounded-full border border-navy/20 bg-white px-3 py-1 text-xs font-semibold text-navy"
+              >
+                Relancer
+              </a>
+            </div>
+          )}
         </div>
       ) : (
         <p className="rounded-2xl border border-navy/10 bg-white p-4 text-sm text-navy/60">
