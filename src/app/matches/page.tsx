@@ -22,6 +22,16 @@ export default async function MatchesPage() {
         )}
       </div>
 
+      {upcoming.length > 0 && (
+        // eslint-disable-next-line @next/next/no-html-link-for-pages
+        <a
+          href="/matches/calendar"
+          className="mb-4 inline-block text-xs font-medium text-navy/60 underline underline-offset-2"
+        >
+          Ajouter les matchs à venir à mon calendrier
+        </a>
+      )}
+
       <h2 className="mb-2 text-sm font-semibold text-navy/60">À venir</h2>
       <ul className="mb-6 space-y-2">
         {upcoming.length === 0 && <li className="text-sm text-navy/50">Aucun match à venir.</li>}

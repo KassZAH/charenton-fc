@@ -60,6 +60,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <p className="text-sm text-navy/70">Coup d&apos;envoi : {formatTime(match.kickoff_time)}</p>
       )}
       {match.location && <p className="text-sm text-navy/70">{match.location}</p>}
+      {match.status !== "completed" && (
+        <a
+          href={`/matches/${match.id}/calendar`}
+          className="mt-1 inline-block text-xs font-medium text-navy/50 underline underline-offset-2"
+        >
+          Ajouter à mon calendrier
+        </a>
+      )}
 
       {match.status === "completed" ? (
         <>
