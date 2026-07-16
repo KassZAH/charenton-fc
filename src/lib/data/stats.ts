@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getActivePlayers } from "./players";
+import { formatMatchDate } from "@/lib/format";
 
 /**
  * Toutes les stats sont recalculées à la volée depuis les événements
@@ -71,6 +72,7 @@ export type TeamStats = {
   losses: number;
   goalsFor: number;
   goalsAgainst: number;
+  goalDiff: number;
 };
 
 export async function getTeamStats(): Promise<TeamStats> {
@@ -98,5 +100,114 @@ export async function getTeamStats(): Promise<TeamStats> {
     else losses++;
   }
 
-  return { played: played.length, wins, draws, losses, goalsFor, goalsAgainst };
+  return {
+    played: played.length,
+    wins,
+    draws,
+    losses,
+    goalsFor,
+    goalsAgainst,
+    goalDiff: goalsFor - goalsAgainst,
+  };
+}
+
+export type MatchResult = {
+  matchId: string;
+  opponentName: string;
+  dateLabel: string;
+  teamScore: number;
+  opponentScore: number;
+};
+
+export type TeamHighlights = {
+  biggestWin: MatchResult | null;
+  biggestLoss: MatchResult | null;
+  currentStreak: { type: "wins" | "draws" | "losses"; count: number } | null;
+  bestWinStreak: number;
+};
+
+function resultType(teamScore: number, opponentScore: number): "wins" | "draws" | "losses" {
+  if (teamScore > opponentScore) return "wins";
+  if (teamScore < opponentScore) return "losses";
+  return "draws";
+}
+
+export async function getTeamHighlights(): Promise<TeamHighlights> {
+  const { data: matches, error } = await supabaseAdmin
+    .from("matches")
+    .select("id, match_date, opponent_id, team_score, opponent_score")
+    .eq("status", "completed")
+    .is("deleted_at", null)
+    .order("match_date", { ascending: true });
+  if (error) throw new Error(error.message);
+
+  const played = matches ?? [];
+  if (played.length === 0) {
+    return { biggestWin: null, biggestLoss: null, currentStreak: null, bestWinStreak: 0 };
+  }
+
+  const opponentIds = [...new Set(played.map((m) => m.opponent_id).filter((id): id is string => !!id))];
+  const { data: opponents, error: opponentsError } =
+    opponentIds.length > 0
+      ? await supabaseAdmin.from("opponents").select("id, name").in("id", opponentIds)
+      : { data: [], error: null };
+  if (opponentsError) throw new Error(opponentsError.message);
+  const opponentNameById = new Map((opponents ?? []).map((o) => [o.id, o.name]));
+
+  function toResult(m: (typeof played)[number]): MatchResult {
+    return {
+      matchId: m.id,
+      opponentName: m.opponent_id ? (opponentNameById.get(m.opponent_id) ?? "Adversaire") : "Adversaire",
+      dateLabel: formatMatchDate(m.match_date),
+      teamScore: m.team_score ?? 0,
+      opponentScore: m.opponent_score ?? 0,
+    };
+  }
+
+  let biggestWin: MatchResult | null = null;
+  let biggestWinDiff = -Infinity;
+  let biggestLoss: MatchResult | null = null;
+  let biggestLossDiff = Infinity;
+
+  for (const m of played) {
+    const diff = (m.team_score ?? 0) - (m.opponent_score ?? 0);
+    if (diff > 0 && diff > biggestWinDiff) {
+      biggestWinDiff = diff;
+      biggestWin = toResult(m);
+    }
+    if (diff < 0 && diff < biggestLossDiff) {
+      biggestLossDiff = diff;
+      biggestLoss = toResult(m);
+    }
+  }
+
+  let bestWinStreak = 0;
+  let runningWinStreak = 0;
+  for (const m of played) {
+    if (resultType(m.team_score ?? 0, m.opponent_score ?? 0) === "wins") {
+      runningWinStreak++;
+      bestWinStreak = Math.max(bestWinStreak, runningWinStreak);
+    } else {
+      runningWinStreak = 0;
+    }
+  }
+
+  const lastMatch = played[played.length - 1];
+  const currentStreakType = resultType(lastMatch.team_score ?? 0, lastMatch.opponent_score ?? 0);
+  let currentStreakCount = 0;
+  for (let i = played.length - 1; i >= 0; i--) {
+    const m = played[i];
+    if (resultType(m.team_score ?? 0, m.opponent_score ?? 0) === currentStreakType) {
+      currentStreakCount++;
+    } else {
+      break;
+    }
+  }
+
+  return {
+    biggestWin,
+    biggestLoss,
+    currentStreak: { type: currentStreakType, count: currentStreakCount },
+    bestWinStreak,
+  };
 }

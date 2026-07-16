@@ -59,6 +59,97 @@ export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
   };
 }
 
+export type PlayerAdvancedStats = {
+  presenceRate: number;
+  winRateWhenPresent: number;
+  braces: number;
+  hatTricks: number;
+  goalAndAssistMatches: number;
+  goalsPerMatch: number;
+  assistsPerMatch: number;
+};
+
+const EMPTY_ADVANCED_STATS: PlayerAdvancedStats = {
+  presenceRate: 0,
+  winRateWhenPresent: 0,
+  braces: 0,
+  hatTricks: 0,
+  goalAndAssistMatches: 0,
+  goalsPerMatch: 0,
+  assistsPerMatch: 0,
+};
+
+/** Recalculé à la volée depuis match_players et goals — jamais stocké. */
+export async function getPlayerAdvancedStats(playerId: string): Promise<PlayerAdvancedStats> {
+  const [{ data: playedRows, error: playedError }, totalCompletedRes] = await Promise.all([
+    supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true),
+    supabaseAdmin.from("matches").select("*", { count: "exact", head: true }).eq("status", "completed").is("deleted_at", null),
+  ]);
+  if (playedError) throw new Error(playedError.message);
+  if (totalCompletedRes.error) throw new Error(totalCompletedRes.error.message);
+
+  const totalCompleted = totalCompletedRes.count ?? 0;
+  const playedMatchIds = [...new Set((playedRows ?? []).map((r) => r.match_id))];
+  const matchesPlayed = playedMatchIds.length;
+
+  if (matchesPlayed === 0) {
+    return EMPTY_ADVANCED_STATS;
+  }
+
+  const [matchesRes, goalsRes] = await Promise.all([
+    supabaseAdmin
+      .from("matches")
+      .select("id, team_score, opponent_score")
+      .in("id", playedMatchIds)
+      .eq("status", "completed")
+      .is("deleted_at", null),
+    supabaseAdmin
+      .from("goals")
+      .select("match_id, scorer_player_id, assist_player_id")
+      .in("match_id", playedMatchIds)
+      .is("deleted_at", null),
+  ]);
+  if (matchesRes.error) throw new Error(matchesRes.error.message);
+  if (goalsRes.error) throw new Error(goalsRes.error.message);
+
+  const playedCompletedMatches = matchesRes.data ?? [];
+  const wins = playedCompletedMatches.filter((m) => (m.team_score ?? 0) > (m.opponent_score ?? 0)).length;
+
+  const goalsByMatch = new Map<string, number>();
+  const assistsByMatch = new Map<string, number>();
+  for (const g of goalsRes.data ?? []) {
+    if (g.scorer_player_id === playerId) {
+      goalsByMatch.set(g.match_id, (goalsByMatch.get(g.match_id) ?? 0) + 1);
+    }
+    if (g.assist_player_id === playerId) {
+      assistsByMatch.set(g.match_id, (assistsByMatch.get(g.match_id) ?? 0) + 1);
+    }
+  }
+
+  let braces = 0;
+  let hatTricks = 0;
+  let goalAndAssistMatches = 0;
+  let totalGoals = 0;
+  for (const [matchId, count] of goalsByMatch) {
+    totalGoals += count;
+    if (count === 2) braces++;
+    if (count >= 3) hatTricks++;
+    if ((assistsByMatch.get(matchId) ?? 0) > 0) goalAndAssistMatches++;
+  }
+  const totalAssists = [...assistsByMatch.values()].reduce((a, b) => a + b, 0);
+
+  return {
+    presenceRate: totalCompleted > 0 ? Math.round((matchesPlayed / totalCompleted) * 100) : 0,
+    winRateWhenPresent:
+      playedCompletedMatches.length > 0 ? Math.round((wins / playedCompletedMatches.length) * 100) : 0,
+    braces,
+    hatTricks,
+    goalAndAssistMatches,
+    goalsPerMatch: matchesPlayed > 0 ? Math.round((totalGoals / matchesPlayed) * 10) / 10 : 0,
+    assistsPerMatch: matchesPlayed > 0 ? Math.round((totalAssists / matchesPlayed) * 10) / 10 : 0,
+  };
+}
+
 export type PlayerAwardWin = { award: Award; wins: number };
 
 /**

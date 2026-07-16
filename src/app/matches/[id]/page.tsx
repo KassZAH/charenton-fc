@@ -15,6 +15,7 @@ import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
 import { AwardsSection } from "./AwardsSection";
 import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
+import { RosterSection } from "./RosterSection";
 
 const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "unsure", "absent", "injured", "none"];
 
@@ -72,6 +73,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {match.status === "completed" && (
         <>
+          {user.role === "admin" && <RosterSection matchId={match.id} />}
           <GoalsSection matchId={match.id} isAdmin={user.role === "admin"} />
           <CardsSection matchId={match.id} isAdmin={user.role === "admin"} />
           <AwardsSection matchId={match.id} myPlayerId={user.playerId} />

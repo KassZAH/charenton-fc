@@ -6,24 +6,42 @@ import {
   getTopPresences,
   getMostCarded,
   getTeamStats,
+  getTeamHighlights,
   type PlayerCount,
 } from "@/lib/data/stats";
 import { getAwardLeaderboards } from "@/lib/data/awards";
 
+const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
+  wins: "victoire(s)",
+  draws: "nul(s)",
+  losses: "défaite(s)",
+};
+
 export default async function StatsPage() {
   await requireUser();
-  const [scorers, assists, presences, carded, team, awardLeaderboards] = await Promise.all([
+  const [scorers, assists, presences, carded, team, highlights, awardLeaderboards] = await Promise.all([
     getTopScorers(),
     getTopAssists(),
     getTopPresences(),
     getMostCarded(),
     getTeamStats(),
+    getTeamHighlights(),
     getAwardLeaderboards(),
   ]);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold text-navy">Stats</h1>
+      <div className="mb-4 flex items-center justify-between">
+        <h1 className="text-lg font-bold text-navy">Stats</h1>
+        <div className="flex gap-2 text-xs font-medium">
+          <Link href="/records" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+            Records
+          </Link>
+          <Link href="/team/compare" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+            Comparer
+          </Link>
+        </div>
+      </div>
 
       <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-navy/60">Équipe</h2>
@@ -34,8 +52,30 @@ export default async function StatsPage() {
           <Stat label="Perdus" value={team.losses} />
         </div>
         <p className="mt-3 text-sm text-navy/70">
-          {team.goalsFor} buts marqués · {team.goalsAgainst} encaissés
+          {team.goalsFor} buts marqués · {team.goalsAgainst} encaissés · diff{" "}
+          {team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff}
         </p>
+
+        {highlights.currentStreak && (
+          <p className="mt-1 text-sm text-navy/70">
+            Série en cours : {highlights.currentStreak.count} {STREAK_LABELS[highlights.currentStreak.type]}
+          </p>
+        )}
+        {highlights.bestWinStreak > 1 && (
+          <p className="text-sm text-navy/70">Meilleure série de victoires : {highlights.bestWinStreak}</p>
+        )}
+        {highlights.biggestWin && (
+          <p className="mt-1 text-sm text-navy/70">
+            Plus grosse victoire : {highlights.biggestWin.teamScore}–{highlights.biggestWin.opponentScore} vs{" "}
+            {highlights.biggestWin.opponentName}
+          </p>
+        )}
+        {highlights.biggestLoss && (
+          <p className="text-sm text-navy/70">
+            Plus grosse défaite : {highlights.biggestLoss.teamScore}–{highlights.biggestLoss.opponentScore} vs{" "}
+            {highlights.biggestLoss.opponentName}
+          </p>
+        )}
       </section>
 
       <StatList title="Buteurs" rows={scorers} />

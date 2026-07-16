@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth/current-user";
 import { getPlayerById } from "@/lib/data/players";
 import {
   getPlayerStats,
+  getPlayerAdvancedStats,
   getPlayerAwardWins,
   getPlayerMatchHistory,
 } from "@/lib/data/player-stats";
@@ -20,8 +21,9 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, awardWins, history] = await Promise.all([
+  const [stats, advanced, awardWins, history] = await Promise.all([
     getPlayerStats(player.id),
+    getPlayerAdvancedStats(player.id),
     getPlayerAwardWins(player.id),
     getPlayerMatchHistory(player.id),
   ]);
@@ -78,6 +80,23 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           </div>
         )}
       </section>
+
+      {stats.matchesPlayed > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-sm font-semibold text-navy/60">En détail</h2>
+          <ul className="space-y-1.5">
+            <DetailRow label="Taux de présence" value={`${advanced.presenceRate}%`} />
+            <DetailRow label="Taux de victoire (présent)" value={`${advanced.winRateWhenPresent}%`} />
+            <DetailRow label="Buts par match" value={advanced.goalsPerMatch.toString()} />
+            <DetailRow label="Passes déc. par match" value={advanced.assistsPerMatch.toString()} />
+            {advanced.braces > 0 && <DetailRow label="Doublés" value={advanced.braces.toString()} />}
+            {advanced.hatTricks > 0 && <DetailRow label="Triplés ou plus" value={advanced.hatTricks.toString()} />}
+            {advanced.goalAndAssistMatches > 0 && (
+              <DetailRow label="But + passe déc. même match" value={advanced.goalAndAssistMatches.toString()} />
+            )}
+          </ul>
+        </section>
+      )}
 
       <section className="mb-6">
         <h2 className="mb-2 text-sm font-semibold text-navy/60">Récompenses</h2>
@@ -151,5 +170,14 @@ function Stat({ label, value }: { label: string; value: number }) {
       <p className="text-lg font-bold text-navy">{value}</p>
       <p className="text-xs text-navy/50">{label}</p>
     </div>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: string }) {
+  return (
+    <li className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2">
+      <span className="text-sm text-navy/70">{label}</span>
+      <span className="text-sm font-bold text-navy">{value}</span>
+    </li>
   );
 }
