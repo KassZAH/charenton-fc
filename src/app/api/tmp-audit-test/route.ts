@@ -20,13 +20,13 @@ export async function GET(request: Request) {
     const { data: player } = await supabaseAdmin
       .from("players")
       .select("id, role, first_name, nickname")
-      .eq("role", "admin")
+      .in("role", ["admin", "coach"])
       .eq("status", "active")
       .limit(1)
       .single();
     const token = await signSession({
       playerId: player!.id,
-      role: player!.role as "admin",
+      role: player!.role as "admin" | "coach",
       name: player!.nickname || player!.first_name,
     });
     const res = NextResponse.json({ step: "0-login", ok: true });
