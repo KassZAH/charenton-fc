@@ -5,6 +5,7 @@ import { getMyAvailability } from "@/lib/data/availability";
 import { getPlayerStats } from "@/lib/data/player-stats";
 import { getTeamStats } from "@/lib/data/stats";
 import { formatMatchDate, formatTime } from "@/lib/format";
+import { getFunnyLine } from "@/lib/funny-lines";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
 export default async function HomePage() {
@@ -18,6 +19,15 @@ export default async function HomePage() {
 
   const isHome = nextMatch?.home_or_away === "home";
   const opponentLabel = nextMatch?.opponent_name ?? "Adversaire à confirmer";
+
+  const funnyLine = getFunnyLine({
+    goals: myStats.goals,
+    assists: myStats.assists,
+    matchesPlayed: myStats.matchesPlayed,
+    yellowCards: myStats.yellowCards,
+    redCards: myStats.redCards,
+    teamMatchesPlayed: teamStats.played,
+  });
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -63,6 +73,7 @@ export default async function HomePage() {
           <MiniStat label="Passes déc." value={myStats.assists} />
           <MiniStat label="Présences" value={`${myStats.matchesPlayed}/${teamStats.played}`} />
         </div>
+        <p className="mt-3 border-t border-navy/10 pt-3 text-sm italic text-navy/70">{funnyLine}</p>
       </Link>
     </div>
   );
