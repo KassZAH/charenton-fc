@@ -9,7 +9,7 @@ export function buildConvocationMessage(params: {
   timeLabel: string | null;
   location: string | null;
   present: string[];
-  unsure: string[];
+  uncertain: string[];
   absent: string[];
   noResponse: string[];
 }): string {
@@ -22,7 +22,7 @@ export function buildConvocationMessage(params: {
   if (params.location) lines.push(`📍 ${params.location}`);
   lines.push("");
   lines.push(`✅ Présents (${params.present.length}) : ${params.present.join(", ") || "—"}`);
-  lines.push(`❓ Incertains (${params.unsure.length}) : ${params.unsure.join(", ") || "—"}`);
+  lines.push(`❓ Incertains (${params.uncertain.length}) : ${params.uncertain.join(", ") || "—"}`);
   lines.push(`❌ Absents (${params.absent.length}) : ${params.absent.join(", ") || "—"}`);
   lines.push(`⏳ Sans réponse (${params.noResponse.length}) : ${params.noResponse.join(", ") || "—"}`);
   return lines.join("\n");

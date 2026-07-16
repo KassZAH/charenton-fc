@@ -405,6 +405,7 @@ export type Database = {
           primary_position: string | null
           quote: string | null
           role: string
+          share_measurements: boolean
           shirt_number: number | null
           status: string
           strong_foot: string | null
@@ -422,6 +423,7 @@ export type Database = {
           primary_position?: string | null
           quote?: string | null
           role?: string
+          share_measurements?: boolean
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null
@@ -439,12 +441,45 @@ export type Database = {
           primary_position?: string | null
           quote?: string | null
           role?: string
+          share_measurements?: boolean
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      player_measurements: {
+        Row: {
+          id: string
+          player_id: string
+          weight_kg: number | null
+          height_cm: number | null
+          recorded_at: string
+        }
+        Insert: {
+          id?: string
+          player_id: string
+          weight_kg?: number | null
+          height_cm?: number | null
+          recorded_at?: string
+        }
+        Update: {
+          id?: string
+          player_id?: string
+          weight_kg?: number | null
+          height_cm?: number | null
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_measurements_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seasons: {
         Row: {

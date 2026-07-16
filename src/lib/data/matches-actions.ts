@@ -189,7 +189,7 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
   revalidatePath("/");
 }
 
-const VALID_STATUSES: AvailabilityStatus[] = ["present", "unsure", "absent", "injured"];
+const VALID_STATUSES: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
 
 async function upsertAvailability(matchId: string, playerId: string, status: AvailabilityStatus) {
   if (!VALID_STATUSES.includes(status)) {

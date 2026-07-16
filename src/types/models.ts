@@ -12,6 +12,7 @@ export type Vote = Tables<"votes">;
 export type Season = Tables<"seasons">;
 export type Opponent = Tables<"opponents">;
 export type TeamSettings = Tables<"team_settings">;
+export type PlayerMeasurement = Tables<"player_measurements">;
 
 /** players.role — confirmé sur les données de démo */
 export type PlayerRole = "player" | "admin";
@@ -19,11 +20,14 @@ export type PlayerRole = "player" | "admin";
 /** players.status — confirmé sur les données de démo (archivage = status "archived" + archived_at renseigné) */
 export type PlayerStatus = "active" | "archived";
 
-/** availability.status — pas encore de données démo, convention choisie pour la fiche de présence */
-export type AvailabilityStatus = "present" | "unsure" | "absent" | "injured";
+/** availability.status — contrainte check en base : present/uncertain/absent/injured/no_response */
+export type AvailabilityStatus = "present" | "uncertain" | "absent" | "injured";
 
-/** matches.status — confirmé sur les données de démo ("cancelled" ajouté par convention, pas encore utilisé) */
-export type MatchStatus = "scheduled" | "completed" | "cancelled";
+/** matches.status — contrainte check en base */
+export type MatchStatus = "scheduled" | "completed" | "cancelled" | "postponed" | "draft";
 
-/** cards.card_type — pas encore de données démo, convention choisie */
+/** cards.card_type — contrainte check en base */
 export type CardType = "yellow" | "red";
+
+/** matches.match_type — contrainte check en base */
+export type MatchType = "amical" | "championnat" | "tournoi" | "autre";

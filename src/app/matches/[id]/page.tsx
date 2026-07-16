@@ -17,7 +17,7 @@ import { AwardsSection } from "./AwardsSection";
 import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
 
-const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "unsure", "absent", "injured", "none"];
+const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "uncertain", "absent", "injured", "none"];
 
 export default async function MatchDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -122,7 +122,7 @@ async function AdminSection({
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
     present: [],
-    unsure: [],
+    uncertain: [],
     absent: [],
     injured: [],
     none: [],
@@ -139,7 +139,7 @@ async function AdminSection({
     timeLabel,
     location,
     present: grouped.present.map(nameOf),
-    unsure: grouped.unsure.map(nameOf),
+    uncertain: grouped.uncertain.map(nameOf),
     absent: [...grouped.absent, ...grouped.injured].map(nameOf),
     noResponse: grouped.none.map(nameOf),
   });

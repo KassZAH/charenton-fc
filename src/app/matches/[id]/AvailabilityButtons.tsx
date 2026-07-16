@@ -5,7 +5,7 @@ import { setAvailability } from "@/lib/data/matches-actions";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
 import type { AvailabilityStatus } from "@/types/models";
 
-const OPTIONS: AvailabilityStatus[] = ["present", "unsure", "absent", "injured"];
+const OPTIONS: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
 
 export function AvailabilityButtons({
   matchId,

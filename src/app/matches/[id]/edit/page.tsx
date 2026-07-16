@@ -116,7 +116,8 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           >
             <option value="championnat">Championnat</option>
             <option value="amical">Amical</option>
-            <option value="coupe">Coupe</option>
+            <option value="tournoi">Tournoi</option>
+            <option value="autre">Autre</option>
           </select>
         </div>
 
