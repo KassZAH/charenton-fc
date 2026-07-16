@@ -15,12 +15,20 @@ export default async function TeamPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-lg font-bold text-navy">Équipe</h1>
         {isAdmin && (
-          <Link
-            href="/team/new"
-            className="rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-gold"
-          >
-            + Ajouter un joueur
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/dues"
+              className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+            >
+              Cotisations
+            </Link>
+            <Link
+              href="/team/new"
+              className="rounded-full bg-navy px-3 py-1.5 text-xs font-semibold text-gold"
+            >
+              + Ajouter un joueur
+            </Link>
+          </div>
         )}
       </div>
 

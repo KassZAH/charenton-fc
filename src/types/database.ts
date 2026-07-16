@@ -599,6 +599,51 @@ export type Database = {
           },
         ]
       }
+      dues: {
+        Row: {
+          id: string
+          season_id: string
+          player_id: string
+          amount_due: number
+          amount_paid: number
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          season_id: string
+          player_id: string
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          season_id?: string
+          player_id?: string
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "dues_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "dues_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           created_at: string | null
