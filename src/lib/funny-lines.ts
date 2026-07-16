@@ -12,91 +12,106 @@ function pick(lines: string[]): string {
 }
 
 /**
- * Une phrase taquine générée à la volée depuis les stats du joueur — jamais
- * stockée, jamais la même à chaque visite parmi les variantes du palier atteint.
+ * Une vanne générée à la volée depuis les stats du joueur — jamais stockée,
+ * jamais la même à chaque visite parmi les variantes du palier atteint.
+ * Ton chambrage/vestiaire assumé, jamais méchant.
  */
 export function getFunnyLine(input: FunnyLineInput): string {
   const { goals, assists, matchesPlayed, yellowCards, redCards, teamMatchesPlayed } = input;
 
   if (teamMatchesPlayed === 0) {
-    return "La saison n'a pas encore commencé — sors les crampons.";
+    return pick([
+      "La saison n'a pas encore commencé — range le trash-talk pour plus tard, ou pas.",
+      "Aucun match encore joué. Le temps de bien préparer tes excuses pour la suite.",
+    ]);
   }
 
   if (matchesPlayed === 0) {
     return pick([
-      "Aucun match joué cette saison. Le canapé te dit merci.",
-      "0 match cette saison. On t'a aperçu sur la photo de groupe, ça compte ?",
-      "Toujours pas débuté la saison. Les autres commencent à poser des questions.",
+      "0 match cette saison. Ton canapé a un meilleur taux de présence que toi.",
+      "T'existes en vrai ou juste sur la photo de groupe ?",
+      "Toujours pas vu sur le terrain. On a vérifié, t'es bien inscrit dans l'effectif.",
+      "0 apparition cette saison. Même le kiné te connaît pas.",
     ]);
   }
 
   if (redCards >= 2) {
     return pick([
-      `${redCards} cartons rouges cette saison. L'arbitre a ton numéro en favori.`,
-      `${redCards} rouges au compteur — un vrai abonnement à la buvette avant la fin du match.`,
+      `${redCards} cartons rouges cette saison. L'arbitre a ton portrait dans son portefeuille.`,
+      `${redCards} rouges au compteur. Tu joues au foot ou tu règles des comptes ?`,
+      `${redCards} expulsions. La buvette te connaît mieux que la pelouse.`,
     ]);
   }
 
   if (redCards === 1) {
     return pick([
-      "Un carton rouge cette saison. Un accident de parcours, ou une habitude qui commence ?",
-      "1 rouge au compteur. On efface et on passe à autre chose.",
+      "1 carton rouge cette saison. Petit accident de parcours... ou avant-goût ?",
+      "1 rouge au compteur. On dira que c'était un cadeau pour l'arbitre.",
+      "1 expulsion cette saison. Les copains n'ont pas encore fini d'en rire.",
     ]);
   }
 
   if (goals >= 10) {
     return pick([
-      `${goals} buts cette saison. Le Ballon d'or de Charenton, c'est toi.`,
-      `${goals} buts — les défenses adverses tremblent rien qu'en lisant la feuille de match.`,
+      `${goals} buts cette saison. Prépare le discours pour le Ballon d'or de Charenton.`,
+      `${goals} buts. Les défenses adverses préviennent leurs familles avant de te croiser.`,
+      `${goals} buts au compteur — à ce niveau, autant vendre des autographes après le match.`,
     ]);
   }
 
   if (goals >= 5) {
     return pick([
-      `${goals} buts au compteur, ça commence à sentir bon le classement des buteurs.`,
-      `${goals} buts cette saison. Pas mal du tout.`,
+      `${goals} buts. Tu commences à faire de l'ombre aux vrais attaquants de l'équipe.`,
+      `${goals} buts cette saison. Les défenses notent ton nom sur leur carnet, doucement.`,
+      `${goals} buts au compteur. Pas mal, pour quelqu'un qui rate encore les passements de jambe.`,
     ]);
   }
 
   if (goals >= 1) {
     return pick([
-      `${goals} but${goals > 1 ? "s" : ""} cette saison. On y croit, la suite arrive.`,
-      `Au moins tu as marqué — ${goals} fois, c'est déjà ça de pris.`,
+      `${goals} but${goals > 1 ? "s" : ""} cette saison. Petit, mais on l'a vu, promis.`,
+      `${goals} but${goals > 1 ? "s" : ""} au compteur. On applaudit, discrètement, sans se lever.`,
+      `Au moins tu as marqué — ${goals} fois. Ça fait toujours ${goals} de plus que certains.`,
     ]);
   }
 
   if (assists >= 5) {
     return pick([
-      `${assists} passes décisives. Le cerveau discret de l'équipe.`,
-      `${assists} caviars distribués. Les buteurs te doivent une bière.`,
+      `${assists} passes déc. Le cerveau de l'équipe, celui qu'on félicite jamais assez.`,
+      `${assists} caviars distribués. Les buteurs te doivent une tournée entière, pas juste une bière.`,
+      `${assists} passes décisives. Tu fais le travail, les autres prennent les photos.`,
     ]);
   }
 
   if (yellowCards >= 3) {
     return pick([
-      `${yellowCards} cartons jaunes cette saison. L'arbitre te reconnaît de loin.`,
-      `${yellowCards} jaunes au compteur — un style disons... engagé.`,
+      `${yellowCards} cartons jaunes cette saison. L'arbitre te tutoie déjà.`,
+      `${yellowCards} jaunes au compteur. Un style de jeu qu'on qualifiera d'« engagé ».`,
+      `${yellowCards} avertissements cette saison. Encore un et on t'appelle boucher officieux du club.`,
     ]);
   }
 
   const presenceRate = teamMatchesPlayed > 0 ? matchesPlayed / teamMatchesPlayed : 0;
   if (presenceRate >= 0.9 && goals === 0 && assists === 0) {
     return pick([
-      "Présent à quasiment tous les matchs, 0 but, 0 passe. Le pilier silencieux de l'équipe.",
-      "Une présence de métronome. Les stats offensives suivront peut-être un jour.",
+      "Présent à quasiment tous les matchs, 0 but, 0 passe. Le meuble du vestiaire, increvable.",
+      "T'as jamais manqué un match, mais t'as jamais touché un but non plus. Constance admirable.",
+      "Présence parfaite, stats offensives à zéro. Au moins t'es fiable pour compter les maillots.",
     ]);
   }
 
   if (goals === 0 && assists === 0) {
     return pick([
-      "0 but, 0 passe déc. cette saison — mais l'ambiance du vestiaire, ça ne se mesure pas.",
-      "Toujours 0 partout aux stats perso. La discrétion a du bon.",
-      "Pas de but, pas de passe, mais présent. C'est déjà ça.",
+      "0 but, 0 passe déc. cette saison. Mais l'ambiance du vestiaire, ça ne se mesure pas — heureusement pour toi.",
+      "Toujours 0 partout aux stats perso. On va dire que c'est du style, pas du niveau.",
+      "0-0 côté stats. Une reconversion coach est peut-être à envisager sérieusement.",
+      "Pas de but, pas de passe, mais présent. On garde le positif, difficilement.",
     ]);
   }
 
   return pick([
-    "Continue comme ça, la saison est encore longue.",
-    "Petit à petit, la stat fait son nid.",
+    "Ni exceptionnel, ni ridicule. Le juste milieu, celui dont personne ne parle au bar.",
+    "Ça avance. Doucement. Très doucement.",
+    "Des stats correctes, sans plus. On te met ni sur l'affiche, ni sur le banc.",
   ]);
 }
