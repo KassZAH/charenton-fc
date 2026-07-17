@@ -10,6 +10,7 @@ import { getMatchRoster } from "./roster";
 import { getMatchLineup } from "./lineup";
 import { getMatchEquipment } from "./equipment";
 import { getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "./injuries";
+import { assertMatchSeasonUnlocked } from "./season-lock";
 import type { AvailabilityStatus } from "@/types/models";
 
 async function resolveOpponentId(formData: FormData): Promise<string | null> {
@@ -137,6 +138,7 @@ export async function createMatch(formData: FormData) {
 
 export async function updateMatchDetails(matchId: string, formData: FormData) {
   await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const matchDate = String(formData.get("match_date") ?? "");
   const kickoffTime = String(formData.get("kickoff_time") ?? "") || null;
@@ -179,6 +181,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
 
 export async function deleteMatch(matchId: string) {
   await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const { error } = await supabaseAdmin
     .from("matches")
@@ -193,6 +196,7 @@ export async function deleteMatch(matchId: string) {
 
 export async function updateMatchResult(matchId: string, formData: FormData) {
   const user = await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const teamScore = Number(formData.get("team_score"));
   const opponentScore = Number(formData.get("opponent_score"));

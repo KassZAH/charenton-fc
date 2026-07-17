@@ -175,7 +175,8 @@ export default async function ProfilePage() {
           <h2 className="mb-2 text-sm font-semibold text-red-400">Zone dangereuse</h2>
           <p className="mb-3 text-xs text-steel/70">
             Supprime définitivement tous les matchs, buts, cartons, présences, votes et badges.
-            L&apos;effectif et les adversaires restent intacts.
+            L&apos;effectif et les adversaires restent intacts. Une sauvegarde est créée automatiquement avant
+            (voir Admin &gt; Sauvegardes).
           </p>
           <form action={resetSeasonData}>
             <ResetButton />

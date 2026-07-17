@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { createBackup } from "./backups";
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -25,6 +26,8 @@ export async function resetSeasonData() {
   if (!player || player.first_name !== "Amine") {
     throw new Error("Action réservée.");
   }
+
+  await createBackup("before_reset", "Avant réinitialisation de la saison", user.playerId);
 
   const { error: matchesError } = await supabaseAdmin.from("matches").delete().neq("id", NIL_UUID);
   if (matchesError) throw new Error(matchesError.message);

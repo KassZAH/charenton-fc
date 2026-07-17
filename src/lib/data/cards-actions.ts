@@ -5,9 +5,11 @@ import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkAndAwardBadges } from "./badges";
 import { logChange } from "./audit";
+import { assertMatchSeasonUnlocked } from "./season-lock";
 
 export async function addCard(matchId: string, formData: FormData) {
   const user = await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const playerId = String(formData.get("player_id") ?? "") || null;
   const cardType = String(formData.get("card_type") ?? "");
@@ -55,6 +57,7 @@ export async function addCard(matchId: string, formData: FormData) {
 
 export async function deleteCard(matchId: string, cardId: string) {
   const user = await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const { data: before } = await supabaseAdmin.from("cards").select("*").eq("id", cardId).maybeSingle();
 

@@ -11,6 +11,7 @@ const TRACKED_TABLE_LABELS: Record<string, string> = {
   cards: "Carton",
   players: "Fiche joueur",
   dues: "Cotisation",
+  seasons: "Saison",
 };
 
 /**

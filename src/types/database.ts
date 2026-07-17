@@ -163,6 +163,44 @@ export type Database = {
           },
         ]
       }
+      backups: {
+        Row: {
+          created_at: string
+          created_by_player_id: string | null
+          id: string
+          label: string
+          snapshot: Json
+          table_counts: Json
+          trigger_reason: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_player_id?: string | null
+          id?: string
+          label: string
+          snapshot: Json
+          table_counts: Json
+          trigger_reason: string
+        }
+        Update: {
+          created_at?: string
+          created_by_player_id?: string | null
+          id?: string
+          label?: string
+          snapshot?: Json
+          table_counts?: Json
+          trigger_reason?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backups_created_by_player_id_fkey"
+            columns: ["created_by_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cards: {
         Row: {
           card_type: string
@@ -1016,6 +1054,8 @@ export type Database = {
           end_date: string | null
           id: string
           is_active: boolean
+          is_locked: boolean
+          locked_at: string | null
           name: string
           start_date: string | null
         }
@@ -1024,6 +1064,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_locked?: boolean
+          locked_at?: string | null
           name: string
           start_date?: string | null
         }
@@ -1032,6 +1074,8 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_locked?: boolean
+          locked_at?: string | null
           name?: string
           start_date?: string | null
         }

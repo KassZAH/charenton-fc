@@ -5,9 +5,11 @@ import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkAndAwardBadges } from "./badges";
 import { logChange } from "./audit";
+import { assertMatchSeasonUnlocked } from "./season-lock";
 
 export async function addGoal(matchId: string, formData: FormData) {
   const user = await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const kind = String(formData.get("kind") ?? "classique");
   const minuteRaw = String(formData.get("minute") ?? "").trim();
@@ -76,6 +78,7 @@ export async function addGoal(matchId: string, formData: FormData) {
 
 export async function deleteGoal(matchId: string, goalId: string) {
   const user = await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const { data: before } = await supabaseAdmin.from("goals").select("*").eq("id", goalId).maybeSingle();
 

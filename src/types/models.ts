@@ -22,6 +22,7 @@ export type ClubQuote = Tables<"club_quotes">;
 export type JerseyHistoryEntry = Tables<"jersey_history_entries">;
 export type MonthlyMvpVote = Tables<"monthly_mvp_votes">;
 export type SeasonTrophy = Tables<"season_trophies">;
+export type Backup = Tables<"backups">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";
@@ -68,6 +69,16 @@ export const REINFORCEMENT_POSITION_LABELS: Record<ReinforcementPosition, string
 
 /** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
 export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";
+
+/** backups.trigger_reason — contrainte check en base. */
+export type BackupTriggerReason = "manual" | "before_reset" | "weekly" | "end_of_season";
+
+export const BACKUP_TRIGGER_LABELS: Record<BackupTriggerReason, string> = {
+  manual: "Manuelle",
+  before_reset: "Avant réinitialisation",
+  weekly: "Hebdomadaire",
+  end_of_season: "Fin de saison",
+};
 
 /** hall_of_fame_entries.category — contrainte check en base. */
 export type HallOfFameCategory =

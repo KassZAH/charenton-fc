@@ -63,6 +63,14 @@ Implémenté intégralement, rien d'écarté.
 - **Joueur du mois : cycle formel (ouverture/clôture, annonce du gagnant)** — fait à la place : un tally toujours ouvert, recalculé en direct depuis les votes du mois en cours, sans étape de clôture ni notification
 - **Trophées de fin de saison : vote d'équipe** — la roadmap ne précise le mécanisme de vote que pour le joueur du mois ; fait à la place : attribution manuelle par l'admin (même logique que le Hall of Fame du Lot 8), pas de vote formalisé pour ces catégories
 
+## Lot 10 — Administration et sécurité
+
+- **Restauration automatique en un clic** — décision prise avec l'utilisateur : une réécriture automatisée de ~25 tables liées entre elles est trop risquée sans tests approfondis (un bug pourrait corrompre la vraie saison en cours). Fait à la place : sauvegarde (manuelle, avant réinitialisation, hebdomadaire, fin de saison) + aperçu (comparaison des compteurs par table) + téléchargement JSON. Une restauration réelle se ferait manuellement si besoin.
+- **Sauvegarde "avant fusion"** — aucune fonctionnalité de fusion de joueurs invités n'existe encore (voir Lot 4 déjà noté plus haut), donc rien à déclencher pour l'instant
+- **Corbeille "joueurs" et "médias"** — les joueurs ne sont jamais supprimés, seulement archivés (fonctionnalité déjà existante, différente d'une suppression) ; aucun stockage de fichiers/médias n'existe dans l'appli (voir Lot 8). La corbeille couvre matchs, buts et cartons (les seules entités à suppression douce aujourd'hui).
+- **Verrouillage de saison : case à cocher par formulaire** — fait à la place : un blocage ferme sur les actions qui touchent le score/les buts/les cartons/la fiche du match, avec déverrouillage temporaire centralisé (Admin > Saisons) qui crée déjà la sauvegarde et la trace exigées par la roadmap, plutôt qu'un avertissement + case à cocher sur chaque formulaire
+- **Administrateur temporaire (droits limités dans le temps/la portée) et transmission formalisée du club** — écarté avec l'utilisateur : le rôle admin/coach se change déjà depuis la fiche joueur, pas besoin d'un système de permissions à expiration pour un petit club avec quelques admins de confiance
+
 ---
 
-_Lots 10 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 11 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._

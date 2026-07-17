@@ -74,6 +74,11 @@ export default async function StatsPage() {
             Historique
           </Link>
         )}
+        {isElevatedRole(user.role) && (
+          <Link href="/admin" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+            Admin
+          </Link>
+        )}
       </div>
 
       <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
