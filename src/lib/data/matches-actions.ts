@@ -85,7 +85,10 @@ export async function createMatch(formData: FormData) {
 
   const matchDate = String(formData.get("match_date") ?? "");
   const kickoffTime = String(formData.get("kickoff_time") ?? "") || null;
+  const meetingTime = String(formData.get("meeting_time") ?? "") || null;
   const location = String(formData.get("location") ?? "") || null;
+  const address = String(formData.get("address") ?? "").trim() || null;
+  const mapsUrl = String(formData.get("maps_url") ?? "").trim() || null;
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
 
@@ -106,7 +109,10 @@ export async function createMatch(formData: FormData) {
     .insert({
       match_date: matchDate,
       kickoff_time: kickoffTime,
+      meeting_time: meetingTime,
       location,
+      address,
+      maps_url: mapsUrl,
       home_or_away: homeOrAway,
       match_type: matchType,
       opponent_id: opponentId,
@@ -130,7 +136,10 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
 
   const matchDate = String(formData.get("match_date") ?? "");
   const kickoffTime = String(formData.get("kickoff_time") ?? "") || null;
+  const meetingTime = String(formData.get("meeting_time") ?? "") || null;
   const location = String(formData.get("location") ?? "") || null;
+  const address = String(formData.get("address") ?? "").trim() || null;
+  const mapsUrl = String(formData.get("maps_url") ?? "").trim() || null;
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim() || null;
@@ -146,7 +155,10 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
     .update({
       match_date: matchDate,
       kickoff_time: kickoffTime,
+      meeting_time: meetingTime,
       location,
+      address,
+      maps_url: mapsUrl,
       home_or_away: homeOrAway,
       match_type: matchType,
       opponent_id: opponentId,
@@ -259,4 +271,14 @@ export async function setAvailabilityAsAdmin(
 ) {
   await requireAdmin();
   await upsertAvailability(matchId, playerId, status);
+}
+
+export async function setCaptain(matchId: string, formData: FormData) {
+  await requireAdmin();
+  const playerId = String(formData.get("captain_player_id") ?? "") || null;
+
+  const { error } = await supabaseAdmin.from("matches").update({ captain_player_id: playerId }).eq("id", matchId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/matches/${matchId}`);
 }

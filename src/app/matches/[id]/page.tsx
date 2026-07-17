@@ -3,21 +3,26 @@ import { notFound } from "next/navigation";
 import { requireUser } from "@/lib/auth/current-user";
 import { getMatchById } from "@/lib/data/matches";
 import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
-import { updateMatchResult } from "@/lib/data/matches-actions";
+import { updateMatchResult, setCaptain } from "@/lib/data/matches-actions";
 import { getMatchGoals } from "@/lib/data/goals";
 import { getMatchAwardResults } from "@/lib/data/awards";
+import { getActivePlayers, getPlayerById } from "@/lib/data/players";
+import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
 import { buildConvocationMessage, buildReminderMessage, buildResultMessage } from "@/lib/whatsapp";
 import { getActiveInjury, getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
 import { WhatsAppShareButton } from "@/components/ui/WhatsAppShareButton";
+import { PlayerSelect } from "@/components/ui/PlayerSelect";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
 import { AwardsSection } from "./AwardsSection";
 import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
+import { CarpoolSection } from "./CarpoolSection";
+import { EquipmentSection } from "./EquipmentSection";
 
 const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "uncertain", "absent", "injured", "none"];
 
@@ -27,13 +32,21 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const match = await getMatchById(id);
   if (!match) notFound();
 
-  const [myStatus, activeInjury] = await Promise.all([
+  const isUpcoming = match.status !== "completed";
+
+  const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo] = await Promise.all([
     getMyAvailability(match.id, user.playerId),
     getActiveInjury(user.playerId),
+    match.captain_player_id ? getPlayerById(match.captain_player_id) : Promise.resolve(null),
+    isUpcoming ? getMatchCarpoolSummary(match.id) : Promise.resolve(null),
+    isUpcoming ? getMyCarpoolInfo(match.id, user.playerId) : Promise.resolve(null),
   ]);
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
   const activeInjuryReturnDateLabel = injuryReturnLabelForDate(activeInjury, match.match_date);
+  const captainName = captain ? captain.nickname || captain.first_name : null;
+  const itineraryUrl =
+    match.maps_url || (match.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(match.address)}` : null);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -62,18 +75,34 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
       </h1>
       <p className="mt-2 text-sm text-steel">{formatMatchDate(match.match_date)}</p>
+      {match.meeting_time && (
+        <p className="text-sm text-steel">🕒 RDV : {formatTime(match.meeting_time)}</p>
+      )}
       {match.kickoff_time && (
         <p className="text-sm text-steel">Coup d&apos;envoi : {formatTime(match.kickoff_time)}</p>
       )}
       {match.location && <p className="text-sm text-steel">{match.location}</p>}
-      {match.status !== "completed" && (
-        <a
-          href={`/matches/${match.id}/calendar`}
-          className="mt-1 inline-block text-xs font-medium text-steel/70 underline underline-offset-2"
-        >
-          Ajouter à mon calendrier
-        </a>
-      )}
+      {captainName && <p className="text-sm text-steel">🧢 Capitaine : {captainName}</p>}
+      <div className="mt-1 flex flex-wrap items-center gap-3">
+        {match.status !== "completed" && (
+          <a
+            href={`/matches/${match.id}/calendar`}
+            className="inline-block text-xs font-medium text-steel/70 underline underline-offset-2"
+          >
+            Ajouter à mon calendrier
+          </a>
+        )}
+        {itineraryUrl && (
+          <a
+            href={itineraryUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-xs font-medium text-steel/70 underline underline-offset-2"
+          >
+            Itinéraire
+          </a>
+        )}
+      </div>
 
       {match.status === "completed" ? (
         <>
@@ -97,6 +126,12 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         </section>
       )}
 
+      {isUpcoming && carpoolSummary && (
+        <CarpoolSection matchId={match.id} myInfo={myCarpoolInfo} summary={carpoolSummary} />
+      )}
+
+      {isUpcoming && <EquipmentSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />}
+
       {match.status === "completed" && (
         <>
           {isElevatedRole(user.role) && <RosterSection matchId={match.id} />}
@@ -117,7 +152,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           isHome={isHome}
           dateLabel={formatMatchDate(match.match_date)}
           timeLabel={formatTime(match.kickoff_time)}
+          meetingTimeLabel={formatTime(match.meeting_time)}
           location={match.location}
+          captainPlayerId={match.captain_player_id}
+          captainName={captainName}
         />
       )}
     </div>
@@ -134,7 +172,10 @@ async function AdminSection({
   isHome,
   dateLabel,
   timeLabel,
+  meetingTimeLabel,
   location,
+  captainPlayerId,
+  captainName,
 }: {
   matchId: string;
   matchDate: string;
@@ -145,11 +186,15 @@ async function AdminSection({
   isHome: boolean;
   dateLabel: string;
   timeLabel: string | null;
+  meetingTimeLabel: string | null;
   location: string | null;
+  captainPlayerId: string | null;
+  captainName: string | null;
 }) {
-  const [summary, activeInjuriesByPlayerId] = await Promise.all([
+  const [summary, activeInjuriesByPlayerId, players] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
     getActiveInjuriesByPlayerId(),
+    getActivePlayers(),
   ]);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
@@ -169,7 +214,9 @@ async function AdminSection({
     isHome,
     dateLabel,
     timeLabel,
+    meetingTimeLabel,
     location,
+    captainName,
     present: grouped.present.map(nameOf),
     uncertain: grouped.uncertain.map(nameOf),
     absent: [...grouped.absent, ...grouped.injured].map(nameOf),
@@ -236,6 +283,25 @@ async function AdminSection({
           </div>
         ))}
       </div>
+
+      <form action={setCaptain.bind(null, matchId)} className="mt-4 flex items-end gap-2">
+        <div className="flex-1">
+          <label className="block text-xs font-medium text-cream/80" htmlFor="captain_player_id">
+            Capitaine
+          </label>
+          <PlayerSelect
+            id="captain_player_id"
+            name="captain_player_id"
+            players={players.map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+            defaultValue={captainPlayerId ?? ""}
+            placeholder="— Aucun —"
+            className="mt-1"
+          />
+        </div>
+        <button type="submit" className="rounded-lg border border-white/15 px-4 py-2 text-sm font-medium text-cream/80">
+          {captainName ? "Changer" : "Définir"}
+        </button>
+      </form>
 
       <div className="mt-4 flex flex-wrap gap-2">
         <WhatsAppShareButton text={convocationText}>Partager la convocation</WhatsAppShareButton>

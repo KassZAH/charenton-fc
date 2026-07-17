@@ -37,6 +37,25 @@ describe("buildConvocationMessage", () => {
     expect(text).toContain("⏳ Sans réponse (1) : Walid");
   });
 
+  it("includes meeting time and captain when provided", () => {
+    const text = buildConvocationMessage({
+      opponentLabel: "FC Poteaux",
+      isHome: true,
+      dateLabel: "vendredi 25 juillet",
+      timeLabel: "15h00",
+      meetingTimeLabel: "14h30",
+      location: "Stade des Marronniers",
+      captainName: "Karim",
+      present: [],
+      uncertain: [],
+      absent: [],
+      noResponse: [],
+    });
+
+    expect(text).toContain("🕒 RDV à 14h30");
+    expect(text).toContain("🧢 Capitaine : Karim");
+  });
+
   it("omits the location line when there is none", () => {
     const text = buildConvocationMessage({
       opponentLabel: "FC Poteaux",

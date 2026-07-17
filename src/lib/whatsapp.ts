@@ -7,7 +7,9 @@ export function buildConvocationMessage(params: {
   isHome: boolean;
   dateLabel: string;
   timeLabel: string | null;
+  meetingTimeLabel?: string | null;
   location: string | null;
+  captainName?: string | null;
   present: string[];
   uncertain: string[];
   absent: string[];
@@ -19,7 +21,9 @@ export function buildConvocationMessage(params: {
       params.timeLabel ? ` à ${params.timeLabel}` : ""
     }`,
   ];
+  if (params.meetingTimeLabel) lines.push(`🕒 RDV à ${params.meetingTimeLabel}`);
   if (params.location) lines.push(`📍 ${params.location}`);
+  if (params.captainName) lines.push(`🧢 Capitaine : ${params.captainName}`);
   lines.push("");
   lines.push(`✅ Présents (${params.present.length}) : ${params.present.join(", ") || "—"}`);
   lines.push(`❓ Incertains (${params.uncertain.length}) : ${params.uncertain.join(", ") || "—"}`);

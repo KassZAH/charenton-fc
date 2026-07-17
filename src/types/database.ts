@@ -399,6 +399,48 @@ export type Database = {
           },
         ]
       }
+      match_equipment_items: {
+        Row: {
+          assigned_player_id: string | null
+          brought: boolean
+          created_at: string
+          id: string
+          label: string
+          match_id: string
+        }
+        Insert: {
+          assigned_player_id?: string | null
+          brought?: boolean
+          created_at?: string
+          id?: string
+          label: string
+          match_id: string
+        }
+        Update: {
+          assigned_player_id?: string | null
+          brought?: boolean
+          created_at?: string
+          id?: string
+          label?: string
+          match_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_equipment_items_assigned_player_id_fkey"
+            columns: ["assigned_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "match_equipment_items_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       match_lineups: {
         Row: {
           formation: string
@@ -479,6 +521,7 @@ export type Database = {
       matches: {
         Row: {
           address: string | null
+          captain_player_id: string | null
           created_at: string | null
           deleted_at: string | null
           description: string | null
@@ -500,6 +543,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          captain_player_id?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
@@ -521,6 +565,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          captain_player_id?: string | null
           created_at?: string | null
           deleted_at?: string | null
           description?: string | null
@@ -541,6 +586,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "matches_captain_player_id_fkey"
+            columns: ["captain_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "matches_opponent_id_fkey"
             columns: ["opponent_id"]

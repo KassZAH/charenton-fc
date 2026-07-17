@@ -15,6 +15,7 @@ export type TeamSettings = Tables<"team_settings">;
 export type PlayerMeasurement = Tables<"player_measurements">;
 export type MatchLineup = { formation: string; positions: Record<string, string> };
 export type Injury = Tables<"injuries">;
+export type MatchEquipmentItem = Tables<"match_equipment_items">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";

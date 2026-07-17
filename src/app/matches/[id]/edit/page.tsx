@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/current-user";
 import { getMatchById } from "@/lib/data/matches";
 import { getOpponents } from "@/lib/data/opponents";
 import { updateMatchDetails, deleteMatch } from "@/lib/data/matches-actions";
+import { KickoffAndMeetingFields } from "../../KickoffAndMeetingFields";
 
 export default async function EditMatchPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -48,33 +49,24 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="match_date">
-              Date
-            </label>
-            <input
-              id="match_date"
-              type="date"
-              name="match_date"
-              defaultValue={match.match_date}
-              required
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="kickoff_time">
-              Heure
-            </label>
-            <input
-              id="kickoff_time"
-              type="time"
-              name="kickoff_time"
-              defaultValue={match.kickoff_time?.slice(0, 5) ?? ""}
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-cream" htmlFor="match_date">
+            Date
+          </label>
+          <input
+            id="match_date"
+            type="date"
+            name="match_date"
+            defaultValue={match.match_date}
+            required
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
+          />
         </div>
+
+        <KickoffAndMeetingFields
+          initialKickoff={match.kickoff_time?.slice(0, 5) ?? ""}
+          initialMeeting={match.meeting_time?.slice(0, 5) ?? ""}
+        />
 
         <div>
           <label className="block text-sm font-medium text-cream" htmlFor="location">
@@ -87,6 +79,34 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
             defaultValue={match.location ?? ""}
             className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-cream" htmlFor="address">
+              Adresse
+            </label>
+            <input
+              id="address"
+              type="text"
+              name="address"
+              defaultValue={match.address ?? ""}
+              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-cream" htmlFor="maps_url">
+              Lien Google Maps
+            </label>
+            <input
+              id="maps_url"
+              type="url"
+              name="maps_url"
+              defaultValue={match.maps_url ?? ""}
+              placeholder="https://maps.google.com/..."
+              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
+            />
+          </div>
         </div>
 
         <div>

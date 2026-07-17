@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getOpponents } from "@/lib/data/opponents";
 import { createMatch } from "@/lib/data/matches-actions";
+import { KickoffAndMeetingFields } from "../KickoffAndMeetingFields";
 
 export default async function NewMatchPage() {
   await requireAdmin();
@@ -48,31 +49,20 @@ export default async function NewMatchPage() {
           />
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="match_date">
-              Date
-            </label>
-            <input
-              id="match_date"
-              type="date"
-              name="match_date"
-              required
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="kickoff_time">
-              Heure
-            </label>
-            <input
-              id="kickoff_time"
-              type="time"
-              name="kickoff_time"
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-            />
-          </div>
+        <div>
+          <label className="block text-sm font-medium text-cream" htmlFor="match_date">
+            Date
+          </label>
+          <input
+            id="match_date"
+            type="date"
+            name="match_date"
+            required
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
+          />
         </div>
+
+        <KickoffAndMeetingFields />
 
         <div>
           <label className="block text-sm font-medium text-cream" htmlFor="location">
@@ -84,6 +74,32 @@ export default async function NewMatchPage() {
             name="location"
             className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           />
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block text-sm font-medium text-cream" htmlFor="address">
+              Adresse
+            </label>
+            <input
+              id="address"
+              type="text"
+              name="address"
+              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-cream" htmlFor="maps_url">
+              Lien Google Maps
+            </label>
+            <input
+              id="maps_url"
+              type="url"
+              name="maps_url"
+              placeholder="https://maps.google.com/..."
+              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
+            />
+          </div>
         </div>
 
         <div>
