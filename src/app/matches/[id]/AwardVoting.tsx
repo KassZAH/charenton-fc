@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { castVote } from "@/lib/data/votes-actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { Award, Player } from "@/types/models";
 
 export function AwardVoting({
@@ -22,6 +23,7 @@ export function AwardVoting({
 }) {
   const [selected, setSelected] = useState(myVote);
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   function vote(playerId: string) {
     const previous = selected;
@@ -29,8 +31,10 @@ export function AwardVoting({
     startTransition(async () => {
       try {
         await castVote(matchId, award.id, playerId);
+        showToast(`Vote enregistré pour ${award.name} ✓`);
       } catch {
         setSelected(previous);
+        showToast("Le vote n'a pas pu s'enregistrer.", "error");
       }
     });
   }

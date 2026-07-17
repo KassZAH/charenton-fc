@@ -66,9 +66,9 @@ function PlayerGrid({
           key={player.id}
           type="button"
           onClick={() => onSelect(player)}
-          className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-navy-card p-3 text-center shadow-lg shadow-black/20 active:scale-95 transition"
+          className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-navy-card p-3 text-center active:scale-95 transition"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-sm font-bold text-navy-deep">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full border border-gold/50 text-sm font-bold text-gold">
             {initials(player)}
           </span>
           <span className="text-xs font-medium text-cream leading-tight">

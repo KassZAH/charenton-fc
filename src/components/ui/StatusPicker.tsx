@@ -30,7 +30,7 @@ export function StatusPicker<T extends string>({
           onClick={() => onSelect(opt.value)}
           className={`rounded-xl border py-3 text-sm font-bold transition disabled:opacity-60 ${
             value === opt.value
-              ? "border-gold bg-gold text-navy-deep"
+              ? "border-gold bg-gold/10 text-gold"
               : "border-white/15 bg-white/5 text-cream/80"
           }`}
         >

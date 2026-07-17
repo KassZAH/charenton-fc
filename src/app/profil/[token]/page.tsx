@@ -31,7 +31,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
             className="h-16 w-16 shrink-0 rounded-full object-cover"
           />
         ) : (
-          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold text-xl font-extrabold text-navy-deep">
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border border-gold/50 text-xl font-extrabold text-gold">
             {initials(player.first_name, player.last_name)}
           </span>
         )}

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getPublicReinforcementCall } from "@/lib/data/reinforcement";
 import { formatMatchDate, formatTime } from "@/lib/format";
@@ -15,9 +16,7 @@ export default async function ReinforcementCallPage({ params }: { params: Promis
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4 py-10">
-      <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gold text-lg font-extrabold text-navy-deep">
-        CFC
-      </div>
+      <Image src="/logo-charenton.png" alt="Charenton FC" width={64} height={64} className="mx-auto mb-4 h-16 w-16" />
       <p className="text-center text-xs font-bold uppercase tracking-widest text-gold">Appel à renfort</p>
       <h1 className="text-scoreboard mt-1 text-center text-2xl font-extrabold text-cream">
         Charenton FC cherche un {REINFORCEMENT_POSITION_LABELS[call.position_needed as ReinforcementPosition]}

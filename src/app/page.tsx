@@ -146,7 +146,7 @@ export default async function HomePage() {
       )}
 
       {nextMatch ? (
-        <div className="relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-navy-card to-navy-mid p-4 pt-5 shadow-lg shadow-black/30 before:absolute before:-top-16 before:-right-16 before:h-40 before:w-40 before:rounded-full before:bg-gold/20 before:blur-2xl">
+        <div className="relative overflow-hidden rounded-2xl border border-gold/15 bg-navy-card p-4 pt-5">
           <div className="corner-pennant">
             <span>{shortDateBadge(dateLabel)}</span>
           </div>
@@ -260,7 +260,7 @@ export default async function HomePage() {
 
       <Link
         href={`/team/${user.playerId}`}
-        className="mt-4 block rounded-2xl border border-white/10 bg-navy-card p-4 shadow-lg shadow-black/20 active:scale-[0.99] transition"
+        className="mt-4 block rounded-2xl border border-white/10 bg-navy-card p-4 active:scale-[0.99] transition"
       >
         <p className="mb-3 text-xs font-bold uppercase tracking-widest text-gold">Ta saison</p>
         <div className="grid grid-cols-3 gap-2 text-center">

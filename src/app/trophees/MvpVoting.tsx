@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { castMonthlyMvpVote } from "@/lib/data/monthly-mvp-actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { MvpCandidate, MvpTally } from "@/lib/data/monthly-mvp";
 
 export function MvpVoting({
@@ -15,6 +16,7 @@ export function MvpVoting({
 }) {
   const [selected, setSelected] = useState(myVote);
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   function vote(playerId: string) {
     const previous = selected;
@@ -22,8 +24,10 @@ export function MvpVoting({
     startTransition(async () => {
       try {
         await castMonthlyMvpVote(playerId);
+        showToast("Vote enregistré pour le joueur du mois ✓");
       } catch {
         setSelected(previous);
+        showToast("Le vote n'a pas pu s'enregistrer.", "error");
       }
     });
   }

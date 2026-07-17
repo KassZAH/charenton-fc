@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { setCarpoolInfo } from "@/lib/data/carpool-actions";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { CarpoolSummary, MyCarpoolInfo } from "@/lib/data/carpool";
 
 type CarpoolRole = "none" | "driver" | "rider";
@@ -28,6 +29,7 @@ export function CarpoolSection({
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [isPending, setIsPending] = useState(false);
+  const { showToast } = useToast();
 
   async function submit(formData: FormData) {
     setError(null);
@@ -36,6 +38,7 @@ export function CarpoolSection({
     try {
       await setCarpoolInfo(matchId, formData);
       setSaved(true);
+      showToast("Covoiturage enregistré ✓");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue.");
     } finally {
@@ -83,7 +86,7 @@ export function CarpoolSection({
             <label
               key={opt.value}
               className={`flex cursor-pointer items-center justify-center rounded-lg border py-2 text-center text-xs font-semibold ${
-                role === opt.value ? "border-gold bg-gold text-navy-deep" : "border-white/15 bg-white/5 text-cream/80"
+                role === opt.value ? "border-gold bg-gold/10 text-gold" : "border-white/15 bg-white/5 text-cream/80"
               }`}
             >
               <input

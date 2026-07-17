@@ -22,11 +22,15 @@ export function BottomNav() {
             <li key={tab.href} className="flex-1">
               <Link
                 href={tab.href}
-                className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold ${
+                className={`flex flex-col items-center gap-1 py-3 text-xs font-semibold transition-colors duration-200 ${
                   active ? "text-cream" : "text-steel/50"
                 }`}
               >
-                <span className={`h-1 w-6 rounded-full ${active ? "bg-gold" : "bg-transparent"}`} />
+                <span
+                  className={`h-1 rounded-full bg-gold transition-all duration-200 ${
+                    active ? "w-6 scale-100 opacity-100" : "w-6 scale-x-0 opacity-0"
+                  }`}
+                />
                 {tab.label}
               </Link>
             </li>

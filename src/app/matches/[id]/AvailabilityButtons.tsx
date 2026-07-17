@@ -6,6 +6,7 @@ import { resolveInjuredPresence } from "@/lib/data/injuries-actions";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
 import { StatusPicker } from "@/components/ui/StatusPicker";
 import { InlineChoicePanel } from "@/components/ui/InlineChoicePanel";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { AvailabilityStatus } from "@/types/models";
 
 const OPTIONS: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
@@ -26,6 +27,7 @@ export function AvailabilityButtons({
   const [needsRefresh, setNeedsRefresh] = useState(false);
   const [showInjuredConfirm, setShowInjuredConfirm] = useState(false);
   const isInjuryCovered = activeInjuryReturnDateLabel !== undefined && activeInjuryReturnDateLabel !== null;
+  const { showToast } = useToast();
 
   function commit(value: AvailabilityStatus) {
     const previous = status;
@@ -34,6 +36,7 @@ export function AvailabilityButtons({
     startTransition(async () => {
       try {
         await setAvailability(matchId, value);
+        showToast(`Présence enregistrée : ${AVAILABILITY_LABELS[value]} ✓`);
       } catch {
         setStatus(previous);
         setNeedsRefresh(true);
@@ -56,6 +59,7 @@ export function AvailabilityButtons({
     startTransition(async () => {
       try {
         await resolveInjuredPresence(matchId, choice);
+        showToast("Présence enregistrée : Présent ✓");
       } catch {
         setStatus(previous);
         setNeedsRefresh(true);

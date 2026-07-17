@@ -37,26 +37,23 @@ body {
   background-image: repeating-linear-gradient(to right, rgb(255 255 255 / 0.2) 0 6px, transparent 6px 12px);
 }
 
-/* Fanion façon coin de terrain, posé en haut à droite d'une carte */
+/* Pastille de date, posée en haut à droite d'une carte — discrète, pas un aplat plein */
 .corner-pennant {
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 0;
-  border-style: solid;
-  border-width: 0 52px 52px 0;
-  border-color: transparent var(--color-gold) transparent transparent;
+  top: 14px;
+  right: 14px;
 }
 .corner-pennant span {
-  position: absolute;
-  top: 8px;
-  right: -44px;
-  transform: rotate(45deg);
-  font-size: 9px;
+  display: inline-block;
+  border: 1px solid rgb(240 185 58 / 0.4);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 10px;
   font-weight: 800;
-  color: var(--color-navy-deep);
+  letter-spacing: 0.02em;
+  color: var(--color-gold);
   white-space: nowrap;
+  background: rgb(240 185 58 / 0.06);
 }
 
 /* Titres resserrés façon panneau d'affichage de stade */
@@ -64,4 +61,41 @@ body {
   transform: scaleX(0.96);
   transform-origin: left;
   letter-spacing: -0.01em;
+}
+
+/* Toast de confirmation — glisse et s'estompe */
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.toast-in {
+  animation: toast-in 0.22s ease-out;
+}
+
+/* Fondu léger entre les pages */
+@keyframes page-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.page-transition {
+  animation: page-fade-in 0.22s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toast-in,
+  .page-transition {
+    animation: none;
+  }
 }

@@ -8,6 +8,7 @@ import {
   updateInjuryReturnDate,
 } from "@/lib/data/injuries-actions";
 import { formatShortDateOnly } from "@/lib/format";
+import { useToast } from "@/components/ui/ToastProvider";
 import type { Injury, InjuryDurationPreset } from "@/types/models";
 
 const DURATION_OPTIONS: { value: InjuryDurationPreset; label: string }[] = [
@@ -70,6 +71,7 @@ export function InjuryPanel({ activeInjury, history }: { activeInjury: Injury | 
   const [editDateOpen, setEditDateOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const { showToast } = useToast();
 
   const pastInjuries = history.filter((i) => i.status !== "active");
   const today = new Date().toISOString().slice(0, 10);
@@ -78,12 +80,14 @@ export function InjuryPanel({ activeInjury, history }: { activeInjury: Injury | 
   function recover() {
     startTransition(async () => {
       await recoverFromInjury();
+      showToast("Te revoilà d'attaque ✓");
     });
   }
 
   function cancel() {
     startTransition(async () => {
       await cancelInjury();
+      showToast("Blessure annulée ✓");
     });
   }
 
@@ -92,6 +96,7 @@ export function InjuryPanel({ activeInjury, history }: { activeInjury: Injury | 
     try {
       await declareInjury(formData);
       setDeclareOpen(false);
+      showToast("Blessure déclarée ✓");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue.");
     }
@@ -102,6 +107,7 @@ export function InjuryPanel({ activeInjury, history }: { activeInjury: Injury | 
     try {
       await updateInjuryReturnDate(formData);
       setEditDateOpen(false);
+      showToast("Date de retour mise à jour ✓");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Erreur inconnue.");
     }
