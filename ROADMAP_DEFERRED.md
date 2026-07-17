@@ -28,6 +28,12 @@ Implémenté intégralement, rien d'écarté.
 - Relance qui exclut automatiquement les joueurs indisponibles/blessés de la liste (actuellement : la relance liste tout le monde sans réponse, les blessés en sont déjà exclus via le Lot 1, mais pas de notion de date limite)
 - Verrouillage du groupe par l'admin : convoqués, liste d'attente, gardiens, capitaine figés une fois décidés
 
+## Lot 4 — Résultat express et corrections
+
+- Ajout groupé de plusieurs buts d'un coup (ex. "Karim 2 buts, Amine 1 but, CSC adverse 1 but" en une seule saisie) — fait à la place : ajout un but à la fois, avec sélecteur de type (but / CSC adverse / CSC Charenton)
+- Propositions de correction soumises par les joueurs avec validation admin (changement de buteur, ajout de passe, correction de présence/score, retrait de carton) — en attendant, un admin peut corriger directement sans passer par une file d'attente de validation
+- Page « À valider » complète : les sections « invités à fusionner » et « votes à clôturer » n'existent pas encore (dépendent de concepts pas encore construits — fusion de joueurs invités, état ouvert/fermé des votes). Fait à la place : page "Matchs à vérifier" limitée aux matchs incomplets/scores incohérents, dérivée de la checklist de complétude
+
 ---
 
-_Lots 4 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 5 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
