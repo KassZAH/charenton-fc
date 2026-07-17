@@ -3,9 +3,11 @@
 import { useState, useTransition } from "react";
 import { setAvailability } from "@/lib/data/matches-actions";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
+import { StatusPicker } from "@/components/ui/StatusPicker";
 import type { AvailabilityStatus } from "@/types/models";
 
 const OPTIONS: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
+const PICKER_OPTIONS = OPTIONS.map((value) => ({ value, label: AVAILABILITY_LABELS[value] }));
 
 export function AvailabilityButtons({
   matchId,
@@ -34,23 +36,7 @@ export function AvailabilityButtons({
 
   return (
     <div>
-      <div className="grid grid-cols-2 gap-2">
-        {OPTIONS.map((value) => (
-          <button
-            key={value}
-            type="button"
-            disabled={isPending}
-            onClick={() => choose(value)}
-            className={`rounded-xl border py-3 text-sm font-bold transition disabled:opacity-60 ${
-              status === value
-                ? "border-gold bg-gold text-navy-deep"
-                : "border-white/15 bg-white/5 text-cream/80"
-            }`}
-          >
-            {AVAILABILITY_LABELS[value]}
-          </button>
-        ))}
-      </div>
+      <StatusPicker options={PICKER_OPTIONS} value={status} onSelect={choose} disabled={isPending} />
       {needsRefresh && (
         <div className="mt-2 flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs text-cream/80">
           <span>Ça n&apos;a pas pu s&apos;enregistrer. Réactualise la page et réessaie.</span>

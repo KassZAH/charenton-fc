@@ -8,8 +8,9 @@ import { getMatchGoals } from "@/lib/data/goals";
 import { getMatchAwardResults } from "@/lib/data/awards";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
-import { buildConvocationMessage, buildReminderMessage, buildResultMessage, whatsappShareUrl } from "@/lib/whatsapp";
+import { buildConvocationMessage, buildReminderMessage, buildResultMessage } from "@/lib/whatsapp";
 import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
+import { WhatsAppShareButton } from "@/components/ui/WhatsAppShareButton";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
@@ -218,34 +219,11 @@ async function AdminSection({
       </div>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <a
-          href={whatsappShareUrl(convocationText)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
-        >
-          Partager la convocation
-        </a>
+        <WhatsAppShareButton text={convocationText}>Partager la convocation</WhatsAppShareButton>
         {reminderText && (
-          <a
-            href={whatsappShareUrl(reminderText)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
-          >
-            Relancer les sans-réponse
-          </a>
+          <WhatsAppShareButton text={reminderText}>Relancer les sans-réponse</WhatsAppShareButton>
         )}
-        {resultText && (
-          <a
-            href={whatsappShareUrl(resultText)}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
-          >
-            Partager le résultat
-          </a>
-        )}
+        {resultText && <WhatsAppShareButton text={resultText}>Partager le résultat</WhatsAppShareButton>}
       </div>
 
       <form action={updateMatchResult.bind(null, matchId)} className="mt-6 flex items-end gap-3">

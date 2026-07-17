@@ -1,5 +1,7 @@
 import { requireAdmin } from "@/lib/auth/current-user";
 import { createPlayer } from "@/lib/data/players-actions";
+import { Field, SelectField } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
 
 export default async function NewPlayerPage() {
   await requireAdmin();
@@ -18,58 +20,18 @@ export default async function NewPlayerPage() {
           <Field label="Poste" name="primary_position" />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-cream" htmlFor="role">
-            Rôle
-          </label>
-          <select
-            id="role"
-            name="role"
-            defaultValue="player"
-            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-          >
-            <option value="player">Joueur (PIN à 4 chiffres)</option>
-            <option value="admin">Admin (PIN à 6 chiffres)</option>
-            <option value="coach">Coach (PIN à 6 chiffres)</option>
-          </select>
-        </div>
+        <SelectField label="Rôle" name="role" defaultValue="player">
+          <option value="player">Joueur (PIN à 4 chiffres)</option>
+          <option value="admin">Admin (PIN à 6 chiffres)</option>
+          <option value="coach">Coach (PIN à 6 chiffres)</option>
+        </SelectField>
 
         <Field label="PIN" name="pin" inputMode="numeric" required />
 
-        <button type="submit" className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep">
+        <Button type="submit" variant="primary" shape="block">
           Ajouter
-        </button>
+        </Button>
       </form>
-    </div>
-  );
-}
-
-function Field({
-  label,
-  name,
-  type = "text",
-  required,
-  inputMode,
-}: {
-  label: string;
-  name: string;
-  type?: string;
-  required?: boolean;
-  inputMode?: "numeric";
-}) {
-  return (
-    <div>
-      <label className="block text-sm font-medium text-cream" htmlFor={name}>
-        {label}
-      </label>
-      <input
-        id={name}
-        type={type}
-        name={name}
-        required={required}
-        inputMode={inputMode}
-        className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-      />
     </div>
   );
 }

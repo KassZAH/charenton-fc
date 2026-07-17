@@ -2,6 +2,9 @@ import Link from "next/link";
 import { getMatchGoals } from "@/lib/data/goals";
 import { addGoal, deleteGoal } from "@/lib/data/goals-actions";
 import { getActivePlayers } from "@/lib/data/players";
+import { PlayerSelect } from "@/components/ui/PlayerSelect";
+import { Field } from "@/components/ui/Field";
+import { Button } from "@/components/ui/Button";
 import type { Player } from "@/types/models";
 
 export async function GoalsSection({ matchId, isAdmin }: { matchId: string; isAdmin: boolean }) {
@@ -63,68 +66,34 @@ export async function GoalsSection({ matchId, isAdmin }: { matchId: string; isAd
 }
 
 function AddGoalForm({ matchId, players }: { matchId: string; players: Player[] }) {
+  const options = players.map((p) => ({ id: p.id, name: p.nickname || p.first_name }));
+
   return (
     <form
       action={addGoal.bind(null, matchId)}
       className="mt-4 space-y-3 rounded-xl border border-white/10 bg-navy-card p-3"
     >
       <div>
-        <label className="block text-xs font-medium text-cream/80" htmlFor="scorer_player_id">
-          Buteur
-        </label>
-        <select
-          id="scorer_player_id"
-          name="scorer_player_id"
-          className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
-        >
-          <option value="">— Choisir —</option>
-          {players.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nickname || p.first_name}
-            </option>
-          ))}
-        </select>
+        <PlayerSelect name="scorer_player_id" label="Buteur" players={options} className="text-sm" />
         <label className="mt-1 flex items-center gap-2 text-xs text-steel">
           <input type="checkbox" name="unknown_scorer" />
           Buteur inconnu
         </label>
       </div>
 
-      <div>
-        <label className="block text-xs font-medium text-cream/80" htmlFor="assist_player_id">
-          Passeur (optionnel)
-        </label>
-        <select
-          id="assist_player_id"
-          name="assist_player_id"
-          className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
-        >
-          <option value="">— Aucun —</option>
-          {players.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.nickname || p.first_name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <PlayerSelect
+        name="assist_player_id"
+        label="Passeur (optionnel)"
+        players={options}
+        placeholder="— Aucun —"
+        className="text-sm"
+      />
 
-      <div>
-        <label className="block text-xs font-medium text-cream/80" htmlFor="minute">
-          Minute (optionnel)
-        </label>
-        <input
-          id="minute"
-          type="number"
-          name="minute"
-          min={0}
-          max={130}
-          className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
-        />
-      </div>
+      <Field label="Minute (optionnel)" name="minute" type="number" min={0} max={130} className="text-sm" />
 
-      <button type="submit" className="w-full rounded-lg bg-gold py-2 text-sm font-bold text-navy-deep">
+      <Button type="submit" variant="primary" shape="block">
         Ajouter le but
-      </button>
+      </Button>
     </form>
   );
 }

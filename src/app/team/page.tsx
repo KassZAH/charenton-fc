@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/auth/current-user";
 import { getActivePlayers, getArchivedPlayers } from "@/lib/data/players";
 import { setPlayerStatus } from "@/lib/data/players-actions";
 import { isElevatedRole, type Player } from "@/types/models";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 export default async function TeamPage() {
   const user = await requireUser();
@@ -16,18 +18,12 @@ export default async function TeamPage() {
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Équipe</h1>
         {isAdmin && (
           <div className="flex gap-2">
-            <Link
-              href="/dues"
-              className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
-            >
+            <Button href="/dues" variant="secondary">
               Cotisations
-            </Link>
-            <Link
-              href="/team/new"
-              className="rounded-full bg-gold px-3 py-1.5 text-xs font-bold text-navy-deep"
-            >
+            </Button>
+            <Button href="/team/new" variant="primary">
               + Ajouter un joueur
-            </Link>
+            </Button>
           </div>
         )}
       </div>
@@ -62,48 +58,40 @@ function PlayerRow({
   archived?: boolean;
 }) {
   return (
-    <li
-      className={`flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3 ${
-        archived ? "opacity-60" : ""
-      }`}
-    >
-      <Link href={`/team/${player.id}`} className="flex-1">
-        <p className="flex items-center gap-1.5 text-sm font-semibold text-cream">
-          {player.nickname || player.first_name}
-          {player.shirt_number != null && (
-            <span className="text-xs font-normal text-steel/70">#{player.shirt_number}</span>
-          )}
-          {player.role === "admin" && (
-            <span className="rounded-full bg-gold px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
-              Admin
-            </span>
-          )}
-          {player.role === "coach" && (
-            <span className="rounded-full border border-gold/40 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
-              Coach
-            </span>
-          )}
-        </p>
-        <p className="text-xs text-steel/70">{player.primary_position || "—"}</p>
-      </Link>
-      {isAdmin && (
-        <div className="flex items-center gap-2">
-          <Link
-            href={`/team/${player.id}/edit`}
-            className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-cream/70"
-          >
-            Modifier
-          </Link>
-          <form action={setPlayerStatus.bind(null, player.id, archived ? "active" : "archived")}>
-            <button
-              type="submit"
-              className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-cream/70"
-            >
-              {archived ? "Réactiver" : "Archiver"}
-            </button>
-          </form>
-        </div>
-      )}
+    <li>
+      <Card padding="sm" className={`flex items-center justify-between ${archived ? "opacity-60" : ""}`}>
+        <Link href={`/team/${player.id}`} className="flex-1">
+          <p className="flex items-center gap-1.5 text-sm font-semibold text-cream">
+            {player.nickname || player.first_name}
+            {player.shirt_number != null && (
+              <span className="text-xs font-normal text-steel/70">#{player.shirt_number}</span>
+            )}
+            {player.role === "admin" && (
+              <span className="rounded-full bg-gold px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
+                Admin
+              </span>
+            )}
+            {player.role === "coach" && (
+              <span className="rounded-full border border-gold/40 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
+                Coach
+              </span>
+            )}
+          </p>
+          <p className="text-xs text-steel/70">{player.primary_position || "—"}</p>
+        </Link>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            <Button href={`/team/${player.id}/edit`} variant="secondary">
+              Modifier
+            </Button>
+            <form action={setPlayerStatus.bind(null, player.id, archived ? "active" : "archived")}>
+              <Button type="submit" variant="secondary">
+                {archived ? "Réactiver" : "Archiver"}
+              </Button>
+            </form>
+          </div>
+        )}
+      </Card>
     </li>
   );
 }
