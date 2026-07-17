@@ -10,6 +10,7 @@ const TRACKED_TABLE_LABELS: Record<string, string> = {
   goals: "But",
   cards: "Carton",
   players: "Fiche joueur",
+  dues: "Cotisation",
 };
 
 /**
@@ -74,6 +75,9 @@ const FIELD_LABELS: Record<string, string> = {
   strong_foot: "Pied fort",
   quote: "Citation",
   status_player: "Statut",
+  amount_due: "Montant dû",
+  amount_paid: "Montant payé",
+  player_count: "Nombre de joueurs",
 };
 
 function formatValue(value: unknown, nameById: Map<string, string>): string {
