@@ -34,6 +34,10 @@ Implémenté intégralement, rien d'écarté.
 - Propositions de correction soumises par les joueurs avec validation admin (changement de buteur, ajout de passe, correction de présence/score, retrait de carton) — en attendant, un admin peut corriger directement sans passer par une file d'attente de validation
 - Page « À valider » complète : les sections « invités à fusionner » et « votes à clôturer » n'existent pas encore (dépendent de concepts pas encore construits — fusion de joueurs invités, état ouvert/fermé des votes). Fait à la place : page "Matchs à vérifier" limitée aux matchs incomplets/scores incohérents, dérivée de la checklist de complétude
 
+## Lot 5 — Calendrier et modèles
+
+- Modèles de matchs nommés et réutilisables (ex. « vendredi soir à Charenton », « match extérieur », « tournoi », « match à cinq »), mémorisant terrain/horaire/RDV/type/matériel habituel, indépendamment d'un adversaire précis — fait à la place : « Rejouer contre cet adversaire » qui duplique un match passé (même terrain/horaires/type) et reprend en option présents/composition/matériel/capitaine. Couvre le cas le plus fréquent (le même adversaire) mais pas un modèle générique sans adversaire
+
 ---
 
-_Lots 5 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 6 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
