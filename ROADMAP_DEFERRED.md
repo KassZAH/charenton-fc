@@ -71,6 +71,14 @@ Implémenté intégralement, rien d'écarté.
 - **Verrouillage de saison : case à cocher par formulaire** — fait à la place : un blocage ferme sur les actions qui touchent le score/les buts/les cartons/la fiche du match, avec déverrouillage temporaire centralisé (Admin > Saisons) qui crée déjà la sauvegarde et la trace exigées par la roadmap, plutôt qu'un avertissement + case à cocher sur chaque formulaire
 - **Administrateur temporaire (droits limités dans le temps/la portée) et transmission formalisée du club** — écarté avec l'utilisateur : le rôle admin/coach se change déjà depuis la fiche joueur, pas besoin d'un système de permissions à expiration pour un petit club avec quelques admins de confiance
 
+## Lot 11 — Profils et confidentialité
+
+- **Visibilité des statistiques** — les stats sont au coeur de l'appli, partagées partout (classements, comparaisons, tendances) ; les rendre privées irait à l'encontre de toutes les fonctionnalités déjà construites autour. Pas de bascule de confidentialité pour les stats.
+- **Upload de photo** — toujours pas d'infra Supabase Storage (même choix qu'aux Lots 8/9) ; fait à la place : une URL externe optionnelle, avec un niveau de visibilité dessus
+- **Consentement photo séparé** — fait à la place : le niveau de visibilité de la photo (privé/coachs/équipe/public) sert lui-même de consentement, pas de case à cocher distincte
+- **Visibilité de la "carte partageable"** — la carte carrière ne montre que des stats déjà considérées non sensibles (buts, passes, matchs, trophées), pas de réglage de visibilité séparé pour elle
+- **Fix de l'affichage du nom d'un détenteur de record archivé** : corrigé uniquement dans `records.ts` (bug concret identifié) — les autres pages qui recherchent un nom de joueur via les joueurs actifs uniquement (stats, historique du club, bingo, etc.) n'ont pas été auditées une par une, l'impact ne se voit que si un détenteur de record est archivé plus tard
+
 ---
 
-_Lots 11 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lot 12 : pas encore commencé — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._

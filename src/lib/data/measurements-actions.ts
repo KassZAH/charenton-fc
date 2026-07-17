@@ -49,16 +49,3 @@ export async function deleteMeasurement(measurementId: string) {
   revalidatePath("/profile");
   revalidatePath(`/team/${user.playerId}`);
 }
-
-export async function setShareMeasurements(share: boolean) {
-  const user = await requireUser();
-
-  const { error } = await supabaseAdmin
-    .from("players")
-    .update({ share_measurements: share })
-    .eq("id", user.playerId);
-  if (error) throw new Error(error.message);
-
-  revalidatePath("/profile");
-  revalidatePath(`/team/${user.playerId}`);
-}

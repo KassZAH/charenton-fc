@@ -23,6 +23,7 @@ export type JerseyHistoryEntry = Tables<"jersey_history_entries">;
 export type MonthlyMvpVote = Tables<"monthly_mvp_votes">;
 export type SeasonTrophy = Tables<"season_trophies">;
 export type Backup = Tables<"backups">;
+export type PlayerGoal = Tables<"player_goals">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";

@@ -24,8 +24,9 @@ export const config = {
      * - /calendar/[token] (flux .ics abonnable — authentifié par token, pas de
      *   cookie possible puisque c'est l'appli calendrier qui vient le chercher)
      * - /renfort/[token] (appel à renfort — page publique envoyée à des non-membres)
+     * - /profil/[token] (profil public opt-in — token, pas de cookie possible)
      * - /api/cron/ (déclenché par Vercel Cron — authentifié par CRON_SECRET, pas de cookie)
      */
-    "/((?!login|manifest\\.webmanifest|icon$|apple-icon$|icons/|calendar/|renfort/|api/cron/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!login|manifest\\.webmanifest|icon$|apple-icon$|icons/|calendar/|renfort/|profil/|api/cron/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

@@ -136,6 +136,8 @@ export async function updateOwnProfile(formData: FormData) {
   const primaryPosition = String(formData.get("primary_position") ?? "").trim() || null;
   const strongFoot = String(formData.get("strong_foot") ?? "").trim() || null;
   const quote = String(formData.get("quote") ?? "").trim() || null;
+  const birthday = String(formData.get("birthday") ?? "").trim() || null;
+  const photoUrl = String(formData.get("photo_url") ?? "").trim() || null;
 
   if (!firstName) {
     throw new Error("Le prénom est obligatoire.");
@@ -150,6 +152,8 @@ export async function updateOwnProfile(formData: FormData) {
       primary_position: primaryPosition,
       strong_foot: strongFoot,
       quote,
+      birthday,
+      photo_url: photoUrl,
     })
     .eq("id", user.playerId);
   if (error) throw new Error(error.message);
@@ -158,4 +162,34 @@ export async function updateOwnProfile(formData: FormData) {
   revalidatePath(`/team/${user.playerId}`);
   revalidatePath("/team");
   redirect("/profile");
+}
+
+const VALID_FIELD_VISIBILITY = new Set(["private", "coach", "team", "public"]);
+
+/** Centre de confidentialité — un niveau par champ personnel, plus l'activation du profil public. */
+export async function updatePrivacySettings(formData: FormData) {
+  const user = await requireUser();
+
+  const photoVisibility = String(formData.get("photo_visibility") ?? "team");
+  const birthdayVisibility = String(formData.get("birthday_visibility") ?? "team");
+  const measurementsVisibility = String(formData.get("measurements_visibility") ?? "team");
+  const publicProfileEnabled = formData.get("public_profile_enabled") === "on";
+
+  for (const v of [photoVisibility, birthdayVisibility, measurementsVisibility]) {
+    if (!VALID_FIELD_VISIBILITY.has(v)) throw new Error("Visibilité invalide.");
+  }
+
+  const { error } = await supabaseAdmin
+    .from("players")
+    .update({
+      photo_visibility: photoVisibility,
+      birthday_visibility: birthdayVisibility,
+      measurements_visibility: measurementsVisibility,
+      public_profile_enabled: publicProfileEnabled,
+    })
+    .eq("id", user.playerId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/profile");
+  revalidatePath(`/team/${user.playerId}`);
 }

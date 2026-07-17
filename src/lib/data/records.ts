@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
 
 export type RecordHolder = { playerId: string; name: string; value: number; detail?: string };
@@ -77,7 +77,7 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
   const opponentIds = [...new Set(scopedMatches.map((m) => m.opponent_id).filter((id): id is string => !!id))];
 
   const [players, goalsRes, cardsRes, matchPlayersRes, opponentsRes] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("goals")
       .select("match_id, scorer_player_id, assist_player_id")

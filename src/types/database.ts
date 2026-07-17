@@ -857,6 +857,50 @@ export type Database = {
           },
         ]
       }
+      player_goals: {
+        Row: {
+          achieved: boolean
+          achieved_at: string | null
+          created_at: string
+          description: string | null
+          id: string
+          player_id: string
+          target_date: string | null
+          title: string
+          visibility: string
+        }
+        Insert: {
+          achieved?: boolean
+          achieved_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          player_id: string
+          target_date?: string | null
+          title: string
+          visibility?: string
+        }
+        Update: {
+          achieved?: boolean
+          achieved_at?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          player_id?: string
+          target_date?: string | null
+          title?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "player_goals_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       player_measurements: {
         Row: {
           height_cm: number | null
@@ -892,18 +936,24 @@ export type Database = {
       players: {
         Row: {
           archived_at: string | null
+          birthday: string | null
+          birthday_visibility: string
           calendar_token: string
           created_at: string | null
           first_name: string
           id: string
           is_guest: boolean
           last_name: string | null
+          measurements_visibility: string
           nickname: string | null
+          photo_url: string | null
+          photo_visibility: string
           pin_hash: string | null
           primary_position: string | null
+          public_profile_enabled: boolean
+          public_token: string
           quote: string | null
           role: string
-          share_measurements: boolean
           shirt_number: number | null
           status: string
           strong_foot: string | null
@@ -911,18 +961,24 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          birthday?: string | null
+          birthday_visibility?: string
           calendar_token?: string
           created_at?: string | null
           first_name: string
           id?: string
           is_guest?: boolean
           last_name?: string | null
+          measurements_visibility?: string
           nickname?: string | null
+          photo_url?: string | null
+          photo_visibility?: string
           pin_hash?: string | null
           primary_position?: string | null
+          public_profile_enabled?: boolean
+          public_token?: string
           quote?: string | null
           role?: string
-          share_measurements?: boolean
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null
@@ -930,18 +986,24 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          birthday?: string | null
+          birthday_visibility?: string
           calendar_token?: string
           created_at?: string | null
           first_name?: string
           id?: string
           is_guest?: boolean
           last_name?: string | null
+          measurements_visibility?: string
           nickname?: string | null
+          photo_url?: string | null
+          photo_visibility?: string
           pin_hash?: string | null
           primary_position?: string | null
+          public_profile_enabled?: boolean
+          public_token?: string
           quote?: string | null
           role?: string
-          share_measurements?: boolean
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null

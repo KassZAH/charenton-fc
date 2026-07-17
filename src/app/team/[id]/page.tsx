@@ -11,9 +11,13 @@ import {
 import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { getPlayerBadges } from "@/lib/data/badges";
 import { getTeamRecordWithWithoutPlayer } from "@/lib/data/stats-advanced";
-import { formatMatchDate, formatShortDate } from "@/lib/format";
+import { getVisiblePlayerGoals } from "@/lib/data/player-goals";
+import { getActiveInjury } from "@/lib/data/injuries";
+import { canView } from "@/lib/visibility";
+import { formatMatchDate, formatShortDate, formatShortDateOnly } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
 import { PlayerCardButton } from "./PlayerCardButton";
+import { CareerCardButton } from "./CareerCardButton";
 
 function initials(firstName: string, lastName: string | null) {
   return (firstName[0] + (lastName?.[0] ?? "")).toUpperCase();
@@ -26,18 +30,23 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, advanced, awardWins, history, badges, withWithout] = await Promise.all([
+  const [stats, advanced, awardWins, history, badges, withWithout, goals, activeInjury] = await Promise.all([
     getPlayerStats(player.id),
     getPlayerAdvancedStats(player.id),
     getPlayerAwardWins(player.id),
     getPlayerMatchHistory(player.id),
     getPlayerBadges(player.id),
     getTeamRecordWithWithoutPlayer(player.id),
+    getVisiblePlayerGoals(player.id, { playerId: user.playerId, role: user.role }),
+    getActiveInjury(player.id),
   ]);
 
-  const canSeeMeasurements =
-    isElevatedRole(user.role) || user.playerId === player.id || player.share_measurements;
+  const viewer = { playerId: user.playerId, role: user.role };
+  const canSeeMeasurements = canView(player.measurements_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
+  const canSeeBirthday = canView(player.birthday_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
+  const canSeePhoto = canView(player.photo_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
   const measurements = canSeeMeasurements ? await getPlayerMeasurements(player.id) : [];
+  const trophyCount = awardWins.reduce((sum, w) => sum + w.wins, 0);
   const latestMeasurement = measurements[0] ?? null;
   const earliestWeight = [...measurements].reverse().find((m) => m.weight_kg != null)?.weight_kg ?? null;
   const weightEvolution =
@@ -48,9 +57,18 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-6 flex items-center gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold text-xl font-extrabold text-navy-deep">
-          {initials(player.first_name, player.last_name)}
-        </span>
+        {canSeePhoto && player.photo_url ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={player.photo_url}
+            alt={player.nickname || player.first_name}
+            className="h-16 w-16 shrink-0 rounded-full object-cover"
+          />
+        ) : (
+          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold text-xl font-extrabold text-navy-deep">
+            {initials(player.first_name, player.last_name)}
+          </span>
+        )}
         <div className="flex-1">
           <h1 className="flex items-center gap-2 text-lg font-extrabold text-cream">
             {player.nickname || player.first_name}
@@ -86,6 +104,18 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               badgeCount: badges.length,
             }}
           />
+          <CareerCardButton
+            player={{
+              name: player.nickname || player.first_name,
+              shirtNumber: player.shirt_number,
+              position: player.primary_position,
+              goals: stats.goals,
+              assists: stats.assists,
+              matchesPlayed: stats.matchesPlayed,
+              trophyCount,
+              badgeCount: badges.length,
+            }}
+          />
           {isElevatedRole(user.role) && (
             <Link
               href={`/team/${player.id}/edit`}
@@ -101,6 +131,21 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
         <p className="mb-6 rounded-xl border border-white/10 bg-navy-card p-3 text-sm italic text-cream/80">
           « {player.quote} »
         </p>
+      )}
+
+      {canSeeBirthday && player.birthday && (
+        <p className="mb-6 text-sm text-steel/70">🎂 {formatShortDateOnly(player.birthday)}</p>
+      )}
+
+      {activeInjury && (
+        <div className="mb-6 rounded-xl border border-white/10 bg-navy-card p-3 text-sm text-cream/80">
+          🩹 Blessé
+          {activeInjury.estimated_return_date && ` — retour estimé ${formatShortDateOnly(activeInjury.estimated_return_date)}`}
+          {activeInjury.comment &&
+            canView(activeInjury.comment_visibility as "private" | "coach" | "team", player.id, viewer) && (
+              <p className="mt-1 italic text-steel/70">{activeInjury.comment}</p>
+            )}
+        </div>
       )}
 
       {latestMeasurement && (latestMeasurement.weight_kg != null || latestMeasurement.height_cm != null) && (
@@ -175,6 +220,28 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           {!withWithout.sufficientSample && (
             <p className="mt-2 text-xs text-steel/60">Données indicatives, échantillon limité.</p>
           )}
+        </section>
+      )}
+
+      {goals.length > 0 && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">Objectifs personnels</h2>
+          <ul className="space-y-1.5">
+            {goals.map((g) => (
+              <li
+                key={g.id}
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2"
+              >
+                <div>
+                  <p className={`text-sm ${g.achieved ? "text-steel/60 line-through" : "text-cream"}`}>{g.title}</p>
+                  {g.target_date && (
+                    <p className="text-[10px] text-steel/60">Objectif : {formatShortDateOnly(g.target_date)}</p>
+                  )}
+                </div>
+                {g.achieved && <span className="text-sm text-gold">✅</span>}
+              </li>
+            ))}
+          </ul>
         </section>
       )}
 
