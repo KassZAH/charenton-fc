@@ -4,9 +4,13 @@ import { getNextMatch } from "@/lib/data/matches";
 import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
 import { getPlayerStats } from "@/lib/data/player-stats";
 import { getTeamStats } from "@/lib/data/stats";
+import { getPlayerById } from "@/lib/data/players";
+import { getMatchReadiness } from "@/lib/data/match-readiness";
 import { formatMatchDate, formatShortDateOnly, formatTime } from "@/lib/format";
 import { getFunnyLine } from "@/lib/funny-lines";
 import { buildReminderMessage, whatsappShareUrl } from "@/lib/whatsapp";
+import { buildItineraryUrl } from "@/lib/maps";
+import { todayDateString, currentTimeString } from "@/lib/clock";
 import { getActiveInjury, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { recoverFromInjury } from "@/lib/data/injuries-actions";
 import { isElevatedRole } from "@/types/models";
@@ -37,6 +41,7 @@ function shortDateBadge(dateLabel: string) {
 
 export default async function HomePage() {
   const user = await requireUser();
+  const isAdmin = isElevatedRole(user.role);
   const [nextMatch, myStats, teamStats, activeInjury] = await Promise.all([
     getNextMatch(),
     getPlayerStats(user.playerId),
@@ -49,17 +54,36 @@ export default async function HomePage() {
   const opponentLabel = nextMatch?.opponent_name ?? "Adversaire à confirmer";
   const dateLabel = nextMatch ? formatMatchDate(nextMatch.match_date) : "";
 
+  const isMatchToday = !!nextMatch && nextMatch.match_date === todayDateString();
+  const hasKickedOff = isMatchToday && !!nextMatch!.kickoff_time && currentTimeString() >= nextMatch!.kickoff_time!;
+
   const activeInjuryReturnDateLabel = nextMatch
     ? injuryReturnLabelForDate(activeInjury, nextMatch.match_date)
     : null;
 
   let noResponseNames: string[] = [];
-  if (nextMatch && isElevatedRole(user.role)) {
+  let presentCount: number | null = null;
+  if (nextMatch && (isAdmin || isMatchToday)) {
     const summary = await getMatchAvailabilitySummary(nextMatch.id);
-    noResponseNames = summary
-      .filter((s) => s.status === null)
-      .map((s) => s.player.nickname || s.player.first_name);
+    if (isAdmin) {
+      noResponseNames = summary.filter((s) => s.status === null).map((s) => s.player.nickname || s.player.first_name);
+    }
+    if (isMatchToday) {
+      presentCount = summary.filter((s) => s.status === "present").length;
+    }
   }
+
+  let captainName: string | null = null;
+  if (isMatchToday && nextMatch?.captain_player_id) {
+    const captain = await getPlayerById(nextMatch.captain_player_id);
+    captainName = captain ? captain.nickname || captain.first_name : null;
+  }
+
+  const itineraryUrl =
+    isMatchToday && nextMatch ? buildItineraryUrl(nextMatch.address, nextMatch.maps_url) : null;
+
+  const readiness =
+    isMatchToday && isAdmin && !hasKickedOff && nextMatch ? await getMatchReadiness(nextMatch.id) : null;
 
   const funnyLine = getFunnyLine({
     goals: myStats.goals,
@@ -107,7 +131,9 @@ export default async function HomePage() {
             <span>{shortDateBadge(dateLabel)}</span>
           </div>
           <Link href={`/matches/${nextMatch.id}`} className="relative block active:opacity-80 transition">
-            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gold">Prochain match</p>
+            <p className="mb-2 text-xs font-bold uppercase tracking-widest text-gold">
+              {hasKickedOff ? "Match en cours" : isMatchToday ? "Match aujourd'hui" : "Prochain match"}
+            </p>
             <p className="text-scoreboard text-lg font-extrabold text-cream">
               {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
             </p>
@@ -118,18 +144,64 @@ export default async function HomePage() {
             {nextMatch.location && <p className="text-sm text-steel">{nextMatch.location}</p>}
           </Link>
 
+          {isMatchToday && (
+            <div className="relative mt-3 grid grid-cols-2 gap-x-3 gap-y-1 rounded-xl bg-navy-deep/40 p-3 text-xs text-cream/90">
+              {nextMatch.meeting_time && <p>🕒 RDV : {formatTime(nextMatch.meeting_time)}</p>}
+              {presentCount != null && <p>👥 {presentCount} présent{presentCount > 1 ? "s" : ""}</p>}
+              {captainName && <p>🧢 Capitaine : {captainName}</p>}
+            </div>
+          )}
+
+          {isMatchToday && (
+            <div className="relative mt-3 flex flex-wrap gap-2">
+              {itineraryUrl && (
+                <a
+                  href={itineraryUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-cream/80"
+                >
+                  Itinéraire
+                </a>
+              )}
+              <a
+                href={`/matches/${nextMatch.id}#covoiturage`}
+                className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-cream/80"
+              >
+                Covoiturage
+              </a>
+              {isAdmin && (
+                <Link
+                  href={`/matches/${nextMatch.id}/lineup`}
+                  className="rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-medium text-cream/80"
+                >
+                  Composition
+                </Link>
+              )}
+            </div>
+          )}
+
           <div className="divider-dashed relative my-4" />
 
-          <div className="relative">
-            <p className="mb-2 text-sm font-bold text-cream">Ta présence</p>
-            <AvailabilityButtons
-              matchId={nextMatch.id}
-              initialStatus={myStatus}
-              activeInjuryReturnDateLabel={activeInjuryReturnDateLabel}
-            />
-          </div>
+          {hasKickedOff ? (
+            <Link
+              href={`/matches/${nextMatch.id}`}
+              className="relative block rounded-xl bg-gold px-4 py-3 text-center text-sm font-bold text-navy-deep"
+            >
+              {isAdmin ? "Saisir le résultat" : "Voir la feuille de match"}
+            </Link>
+          ) : (
+            <div className="relative">
+              <p className="mb-2 text-sm font-bold text-cream">Ta présence</p>
+              <AvailabilityButtons
+                matchId={nextMatch.id}
+                initialStatus={myStatus}
+                activeInjuryReturnDateLabel={activeInjuryReturnDateLabel}
+              />
+            </div>
+          )}
 
-          {noResponseNames.length > 0 && (
+          {!hasKickedOff && noResponseNames.length > 0 && (
             <div className="relative mt-4 flex items-center justify-between gap-2 rounded-xl bg-gold/10 px-3 py-2">
               <p className="text-xs text-cream/80">
                 {noResponseNames.length} joueur{noResponseNames.length > 1 ? "s" : ""} sans réponse pour ce match.
@@ -147,6 +219,16 @@ export default async function HomePage() {
               >
                 Relancer
               </a>
+            </div>
+          )}
+
+          {readiness && readiness.warnings.length > 0 && (
+            <div className="relative mt-4 rounded-xl border border-gold/30 bg-gold/5 px-3 py-2">
+              {readiness.warnings.map((w) => (
+                <p key={w} className="text-xs text-gold">
+                  ⚠️ {w}
+                </p>
+              ))}
             </div>
           )}
         </div>

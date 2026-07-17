@@ -44,7 +44,7 @@ export function CarpoolSection({
   }
 
   return (
-    <section className="mt-8 border-t border-white/10 pt-6">
+    <section id="covoiturage" className="mt-8 border-t border-white/10 pt-6">
       <h2 className="mb-3 text-sm font-bold text-cream">Covoiturage</h2>
 
       {(summary.drivers.length > 0 || summary.riders.length > 0) && (

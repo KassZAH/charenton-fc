@@ -8,6 +8,8 @@ import { getMatchGoals } from "@/lib/data/goals";
 import { getMatchAwardResults } from "@/lib/data/awards";
 import { getActivePlayers, getPlayerById } from "@/lib/data/players";
 import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
+import { getMatchReadiness } from "@/lib/data/match-readiness";
+import { buildItineraryUrl } from "@/lib/maps";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
 import { buildConvocationMessage, buildReminderMessage, buildResultMessage } from "@/lib/whatsapp";
@@ -45,8 +47,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
   const activeInjuryReturnDateLabel = injuryReturnLabelForDate(activeInjury, match.match_date);
   const captainName = captain ? captain.nickname || captain.first_name : null;
-  const itineraryUrl =
-    match.maps_url || (match.address ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(match.address)}` : null);
+  const itineraryUrl = buildItineraryUrl(match.address, match.maps_url);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -191,10 +192,11 @@ async function AdminSection({
   captainPlayerId: string | null;
   captainName: string | null;
 }) {
-  const [summary, activeInjuriesByPlayerId, players] = await Promise.all([
+  const [summary, activeInjuriesByPlayerId, players, readiness] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
     getActiveInjuriesByPlayerId(),
     getActivePlayers(),
+    isCompleted ? Promise.resolve(null) : getMatchReadiness(matchId),
   ]);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
@@ -302,6 +304,23 @@ async function AdminSection({
           {captainName ? "Changer" : "Définir"}
         </button>
       </form>
+
+      {readiness && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-navy-card p-3">
+          <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-steel/70">État de préparation</p>
+          {readiness.warnings.length === 0 ? (
+            <p className="text-sm text-emerald-400">✅ Tout est prêt.</p>
+          ) : (
+            <ul className="space-y-1">
+              {readiness.warnings.map((w) => (
+                <li key={w} className="text-sm text-gold">
+                  ⚠️ {w}
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
 
       <div className="mt-4 flex flex-wrap gap-2">
         <WhatsAppShareButton text={convocationText}>Partager la convocation</WhatsAppShareButton>
