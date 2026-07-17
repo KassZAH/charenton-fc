@@ -3,14 +3,15 @@ import { requireUser } from "@/lib/auth/current-user";
 import {
   getTopScorers,
   getTopAssists,
+  getTopGoalContributions,
   getTopPresences,
   getMostCarded,
   getTeamStats,
   getTeamHighlights,
-  type PlayerCount,
 } from "@/lib/data/stats";
 import { getAwardLeaderboards } from "@/lib/data/awards";
 import { isElevatedRole } from "@/types/models";
+import { StatSelector, type StatCategory } from "./StatSelector";
 
 const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
   wins: "victoire(s)",
@@ -20,15 +21,29 @@ const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
 
 export default async function StatsPage() {
   const user = await requireUser();
-  const [scorers, assists, presences, carded, team, highlights, awardLeaderboards] = await Promise.all([
+  const [scorers, assists, contributions, presences, carded, team, highlights, awardLeaderboards] = await Promise.all([
     getTopScorers(),
     getTopAssists(),
+    getTopGoalContributions(),
     getTopPresences(),
     getMostCarded(),
     getTeamStats(),
     getTeamHighlights(),
     getAwardLeaderboards(),
   ]);
+
+  const categories: StatCategory[] = [
+    { key: "scorers", title: "Buteurs", rows: scorers },
+    { key: "assists", title: "Passeurs", rows: assists },
+    { key: "contributions", title: "Buts + passes déc.", rows: contributions },
+    { key: "presences", title: "Présences", rows: presences },
+    { key: "carded", title: "Cartons", rows: carded },
+    ...awardLeaderboards.map(({ award, leaders }) => ({
+      key: award.id,
+      title: `${award.emoji ?? ""} ${award.name}`.trim(),
+      rows: leaders,
+    })),
+  ];
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -98,14 +113,7 @@ export default async function StatsPage() {
         )}
       </section>
 
-      <StatList title="Buteurs" rows={scorers} />
-      <StatList title="Passeurs" rows={assists} />
-      <StatList title="Présences" rows={presences} />
-      <StatList title="Cartons" rows={carded} />
-
-      {awardLeaderboards.map(({ award, leaders }) => (
-        <StatList key={award.id} title={`${award.emoji ?? ""} ${award.name}`.trim()} rows={leaders} />
-      ))}
+      <StatSelector categories={categories} />
     </div>
   );
 }
@@ -125,33 +133,5 @@ function TeamStatRow({ label, value, last = false }: { label: string; value: num
       <td className="py-1.5 text-steel">{label}</td>
       <td className="py-1.5 text-right font-semibold tabular-nums text-cream">{value}</td>
     </tr>
-  );
-}
-
-function StatList({ title, rows }: { title: string; rows: PlayerCount[] }) {
-  return (
-    <section className="mb-6">
-      <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">{title}</h2>
-      {rows.length === 0 ? (
-        <p className="text-sm text-steel/70">Aucune donnée pour le moment.</p>
-      ) : (
-        <ol className="space-y-1.5">
-          {rows.map((row, i) => (
-            <li key={row.playerId}>
-              <Link
-                href={`/team/${row.playerId}`}
-                className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2"
-              >
-                <span className="text-sm text-cream">
-                  <span className="mr-2 text-steel/60">{i + 1}.</span>
-                  {row.name}
-                </span>
-                <span className="text-sm font-bold text-gold">{row.count}</span>
-              </Link>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
   );
 }

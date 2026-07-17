@@ -43,6 +43,29 @@ export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
   return countBy(rows, nameById).slice(0, limit);
 }
 
+/** Buts + passes décisives cumulés (contribution directe aux buts). */
+export async function getTopGoalContributions(limit = 10): Promise<PlayerCount[]> {
+  const [players, { data: goals, error }] = await Promise.all([
+    getActivePlayers(),
+    supabaseAdmin
+      .from("goals")
+      .select("scorer_player_id, assist_player_id")
+      .eq("credited_to", "charenton")
+      .is("deleted_at", null),
+  ]);
+  if (error) throw new Error(error.message);
+  const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
+  const counts = new Map<string, number>();
+  for (const g of goals ?? []) {
+    if (g.scorer_player_id) counts.set(g.scorer_player_id, (counts.get(g.scorer_player_id) ?? 0) + 1);
+    if (g.assist_player_id) counts.set(g.assist_player_id, (counts.get(g.assist_player_id) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([playerId, count]) => ({ playerId, name: nameById.get(playerId) ?? "Joueur", count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, limit);
+}
+
 export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: rows, error }] = await Promise.all([
     getActivePlayers(),
