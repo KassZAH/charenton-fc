@@ -14,6 +14,8 @@ import { todayDateString, currentTimeString } from "@/lib/clock";
 import { getActiveInjury, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { recoverFromInjury } from "@/lib/data/injuries-actions";
 import { getThisDayInHistory } from "@/lib/data/club-memory";
+import { getActiveSeasonId } from "@/lib/data/seasons";
+import { getMyDue } from "@/lib/data/dues";
 import { isElevatedRole } from "@/types/models";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
@@ -43,13 +45,17 @@ function shortDateBadge(dateLabel: string) {
 export default async function HomePage() {
   const user = await requireUser();
   const isAdmin = isElevatedRole(user.role);
-  const [nextMatch, myStats, teamStats, activeInjury, thisDay] = await Promise.all([
+  const [nextMatch, myStats, teamStats, activeInjury, thisDay, activeSeasonId] = await Promise.all([
     getNextMatch(),
     getPlayerStats(user.playerId),
     getTeamStats(),
     getActiveInjury(user.playerId),
     getThisDayInHistory(),
+    getActiveSeasonId(),
   ]);
+  const myDue = activeSeasonId ? await getMyDue(activeSeasonId, user.playerId) : null;
+  const dueRemaining = myDue ? myDue.amountDue - myDue.amountPaid : 0;
+  const hasUnpaidDue = dueRemaining > 0;
   const myStatus = nextMatch ? await getMyAvailability(nextMatch.id, user.playerId) : null;
 
   const isHome = nextMatch?.home_or_away === "home";
@@ -100,6 +106,18 @@ export default async function HomePage() {
     <div className="mx-auto max-w-md px-4 py-6">
       <p className="text-xs font-bold uppercase tracking-widest text-gold">Salut {user.name}</p>
       <h1 className="text-scoreboard mb-4 text-2xl font-extrabold text-cream">Bienvenue sur l&apos;espace</h1>
+
+      {hasUnpaidDue && (
+        <Link
+          href="/dues"
+          className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-gold/30 bg-gold/5 px-3 py-2"
+        >
+          <p className="text-xs text-gold">
+            💶 Cotisation non réglée — {dueRemaining.toFixed(2)} € restant{dueRemaining > 1 ? "s" : ""}
+          </p>
+          <span className="shrink-0 text-xs font-bold text-gold">Voir →</span>
+        </Link>
+      )}
 
       {activeInjury ? (
         <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-navy-card px-3 py-2">

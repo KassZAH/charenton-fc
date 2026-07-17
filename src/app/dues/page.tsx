@@ -1,20 +1,81 @@
-import { requireAdmin } from "@/lib/auth/current-user";
+import { requireUser } from "@/lib/auth/current-user";
 import { getActiveSeason } from "@/lib/data/seasons";
-import { getSeasonDues } from "@/lib/data/dues";
+import { getSeasonDues, getMyDue } from "@/lib/data/dues";
 import { setDueAmount, setPaidAmount, bulkSetDueAmount } from "@/lib/data/dues-actions";
+import { isElevatedRole } from "@/types/models";
 
 function formatEuros(amount: number) {
   return `${amount.toFixed(2)} €`;
 }
 
+function dueStatus(amountDue: number, amountPaid: number): "paid" | "partial" | "unpaid" | null {
+  if (amountDue === 0) return null;
+  const remaining = amountDue - amountPaid;
+  return remaining <= 0 ? "paid" : amountPaid > 0 ? "partial" : "unpaid";
+}
+
+function StatusBadge({ status }: { status: "paid" | "partial" | "unpaid" | null }) {
+  if (!status) return null;
+  return (
+    <span
+      className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
+        status === "paid"
+          ? "bg-emerald-400/15 text-emerald-300"
+          : status === "partial"
+            ? "bg-gold/20 text-gold"
+            : "bg-red-400/15 text-red-300"
+      }`}
+    >
+      {status === "paid" ? "Payé" : status === "partial" ? "Partiel" : "Non payé"}
+    </span>
+  );
+}
+
 export default async function DuesPage() {
-  await requireAdmin();
+  const user = await requireUser();
+  const isAdmin = isElevatedRole(user.role);
   const season = await getActiveSeason();
   if (!season) {
     return (
       <div className="mx-auto max-w-md px-4 py-6">
         <h1 className="mb-2 text-lg font-extrabold text-cream">Cotisations</h1>
         <p className="text-sm text-steel/70">Aucune saison active — impossible de suivre les cotisations.</p>
+      </div>
+    );
+  }
+
+  if (!isAdmin) {
+    const myDue = await getMyDue(season.id, user.playerId);
+    const amountDue = myDue?.amountDue ?? 0;
+    const amountPaid = myDue?.amountPaid ?? 0;
+    const status = dueStatus(amountDue, amountPaid);
+
+    return (
+      <div className="mx-auto max-w-md px-4 py-6">
+        <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Cotisation</p>
+        <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">{season.name}</h1>
+
+        {amountDue === 0 ? (
+          <p className="text-sm text-steel/70">Aucune cotisation fixée pour toi pour le moment.</p>
+        ) : (
+          <section className="rounded-2xl border border-white/10 bg-navy-card p-4">
+            <div className="mb-3 flex items-center justify-between">
+              <span className="text-sm font-semibold text-cream">Statut</span>
+              <StatusBadge status={status} />
+            </div>
+            <div className="grid grid-cols-2 gap-2 text-center">
+              <div>
+                <p className="text-2xl font-extrabold tabular-nums text-gold">{formatEuros(amountPaid)}</p>
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-steel">Payé</p>
+              </div>
+              <div>
+                <p className="text-2xl font-extrabold tabular-nums text-cream">{formatEuros(amountDue)}</p>
+                <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-steel">Dû</p>
+              </div>
+            </div>
+          </section>
+        )}
+        <p className="mt-4 text-xs text-steel/60">Seuls les admins/coachs peuvent modifier les cotisations.</p>
       </div>
     );
   }
@@ -77,26 +138,13 @@ function DueRow({
   due: { playerId: string; name: string; amountDue: number; amountPaid: number };
   seasonId: string;
 }) {
-  const remaining = due.amountDue - due.amountPaid;
-  const status = due.amountDue === 0 ? null : remaining <= 0 ? "paid" : due.amountPaid > 0 ? "partial" : "unpaid";
+  const status = dueStatus(due.amountDue, due.amountPaid);
 
   return (
     <li className="rounded-xl border border-white/10 bg-navy-card p-3">
       <div className="mb-2 flex items-center justify-between">
         <span className="text-sm font-semibold text-cream">{due.name}</span>
-        {status && (
-          <span
-            className={`rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-              status === "paid"
-                ? "bg-emerald-400/15 text-emerald-300"
-                : status === "partial"
-                  ? "bg-gold/20 text-gold"
-                  : "bg-red-400/15 text-red-300"
-            }`}
-          >
-            {status === "paid" ? "Payé" : status === "partial" ? "Partiel" : "Non payé"}
-          </span>
-        )}
+        <StatusBadge status={status} />
       </div>
       <div className="flex gap-2">
         <form action={setDueAmount.bind(null, due.playerId, seasonId)} className="flex flex-1 items-center gap-1">

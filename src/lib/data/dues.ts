@@ -28,3 +28,18 @@ export async function getSeasonDues(seasonId: string): Promise<PlayerDue[]> {
     };
   });
 }
+
+export type MyDue = { amountDue: number; amountPaid: number };
+
+/** Cotisation d'un seul joueur — pour sa propre page et l'alerte d'accueil, jamais celle des autres. */
+export async function getMyDue(seasonId: string, playerId: string): Promise<MyDue | null> {
+  const { data: row, error } = await supabaseAdmin
+    .from("dues")
+    .select("amount_due, amount_paid")
+    .eq("season_id", seasonId)
+    .eq("player_id", playerId)
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+  if (!row) return null;
+  return { amountDue: row.amount_due, amountPaid: row.amount_paid };
+}
