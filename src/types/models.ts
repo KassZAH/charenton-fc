@@ -20,6 +20,8 @@ export type ReinforcementCall = Tables<"reinforcement_calls">;
 export type HallOfFameEntry = Tables<"hall_of_fame_entries">;
 export type ClubQuote = Tables<"club_quotes">;
 export type JerseyHistoryEntry = Tables<"jersey_history_entries">;
+export type MonthlyMvpVote = Tables<"monthly_mvp_votes">;
+export type SeasonTrophy = Tables<"season_trophies">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";
@@ -80,5 +82,33 @@ export const HALL_OF_FAME_CATEGORY_LABELS: Record<HallOfFameCategory, string> = 
   capitaine_emblematique: "Capitaine emblématique",
   meilleur_buteur_historique: "Meilleur buteur historique",
   legende_vestiaire: "Légende du vestiaire",
+  autre: "Autre",
+};
+
+/** season_trophies.category — contrainte check en base. */
+export type SeasonTrophyCategory =
+  | "joueur_de_la_saison"
+  | "meilleur_buteur"
+  | "meilleur_passeur"
+  | "mur_de_la_saison"
+  | "revelation"
+  | "plus_grande_vendange"
+  | "meilleure_ambiance"
+  | "action_la_plus_improbable"
+  | "plus_grande_disparition_whatsapp"
+  | "meilleur_moment_de_la_saison"
+  | "autre";
+
+export const SEASON_TROPHY_CATEGORY_LABELS: Record<SeasonTrophyCategory, string> = {
+  joueur_de_la_saison: "Joueur de la saison",
+  meilleur_buteur: "Meilleur buteur",
+  meilleur_passeur: "Meilleur passeur",
+  mur_de_la_saison: "Mur de la saison",
+  revelation: "Révélation",
+  plus_grande_vendange: "Plus grande vendange",
+  meilleure_ambiance: "Meilleure ambiance",
+  action_la_plus_improbable: "Action la plus improbable",
+  plus_grande_disparition_whatsapp: "Plus grande disparition WhatsApp",
+  meilleur_moment_de_la_saison: "Meilleur moment de la saison",
   autre: "Autre",
 };

@@ -55,6 +55,14 @@ Implémenté intégralement, rien d'écarté.
 - **Trophées de fin de saison** dans la frise — le concept de trophée de saison n'existe pas encore (c'est le Lot 9) ; la frise couvre à la place les intronisations au Hall of Fame comme moments cérémoniels, la première victoire, le premier triplé, la plus grosse victoire et les fins de saison
 - **Numéros retirés** en tant que fonction dédiée — fait à la place : un champ optionnel sur les entrées du Hall of Fame plutôt qu'une table séparée, la roadmap la qualifie elle-même de facultative
 
+## Lot 9 — Fun et engagement
+
+- **Case "gardien homme du match" du bingo de saison** — nécessite de savoir qui a joué gardien par match (`match_players.goalkeeper` existe en base mais rien ne l'alimente, même gap que noté au Lot 7) ; bingo livré avec 5 cases sur 6 en attendant
+- **Réactions emoji** — aucun système de réaction/commentaire n'existe dans l'appli (sur quoi réagir precisément — un match ? un but ? — n'est pas non plus précisé dans la roadmap) ; entièrement écarté pour l'instant
+- **Défis collectifs personnalisables** — fait à la place : 4 défis fixes calculés à la volée (3 victoires consécutives, 5 matchs sans carton, 10 buteurs différents, présence collective moyenne), pas de créateur de défi admin avec cible ajustable
+- **Joueur du mois : cycle formel (ouverture/clôture, annonce du gagnant)** — fait à la place : un tally toujours ouvert, recalculé en direct depuis les votes du mois en cours, sans étape de clôture ni notification
+- **Trophées de fin de saison : vote d'équipe** — la roadmap ne précise le mécanisme de vote que pour le joueur du mois ; fait à la place : attribution manuelle par l'admin (même logique que le Hall of Fame du Lot 8), pas de vote formalisé pour ces catégories
+
 ---
 
-_Lots 9 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 10 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._

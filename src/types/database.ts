@@ -134,6 +134,7 @@ export type Database = {
           emoji: string | null
           id: string
           is_active: boolean
+          match_id: string | null
           name: string
         }
         Insert: {
@@ -141,6 +142,7 @@ export type Database = {
           emoji?: string | null
           id?: string
           is_active?: boolean
+          match_id?: string | null
           name: string
         }
         Update: {
@@ -148,9 +150,18 @@ export type Database = {
           emoji?: string | null
           id?: string
           is_active?: boolean
+          match_id?: string | null
           name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "awards_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cards: {
         Row: {
@@ -709,6 +720,48 @@ export type Database = {
           },
         ]
       }
+      monthly_mvp_votes: {
+        Row: {
+          created_at: string
+          id: string
+          month: number
+          voted_player_id: string
+          voter_player_id: string
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month: number
+          voted_player_id: string
+          voter_player_id: string
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month?: number
+          voted_player_id?: string
+          voter_player_id?: string
+          year?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "monthly_mvp_votes_voted_player_id_fkey"
+            columns: ["voted_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "monthly_mvp_votes_voter_player_id_fkey"
+            columns: ["voter_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       opponents: {
         Row: {
           created_at: string | null
@@ -905,6 +958,54 @@ export type Database = {
             columns: ["match_id"]
             isOneToOne: false
             referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      season_trophies: {
+        Row: {
+          awarded_at: string
+          category: string
+          created_at: string
+          description: string | null
+          display_name: string | null
+          id: string
+          player_id: string | null
+          season_id: string
+        }
+        Insert: {
+          awarded_at?: string
+          category: string
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          player_id?: string | null
+          season_id: string
+        }
+        Update: {
+          awarded_at?: string
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          player_id?: string | null
+          season_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "season_trophies_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "season_trophies_season_id_fkey"
+            columns: ["season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
             referencedColumns: ["id"]
           },
         ]

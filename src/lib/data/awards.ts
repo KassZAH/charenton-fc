@@ -3,12 +3,15 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { getActivePlayers } from "./players";
 import type { Award } from "@/types/models";
 
-export async function getActiveAwards(): Promise<Award[]> {
-  const { data, error } = await supabaseAdmin
-    .from("awards")
-    .select("*")
-    .eq("is_active", true)
-    .order("created_at", { ascending: true });
+/**
+ * Sans matchId : uniquement les récompenses globales (disponibles sur tous les matchs).
+ * Avec matchId : les récompenses globales + une éventuelle récompense ponctuelle créée
+ * pour ce match précis (voir createOneOffAward).
+ */
+export async function getActiveAwards(matchId?: string): Promise<Award[]> {
+  let query = supabaseAdmin.from("awards").select("*").eq("is_active", true);
+  query = matchId ? query.or(`match_id.is.null,match_id.eq.${matchId}`) : query.is("match_id", null);
+  const { data, error } = await query.order("created_at", { ascending: true });
   if (error) throw new Error(error.message);
   return data ?? [];
 }
@@ -26,7 +29,7 @@ export type AwardResult = {
  */
 export async function getMatchAwardResults(matchId: string): Promise<AwardResult[]> {
   const [awards, players, { data: votes, error }] = await Promise.all([
-    getActiveAwards(),
+    getActiveAwards(matchId),
     getActivePlayers(),
     supabaseAdmin.from("votes").select("award_id, voted_player_id").eq("match_id", matchId),
   ]);

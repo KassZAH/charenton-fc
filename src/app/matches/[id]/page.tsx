@@ -205,7 +205,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           {isElevatedRole(user.role) && <RosterSection matchId={match.id} />}
           <GoalsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
           <CardsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
-          <AwardsSection matchId={match.id} myPlayerId={user.playerId} />
+          <AwardsSection matchId={match.id} myPlayerId={user.playerId} isAdmin={isElevatedRole(user.role)} />
         </>
       )}
 

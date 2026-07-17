@@ -66,6 +66,9 @@ export default async function StatsPage() {
         <Link href="/memoire" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
           Mémoire
         </Link>
+        <Link href="/trophees" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Trophées
+        </Link>
         {isElevatedRole(user.role) && (
           <Link href="/history" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
             Historique
