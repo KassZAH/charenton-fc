@@ -16,6 +16,7 @@ export type PlayerMeasurement = Tables<"player_measurements">;
 export type MatchLineup = { formation: string; positions: Record<string, string> };
 export type Injury = Tables<"injuries">;
 export type MatchEquipmentItem = Tables<"match_equipment_items">;
+export type ReinforcementCall = Tables<"reinforcement_calls">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";
@@ -50,6 +51,15 @@ export type InjuryStatus = "active" | "closed" | "cancelled";
 
 /** goals.credited_to — contrainte check en base. À qui profite le but (utile pour les CSC). */
 export type GoalCreditedTo = "charenton" | "opponent";
+
+/** reinforcement_calls.position_needed — contrainte check en base. */
+export type ReinforcementPosition = "gardien" | "defenseur" | "joueur_de_champ";
+
+export const REINFORCEMENT_POSITION_LABELS: Record<ReinforcementPosition, string> = {
+  gardien: "Gardien",
+  defenseur: "Défenseur",
+  joueur_de_champ: "Joueur de champ",
+};
 
 /** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
 export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";

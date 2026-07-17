@@ -37,6 +37,7 @@ export default async function LineupPage({ params }: { params: Promise<{ id: str
       ) : (
         <LineupBoard
           matchId={match.id}
+          opponentLabel={opponentLabel}
           players={presentPlayers}
           initialFormation={lineup?.formation ?? "4-4-2"}
           initialPositions={lineup?.positions ?? {}}

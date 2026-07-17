@@ -3,16 +3,19 @@
 import { useState, useTransition } from "react";
 import { FORMATIONS, FORMATION_LABELS, type FormationKey } from "@/lib/formations";
 import { saveLineup } from "@/lib/data/lineup-actions";
+import { LineupCardButton } from "./LineupCardButton";
 
 type PlayerOption = { id: string; name: string };
 
 export function LineupBoard({
   matchId,
+  opponentLabel,
   players,
   initialFormation,
   initialPositions,
 }: {
   matchId: string;
+  opponentLabel: string;
   players: PlayerOption[];
   initialFormation: FormationKey;
   initialPositions: Record<string, string>;
@@ -138,6 +141,15 @@ export function LineupBoard({
       >
         {isPending ? "Enregistrement..." : saved ? "Enregistré ✓" : "Enregistrer la composition"}
       </button>
+
+      <LineupCardButton
+        data={{
+          opponentLabel,
+          formationLabel: FORMATION_LABELS[formation],
+          slots,
+          playerNameBySlotKey: Object.fromEntries(slots.map((s) => [s.key, playerLabel(positions[s.key])])),
+        }}
+      />
     </form>
   );
 }

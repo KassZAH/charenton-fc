@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth/current-user";
 import { getMatchById } from "@/lib/data/matches";
 import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
 import { updateMatchResult, setCaptain } from "@/lib/data/matches-actions";
 import { getMatchGoals } from "@/lib/data/goals";
 import { getMatchAwardResults } from "@/lib/data/awards";
+import { getTeamHighlights } from "@/lib/data/stats";
 import { getActivePlayers, getPlayerById } from "@/lib/data/players";
 import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
 import { getMatchReadiness } from "@/lib/data/match-readiness";
@@ -27,6 +29,9 @@ import { RosterSection } from "./RosterSection";
 import { CarpoolSection } from "./CarpoolSection";
 import { EquipmentSection } from "./EquipmentSection";
 import { DuplicateMatchForm } from "./DuplicateMatchForm";
+import { MatchPosterButton } from "./MatchPosterButton";
+import { ResultCardButton } from "./ResultCardButton";
+import { ReinforcementSection } from "./ReinforcementSection";
 
 const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "uncertain", "absent", "injured", "none"];
 
@@ -37,6 +42,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   if (!match) notFound();
 
   const isUpcoming = match.status !== "completed";
+
+  const headerList = await headers();
+  const host = headerList.get("host");
+  const origin = `${host?.startsWith("localhost") ? "http" : "https"}://${host}`;
 
   const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo] = await Promise.all([
     getMyAvailability(match.id, user.playerId),
@@ -49,7 +58,33 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
   const activeInjuryReturnDateLabel = injuryReturnLabelForDate(activeInjury, match.match_date);
   const captainName = captain ? captain.nickname || captain.first_name : null;
+  const matchLabel = `${isHome ? "Charenton FC" : opponentLabel} vs ${isHome ? opponentLabel : "Charenton FC"}`;
   const itineraryUrl = buildItineraryUrl(match.address, match.maps_url);
+
+  let resultCardData: {
+    scorers: string[];
+    assists: string[];
+    awards: { emoji: string | null; name: string; winner: string }[];
+    streakLabel: string | null;
+  } | null = null;
+  if (match.status === "completed") {
+    const [goals, awardResults, highlights] = await Promise.all([
+      getMatchGoals(match.id),
+      getMatchAwardResults(match.id),
+      getTeamHighlights(),
+    ]);
+    const streakLabels = { wins: "victoire(s) de suite", draws: "match(s) nul(s) de suite", losses: "défaite(s) de suite" };
+    resultCardData = {
+      scorers: goals.filter((g) => g.credited_to === "charenton").map((g) => g.scorer_name ?? "Buteur inconnu"),
+      assists: goals.filter((g) => g.assist_name).map((g) => g.assist_name!),
+      awards: awardResults
+        .filter((r) => r.winners.length > 0)
+        .map((r) => ({ emoji: r.award.emoji, name: r.award.name, winner: r.winners.map((w) => w.name).join(" / ") })),
+      streakLabel: highlights.currentStreak
+        ? `${highlights.currentStreak.count} ${streakLabels[highlights.currentStreak.type]}`
+        : null,
+    };
+  }
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -107,6 +142,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         )}
       </div>
 
+      {isUpcoming && (
+        <div className="mt-3">
+          <MatchPosterButton
+            data={{ isHome, opponentLabel, dateLabel: formatMatchDate(match.match_date), timeLabel: formatTime(match.kickoff_time), location: match.location }}
+          />
+        </div>
+      )}
+
       {match.status === "completed" ? (
         <>
           <p className="mt-4 text-4xl font-extrabold tabular-nums text-gold">
@@ -116,6 +159,19 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             <p className="mt-3 rounded-xl border border-white/10 bg-navy-card p-3 text-sm italic text-cream/80">
               {match.description}
             </p>
+          )}
+          {resultCardData && (
+            <div className="mt-3">
+              <ResultCardButton
+                data={{
+                  isHome,
+                  opponentLabel,
+                  teamScore: match.team_score ?? 0,
+                  opponentScore: match.opponent_score ?? 0,
+                  ...resultCardData,
+                }}
+              />
+            </div>
           )}
           {isElevatedRole(user.role) && match.opponent_id && (
             <div className="mt-4">
@@ -139,6 +195,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       )}
 
       {isUpcoming && <EquipmentSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />}
+
+      {isUpcoming && isElevatedRole(user.role) && (
+        <ReinforcementSection matchId={match.id} origin={origin} matchLabel={matchLabel} />
+      )}
 
       {match.status === "completed" && (
         <>

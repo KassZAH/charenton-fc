@@ -761,6 +761,57 @@ export type Database = {
         }
         Relationships: []
       }
+      reinforcement_calls: {
+        Row: {
+          created_at: string
+          created_by_player_id: string | null
+          expires_at: string | null
+          id: string
+          match_id: string
+          message: string | null
+          position_needed: string
+          revoked_at: string | null
+          token: string
+        }
+        Insert: {
+          created_at?: string
+          created_by_player_id?: string | null
+          expires_at?: string | null
+          id?: string
+          match_id: string
+          message?: string | null
+          position_needed: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Update: {
+          created_at?: string
+          created_by_player_id?: string | null
+          expires_at?: string | null
+          id?: string
+          match_id?: string
+          message?: string | null
+          position_needed?: string
+          revoked_at?: string | null
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reinforcement_calls_created_by_player_id_fkey"
+            columns: ["created_by_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reinforcement_calls_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       seasons: {
         Row: {
           created_at: string | null
