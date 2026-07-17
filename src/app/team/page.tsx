@@ -16,16 +16,16 @@ export default async function TeamPage() {
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Équipe</h1>
-        {isAdmin && (
-          <div className="flex gap-2">
-            <Button href="/dues" variant="secondary">
-              Cotisations
-            </Button>
+        <div className="flex gap-2">
+          <Button href="/dues" variant="secondary">
+            {isAdmin ? "Cotisations" : "Ma cotisation"}
+          </Button>
+          {isAdmin && (
             <Button href="/team/new" variant="primary">
               + Ajouter un joueur
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       <ul className="space-y-2">

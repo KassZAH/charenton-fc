@@ -11,7 +11,7 @@ const PLAYER_ITEMS: Item[] = [
   {
     emoji: "🏠",
     title: "Accueil",
-    text: "Tu retrouves le prochain match, tes stats de la saison et une petite phrase qui se moque gentiment de toi selon tes stats.",
+    text: "Le prochain match, tes stats de la saison, une phrase qui se moque gentiment de toi selon tes stats, et des alertes (blessure, cotisation non réglée, souvenir « Ce jour-là ») quand elles te concernent.",
   },
   {
     emoji: "✅",
@@ -19,14 +19,34 @@ const PLAYER_ITEMS: Item[] = [
     text: "Sur l'Accueil ou la fiche du match, choisis Présent / Incertain / Absent / Blessé. Tu peux changer d'avis à tout moment, ça s'enregistre tout de suite.",
   },
   {
+    emoji: "🩹",
+    title: "Se déclarer blessé",
+    text: "Depuis l'Accueil ou ton profil, « Je suis blessé » : choisis une durée (prochain match, ~1 semaine, ~2 semaines, ~1 mois, date précise, ou inconnue). Tes convocations à venir passent automatiquement en Blessé. « Je suis rétabli » annule tout d'un coup.",
+  },
+  {
+    emoji: "🚗",
+    title: "Covoiturage",
+    text: "Sur la fiche d'un match à venir, section Covoiturage : indique si tu conduis ou si tu as besoin d'une place.",
+  },
+  {
+    emoji: "🎒",
+    title: "Qui apporte quoi",
+    text: "Sur la fiche d'un match à venir, section « Qui apporte quoi » : réserve un élément de matériel (« Je m'en occupe ») ou coche-le comme apporté.",
+  },
+  {
     emoji: "⚽",
     title: "Fiche d'un match",
-    text: "Détails du match, et une fois le match terminé : les buts, les cartons, et les votes pour les récompenses.",
+    text: "Détails du match (lieu, itinéraire, capitaine), et une fois terminé : les buts, les cartons, les votes pour les récompenses, et les cartes à partager.",
   },
   {
     emoji: "🏆",
     title: "Voter pour les récompenses",
-    text: "Une fois un match terminé, vote pour Homme du match, Mur du match, etc. dans les menus déroulants. Tu ne peux pas voter pour toi-même, et tu peux changer ton vote.",
+    text: "Une fois un match terminé, vote pour Homme du match, Vendange, Mur, Geste, Moment, Boucher, et d'éventuelles récompenses ponctuelles créées pour ce match précis. Tu ne peux pas voter pour toi-même, et tu peux changer ton vote.",
+  },
+  {
+    emoji: "📤",
+    title: "Partager une carte",
+    text: "Sur la fiche d'un match : Affiche du match, Carte résultat, Carte de composition. Sur ta fiche joueur : Carte joueur (stats de la saison) et Carte carrière (stats all-time). Tout se télécharge ou se partage en image.",
   },
   {
     emoji: "👥",
@@ -36,12 +56,17 @@ const PLAYER_ITEMS: Item[] = [
   {
     emoji: "👤",
     title: "Fiche joueur",
-    text: "Stats détaillées, récompenses gagnées, badges, et l'historique des matchs joués.",
+    text: "Stats détaillées, récompenses gagnées, badges, objectifs personnels visibles, bilan avec/sans ce joueur, et l'historique des matchs joués.",
   },
   {
     emoji: "📊",
     title: "Stats",
-    text: "Les classements de l'équipe : buteurs, passeurs, présences, cartons, et un classement par récompense.",
+    text: "Un menu déroulant pour choisir le classement à afficher : buteurs, passeurs, buts + passes déc., présences, cartons, ou n'importe quelle récompense.",
+  },
+  {
+    emoji: "📈",
+    title: "Tendances",
+    text: "Depuis Stats : forme sur les 5 derniers matchs, projection de fin de saison, records imminents, bilan domicile/extérieur, par jour, par mois, par formation, et répartition des types de buts.",
   },
   {
     emoji: "🥇",
@@ -54,14 +79,44 @@ const PLAYER_ITEMS: Item[] = [
     text: "Depuis Stats, choisis deux joueurs pour voir toutes leurs stats côte à côte.",
   },
   {
-    emoji: "🎖️",
-    title: "Badges",
-    text: "Ils tombent tout seuls : premier but, 10 matchs joués, série de présence, etc. Rien à faire, ça se déclenche automatiquement.",
+    emoji: "📄",
+    title: "Bilan de fin de saison",
+    text: "Depuis Stats → Bilan : le résumé complet de la saison (victoires/nuls/défaites, buts, cartons, records), partageable en un lien.",
   },
   {
-    emoji: "⚙️",
-    title: "Mon profil",
-    text: "Clique ton nom en haut de l'écran. Tu peux modifier tes infos (nom, poste, pied fort, citation), et suivre ton poids/ta taille — privé par défaut, tu choisis si tu le partages avec l'équipe.",
+    emoji: "🏛️",
+    title: "Mémoire du club",
+    text: "Depuis Stats → Mémoire : frise historique, souvenir du jour, souvenir aléatoire, Hall of Fame, mur des citations, historique des maillots. Les admins peuvent y ajouter des entrées.",
+  },
+  {
+    emoji: "🏅",
+    title: "Trophées",
+    text: "Depuis Stats → Trophées : vote pour le joueur du mois parmi 3 candidats sélectionnés automatiquement, bingo de saison, défis collectifs, et les trophées de fin de saison attribués par les admins.",
+  },
+  {
+    emoji: "🎖️",
+    title: "Badges",
+    text: "Ils tombent tout seuls : premier but, 10 matchs joués, série de présence, 5 récompenses de match, etc. Rien à faire, ça se déclenche automatiquement.",
+  },
+  {
+    emoji: "💶",
+    title: "Ma cotisation",
+    text: "Depuis Équipe → « Ma cotisation » (ou le lien d'alerte sur l'Accueil si elle n'est pas réglée) : ton propre montant dû et payé, jamais celui des autres. Seuls les admins/coachs peuvent la modifier.",
+  },
+  {
+    emoji: "📅",
+    title: "S'abonner au calendrier",
+    text: "Depuis ton profil : copie le lien et ajoute-le à ton appli calendrier (Google, Apple...) pour voir tous les matchs automatiquement, sans rien faire de plus.",
+  },
+  {
+    emoji: "🎯",
+    title: "Objectifs personnels",
+    text: "Depuis ton profil : ajoute un objectif (« marquer 10 buts cette saison »), marque-le atteint, et choisis qui peut le voir (privé, coachs, équipe).",
+  },
+  {
+    emoji: "🔐",
+    title: "Centre de confidentialité",
+    text: "Depuis ton profil : choisis qui voit ta photo, ton anniversaire et tes mesures (privé, coachs, équipe, public). Active ton profil public pour obtenir un lien partageable hors de l'appli.",
   },
 ];
 
@@ -69,17 +124,22 @@ const ADMIN_ITEMS: Item[] = [
   {
     emoji: "➕",
     title: "Créer un match",
-    text: "Depuis Matchs → « + Nouveau match ». Pour poser plusieurs matchs d'un coup (juste adversaire + date), utilise « Plusieurs matchs d'un coup », l'heure et le lieu se complètent plus tard.",
+    text: "Depuis Matchs → « + Nouveau match ». Pour poser plusieurs matchs d'un coup (juste adversaire + date), utilise « Plusieurs matchs d'un coup ». « Rejouer contre cet adversaire » sur un match passé recrée un match identique (terrain, horaires, et en option présents/composition/matériel/capitaine).",
   },
   {
     emoji: "✏️",
     title: "Modifier ou supprimer un match",
-    text: "Bouton « Modifier » sur la fiche du match : date, heure, lieu, adversaire, type, anecdote. Bouton rouge en bas pour le supprimer.",
+    text: "Bouton « Modifier » sur la fiche du match : date, heure, lieu, adversaire, type, anecdote. Bouton rouge en bas pour le supprimer (récupérable depuis la Corbeille).",
   },
   {
     emoji: "🧩",
     title: "Feuille tactique",
     text: "Bouton « Feuille tactique » sur la fiche du match : choisis une formation (4-4-2, 4-3-3, 3-5-2, 4-2-3-1) et place un joueur par poste, parmi ceux qui ont répondu « Présent ».",
+  },
+  {
+    emoji: "🧢",
+    title: "Désigner le capitaine",
+    text: "Sur la fiche du match : choisis le capitaine parmi les présents.",
   },
   {
     emoji: "🧑‍🤝‍🧑",
@@ -94,7 +154,7 @@ const ADMIN_ITEMS: Item[] = [
   {
     emoji: "⚽",
     title: "Ajouter les buts et passes",
-    text: "Sur un match terminé, section Buts : buteur, passeur (optionnel), minute (optionnel). Bouton « Supprimer » sur chaque ligne en cas d'erreur.",
+    text: "Sur un match terminé, section Buts : buteur, passeur (optionnel), minute (optionnel), type (classique, penalty, coup franc, CSC adverse ou CSC Charenton). Bouton « Supprimer » sur chaque ligne en cas d'erreur.",
   },
   {
     emoji: "🟨🟥",
@@ -112,9 +172,49 @@ const ADMIN_ITEMS: Item[] = [
     text: "Dans « Réponses de l'équipe » sur la fiche match, tu peux changer la réponse de n'importe quel joueur (désistement de dernière minute, erreur, etc.).",
   },
   {
+    emoji: "✅",
+    title: "Matchs à vérifier",
+    text: "Depuis Matchs : la liste des matchs terminés dont la fiche est incomplète (score, présents, buteurs, récompenses manquants).",
+  },
+  {
+    emoji: "🎉",
+    title: "Récompense ponctuelle",
+    text: "Sur la fiche d'un match terminé, section Récompenses : crée une catégorie de vote valable uniquement sur ce match (ex. « Blague du match »).",
+  },
+  {
+    emoji: "📣",
+    title: "Appel à renfort",
+    text: "Sur la fiche d'un match à venir : crée un lien public temporaire (poste recherché, durée de validité, message) à partager à un joueur ponctuel hors de l'appli.",
+  },
+  {
     emoji: "💬",
     title: "Partager sur WhatsApp",
     text: "Sur la fiche match : « Partager la convocation » (avant le match, avec le décompte des réponses), « Relancer les sans-réponse », et « Partager le résultat » (après le match, avec buteurs et récompenses).",
+  },
+  {
+    emoji: "💶",
+    title: "Gérer les cotisations",
+    text: "Depuis Équipe → Cotisations : fixe un montant pour tout le monde d'un coup ou joueur par joueur, et enregistre les paiements. Chaque joueur ne voit que son propre statut.",
+  },
+  {
+    emoji: "🏛️",
+    title: "Alimenter la mémoire du club",
+    text: "Depuis Stats → Mémoire : intronise au Hall of Fame, ajoute une citation, un maillot historique, ou renseigne la date de création du club.",
+  },
+  {
+    emoji: "🏅",
+    title: "Attribuer les trophées de fin de saison",
+    text: "Depuis Stats → Trophées → Trophées de fin de saison : attribue joueur de la saison, meilleur buteur, révélation, plus grande vendange, etc.",
+  },
+  {
+    emoji: "🛠️",
+    title: "Administration",
+    text: "Depuis Stats → Admin : tableau de santé des données (matchs incomplets, âge de la dernière sauvegarde), sauvegardes (manuelles ou automatiques, aperçu, téléchargement), corbeille (matchs/buts/cartons supprimés, restaurables), et gestion des saisons (verrouillage, nouvelle saison).",
+  },
+  {
+    emoji: "🕓",
+    title: "Historique des modifications",
+    text: "Depuis Stats → Historique : les dernières modifications à fort enjeu (scores, buts, cartons, fiches joueurs, cotisations) avec un bouton pour annuler chacune.",
   },
 ];
 
