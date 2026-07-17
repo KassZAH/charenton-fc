@@ -43,6 +43,11 @@ Implémenté intégralement, rien d'écarté.
 - QR codes (accès à l'équipe, prochain match, profil public, appel à renfort) — dépendent en partie du "profil public" pas encore construit (voir Lot 11) ; les liens WhatsApp/copier-coller couvrent déjà le partage sans QR pour l'instant
 - Système générique de "liens publics temporaires" réutilisable au-delà de l'appel à renfort (ex. pour un futur profil public) — fait à la place : le mécanisme token/expiration/révocation est scopé uniquement aux appels à renfort, pas encore extrait en système générique
 
+## Lot 7 — Statistiques enrichies
+
+- Filtres interactifs génériques (saison/mois/année/5 derniers matchs/domicile-extérieur/jour de la semaine) — fait à la place : des répartitions fixes directement affichées sur la page Tendances (bilan domicile/extérieur, bilan par jour, bilan par mois), pas de contrôle de filtre universel
+- Statistiques gardien (matchs comme gardien, clean sheets, buts encaissés, victoires, moyenne encaissée) — nécessite d'abord une UI pour marquer qui a joué gardien par match (la colonne `match_players.goalkeeper` existe déjà en base mais rien ne l'alimente), pas encore construite
+
 ---
 
-_Lots 7 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 8 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
