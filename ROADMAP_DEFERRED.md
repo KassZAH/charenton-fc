@@ -38,6 +38,11 @@ Implémenté intégralement, rien d'écarté.
 
 - Modèles de matchs nommés et réutilisables (ex. « vendredi soir à Charenton », « match extérieur », « tournoi », « match à cinq »), mémorisant terrain/horaire/RDV/type/matériel habituel, indépendamment d'un adversaire précis — fait à la place : « Rejouer contre cet adversaire » qui duplique un match passé (même terrain/horaires/type) et reprend en option présents/composition/matériel/capitaine. Couvre le cas le plus fréquent (le même adversaire) mais pas un modèle générique sans adversaire
 
+## Lot 6 — Partage et renforts
+
+- QR codes (accès à l'équipe, prochain match, profil public, appel à renfort) — dépendent en partie du "profil public" pas encore construit (voir Lot 11) ; les liens WhatsApp/copier-coller couvrent déjà le partage sans QR pour l'instant
+- Système générique de "liens publics temporaires" réutilisable au-delà de l'appel à renfort (ex. pour un futur profil public) — fait à la place : le mécanisme token/expiration/révocation est scopé uniquement aux appels à renfort, pas encore extrait en système générique
+
 ---
 
-_Lots 6 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 7 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
