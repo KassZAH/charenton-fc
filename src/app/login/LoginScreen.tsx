@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useTransition } from "react";
 import { login } from "@/lib/auth/actions";
 import { pinLengthForRole, type PlayerRole } from "@/types/models";
@@ -28,9 +29,14 @@ export function LoginScreen({ players }: { players: LoginPlayer[] }) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col px-4 py-8">
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-2xl font-extrabold text-navy-deep shadow-lg shadow-black/30">
-          CFC
-        </div>
+        <Image
+          src="/logo-charenton.png"
+          alt="Charenton FC"
+          width={112}
+          height={112}
+          priority
+          className="mx-auto mb-3 h-28 w-28 drop-shadow-[0_8px_24px_rgba(240,185,58,0.25)]"
+        />
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Charenton FC</h1>
         <p className="text-sm text-steel">
           {selected ? "Entre ton code" : "Qui es-tu ?"}

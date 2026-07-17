@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { logout } from "@/lib/auth/actions";
@@ -8,7 +9,8 @@ export function AppShell({ user, children }: { user: SessionPayload; children: R
   return (
     <div className="flex min-h-dvh flex-col">
       <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-navy px-4 py-3">
-        <Link href="/" className="text-scoreboard font-extrabold text-gold">
+        <Link href="/" className="flex items-center gap-2 text-scoreboard font-extrabold text-gold">
+          <Image src="/logo-charenton.png" alt="" width={28} height={28} className="h-7 w-7" />
           Charenton FC
         </Link>
         <form action={logout} className="flex items-center gap-3">
