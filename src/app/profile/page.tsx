@@ -5,15 +5,21 @@ import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { updateOwnProfile } from "@/lib/data/players-actions";
 import { addMeasurement, deleteMeasurement, setShareMeasurements } from "@/lib/data/measurements-actions";
 import { resetSeasonData } from "@/lib/data/reset-actions";
+import { getActiveInjury, getPlayerInjuryHistory } from "@/lib/data/injuries";
 import { formatShortDate } from "@/lib/format";
 import { ResetButton } from "./ResetButton";
+import { InjuryPanel } from "./InjuryPanel";
 
 export default async function ProfilePage() {
   const user = await requireUser();
   const player = await getPlayerById(user.playerId);
   if (!player) notFound();
 
-  const measurements = await getPlayerMeasurements(player.id);
+  const [measurements, activeInjury, injuryHistory] = await Promise.all([
+    getPlayerMeasurements(player.id),
+    getActiveInjury(player.id),
+    getPlayerInjuryHistory(player.id),
+  ]);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -150,6 +156,8 @@ export default async function ProfilePage() {
           </ul>
         )}
       </section>
+
+      <InjuryPanel activeInjury={activeInjury} history={injuryHistory} />
 
       {player.first_name === "Amine" && (
         <section className="mt-8 border-t border-white/10 pt-6">

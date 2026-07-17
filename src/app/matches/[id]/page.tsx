@@ -9,6 +9,7 @@ import { getMatchAwardResults } from "@/lib/data/awards";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
 import { buildConvocationMessage, buildReminderMessage, buildResultMessage } from "@/lib/whatsapp";
+import { getActiveInjury, getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
 import { WhatsAppShareButton } from "@/components/ui/WhatsAppShareButton";
 import { AvailabilityButtons } from "./AvailabilityButtons";
@@ -26,9 +27,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const match = await getMatchById(id);
   if (!match) notFound();
 
-  const myStatus = await getMyAvailability(match.id, user.playerId);
+  const [myStatus, activeInjury] = await Promise.all([
+    getMyAvailability(match.id, user.playerId),
+    getActiveInjury(user.playerId),
+  ]);
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
+  const activeInjuryReturnDateLabel = injuryReturnLabelForDate(activeInjury, match.match_date);
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -84,7 +89,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       ) : (
         <section className="mt-6">
           <h2 className="mb-3 text-sm font-bold text-cream">Ta présence</h2>
-          <AvailabilityButtons matchId={match.id} initialStatus={myStatus} />
+          <AvailabilityButtons
+            matchId={match.id}
+            initialStatus={myStatus}
+            activeInjuryReturnDateLabel={activeInjuryReturnDateLabel}
+          />
         </section>
       )}
 
@@ -100,6 +109,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {isElevatedRole(user.role) && (
         <AdminSection
           matchId={match.id}
+          matchDate={match.match_date}
           isCompleted={match.status === "completed"}
           teamScore={match.team_score}
           opponentScore={match.opponent_score}
@@ -116,6 +126,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
 async function AdminSection({
   matchId,
+  matchDate,
   isCompleted,
   teamScore,
   opponentScore,
@@ -126,6 +137,7 @@ async function AdminSection({
   location,
 }: {
   matchId: string;
+  matchDate: string;
   isCompleted: boolean;
   teamScore: number | null;
   opponentScore: number | null;
@@ -135,7 +147,10 @@ async function AdminSection({
   timeLabel: string | null;
   location: string | null;
 }) {
-  const summary = await getMatchAvailabilitySummary(matchId);
+  const [summary, activeInjuriesByPlayerId] = await Promise.all([
+    getMatchAvailabilitySummary(matchId),
+    getActiveInjuriesByPlayerId(),
+  ]);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
     present: [],
@@ -210,6 +225,10 @@ async function AdminSection({
                     playerId={g.player.id}
                     playerName={nameOf(g)}
                     initialStatus={g.status}
+                    activeInjuryReturnDateLabel={injuryReturnLabelForDate(
+                      activeInjuriesByPlayerId.get(g.player.id),
+                      matchDate
+                    )}
                   />
                 ))}
               </div>

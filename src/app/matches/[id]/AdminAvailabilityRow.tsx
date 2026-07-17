@@ -2,7 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { setAvailabilityAsAdmin } from "@/lib/data/matches-actions";
+import { adminOverrideInjuredPresence } from "@/lib/data/injuries-actions";
 import { AVAILABILITY_LABELS } from "@/lib/labels";
+import { InlineChoicePanel } from "@/components/ui/InlineChoicePanel";
 import type { AvailabilityStatus } from "@/types/models";
 
 const OPTIONS: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
@@ -12,17 +14,20 @@ export function AdminAvailabilityRow({
   playerId,
   playerName,
   initialStatus,
+  activeInjuryReturnDateLabel,
 }: {
   matchId: string;
   playerId: string;
   playerName: string;
   initialStatus: AvailabilityStatus | null;
+  activeInjuryReturnDateLabel?: string | null;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [isPending, startTransition] = useTransition();
+  const [showInjuredConfirm, setShowInjuredConfirm] = useState(false);
+  const isInjuryCovered = activeInjuryReturnDateLabel !== undefined && activeInjuryReturnDateLabel !== null;
 
-  function change(value: string) {
-    const next = (value || null) as AvailabilityStatus | null;
+  function commit(next: AvailabilityStatus | null) {
     const previous = status;
     setStatus(next);
     startTransition(async () => {
@@ -32,6 +37,44 @@ export function AdminAvailabilityRow({
         setStatus(previous);
       }
     });
+  }
+
+  function change(value: string) {
+    const next = (value || null) as AvailabilityStatus | null;
+    if (next === "present" && isInjuryCovered) {
+      setShowInjuredConfirm(true);
+      return;
+    }
+    commit(next);
+  }
+
+  function resolveInjured(choice: "this_match_only" | "close_and_present") {
+    setShowInjuredConfirm(false);
+    const previous = status;
+    setStatus("present");
+    startTransition(async () => {
+      try {
+        await adminOverrideInjuredPresence(matchId, playerId, choice);
+      } catch {
+        setStatus(previous);
+      }
+    });
+  }
+
+  if (showInjuredConfirm) {
+    return (
+      <InlineChoicePanel
+        message={`${playerName} est actuellement marqué blessé. Confirmer sa présence pour ce match ?`}
+        options={[
+          { label: "Présent pour ce match uniquement", onClick: () => resolveInjured("this_match_only") },
+          {
+            label: "Clôturer la blessure et le marquer présent",
+            onClick: () => resolveInjured("close_and_present"),
+          },
+          { label: "Annuler", onClick: () => setShowInjuredConfirm(false) },
+        ]}
+      />
+    );
   }
 
   return (

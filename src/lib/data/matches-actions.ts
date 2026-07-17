@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
+import { syncActiveInjuriesToUpcomingMatches } from "./injuries-actions";
 import type { AvailabilityStatus } from "@/types/models";
 
 async function resolveOpponentId(formData: FormData): Promise<string | null> {
@@ -72,6 +73,8 @@ export async function createMatchesBulk(rows: BulkMatchRow[]) {
     if (error) throw new Error(error.message);
   }
 
+  await syncActiveInjuriesToUpcomingMatches();
+
   revalidatePath("/matches");
   revalidatePath("/");
   redirect("/matches");
@@ -114,6 +117,8 @@ export async function createMatch(formData: FormData) {
     .single();
 
   if (error) throw new Error(error.message);
+
+  await syncActiveInjuriesToUpcomingMatches();
 
   revalidatePath("/matches");
   revalidatePath("/");
@@ -222,15 +227,18 @@ async function upsertAvailability(matchId: string, playerId: string, status: Ava
   if (findError) throw new Error(findError.message);
 
   if (existing) {
+    // injury_id remis à zéro : un statut posé à la main n'est plus rattaché à la
+    // blessure qui l'avait éventuellement pré-rempli (voir resolveInjuredPresence
+    // pour le cas "je joue quand même malgré la blessure", qui repasse par ici).
     const { error } = await supabaseAdmin
       .from("availability")
-      .update({ status, updated_at: new Date().toISOString() })
+      .update({ status, updated_at: new Date().toISOString(), injury_id: null })
       .eq("id", existing.id);
     if (error) throw new Error(error.message);
   } else {
     const { error } = await supabaseAdmin
       .from("availability")
-      .insert({ match_id: matchId, player_id: playerId, status });
+      .insert({ match_id: matchId, player_id: playerId, status, injury_id: null });
     if (error) throw new Error(error.message);
   }
 

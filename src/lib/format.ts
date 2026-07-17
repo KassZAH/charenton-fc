@@ -15,3 +15,8 @@ export function formatTime(timeStr: string | null) {
 export function formatShortDate(isoString: string) {
   return new Date(isoString).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
+
+/** Pour une colonne `date` seule (ex: injuries.estimated_return_date) — même précaution que formatMatchDate contre le décalage UTC. */
+export function formatShortDateOnly(dateStr: string) {
+  return new Date(`${dateStr}T00:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}

@@ -14,6 +14,7 @@ export type Opponent = Tables<"opponents">;
 export type TeamSettings = Tables<"team_settings">;
 export type PlayerMeasurement = Tables<"player_measurements">;
 export type MatchLineup = { formation: string; positions: Record<string, string> };
+export type Injury = Tables<"injuries">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";
@@ -42,3 +43,9 @@ export type CardType = "yellow" | "red";
 
 /** matches.match_type — contrainte check en base */
 export type MatchType = "amical" | "championnat" | "tournoi" | "autre";
+
+/** injuries.status — contrainte check en base */
+export type InjuryStatus = "active" | "closed" | "cancelled";
+
+/** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
+export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";

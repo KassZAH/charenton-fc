@@ -4,9 +4,11 @@ import { getNextMatch } from "@/lib/data/matches";
 import { getMyAvailability, getMatchAvailabilitySummary } from "@/lib/data/availability";
 import { getPlayerStats } from "@/lib/data/player-stats";
 import { getTeamStats } from "@/lib/data/stats";
-import { formatMatchDate, formatTime } from "@/lib/format";
+import { formatMatchDate, formatShortDateOnly, formatTime } from "@/lib/format";
 import { getFunnyLine } from "@/lib/funny-lines";
 import { buildReminderMessage, whatsappShareUrl } from "@/lib/whatsapp";
+import { getActiveInjury, injuryReturnLabelForDate } from "@/lib/data/injuries";
+import { recoverFromInjury } from "@/lib/data/injuries-actions";
 import { isElevatedRole } from "@/types/models";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
@@ -35,16 +37,21 @@ function shortDateBadge(dateLabel: string) {
 
 export default async function HomePage() {
   const user = await requireUser();
-  const [nextMatch, myStats, teamStats] = await Promise.all([
+  const [nextMatch, myStats, teamStats, activeInjury] = await Promise.all([
     getNextMatch(),
     getPlayerStats(user.playerId),
     getTeamStats(),
+    getActiveInjury(user.playerId),
   ]);
   const myStatus = nextMatch ? await getMyAvailability(nextMatch.id, user.playerId) : null;
 
   const isHome = nextMatch?.home_or_away === "home";
   const opponentLabel = nextMatch?.opponent_name ?? "Adversaire à confirmer";
   const dateLabel = nextMatch ? formatMatchDate(nextMatch.match_date) : "";
+
+  const activeInjuryReturnDateLabel = nextMatch
+    ? injuryReturnLabelForDate(activeInjury, nextMatch.match_date)
+    : null;
 
   let noResponseNames: string[] = [];
   if (nextMatch && isElevatedRole(user.role)) {
@@ -66,7 +73,33 @@ export default async function HomePage() {
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <p className="text-xs font-bold uppercase tracking-widest text-gold">Salut {user.name}</p>
-      <h1 className="text-scoreboard mb-6 text-2xl font-extrabold text-cream">Bienvenue sur l&apos;espace</h1>
+      <h1 className="text-scoreboard mb-4 text-2xl font-extrabold text-cream">Bienvenue sur l&apos;espace</h1>
+
+      {activeInjury ? (
+        <div className="mb-4 flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-navy-card px-3 py-2">
+          <p className="text-xs text-cream/80">
+            🩹 Blessé
+            {activeInjury.estimated_return_date
+              ? ` — retour estimé ${formatShortDateOnly(activeInjury.estimated_return_date)}`
+              : ""}
+          </p>
+          <form action={recoverFromInjury}>
+            <button
+              type="submit"
+              className="shrink-0 rounded-full border border-gold/40 px-3 py-1 text-xs font-bold text-gold"
+            >
+              Je suis rétabli
+            </button>
+          </form>
+        </div>
+      ) : (
+        <Link
+          href="/profile"
+          className="mb-4 inline-block text-xs font-medium text-steel underline underline-offset-2"
+        >
+          🩹 Je suis blessé ?
+        </Link>
+      )}
 
       {nextMatch ? (
         <div className="relative overflow-hidden rounded-2xl border border-gold/15 bg-gradient-to-br from-navy-card to-navy-mid p-4 pt-5 shadow-lg shadow-black/30 before:absolute before:-top-16 before:-right-16 before:h-40 before:w-40 before:rounded-full before:bg-gold/20 before:blur-2xl">
@@ -89,7 +122,11 @@ export default async function HomePage() {
 
           <div className="relative">
             <p className="mb-2 text-sm font-bold text-cream">Ta présence</p>
-            <AvailabilityButtons matchId={nextMatch.id} initialStatus={myStatus} />
+            <AvailabilityButtons
+              matchId={nextMatch.id}
+              initialStatus={myStatus}
+              activeInjuryReturnDateLabel={activeInjuryReturnDateLabel}
+            />
           </div>
 
           {noResponseNames.length > 0 && (
