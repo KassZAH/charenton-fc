@@ -9,6 +9,7 @@ import { getMatchAwardResults } from "@/lib/data/awards";
 import { getActivePlayers, getPlayerById } from "@/lib/data/players";
 import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
 import { getMatchReadiness } from "@/lib/data/match-readiness";
+import { getMatchCompleteness } from "@/lib/data/match-completeness";
 import { buildItineraryUrl } from "@/lib/maps";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
@@ -192,11 +193,12 @@ async function AdminSection({
   captainPlayerId: string | null;
   captainName: string | null;
 }) {
-  const [summary, activeInjuriesByPlayerId, players, readiness] = await Promise.all([
+  const [summary, activeInjuriesByPlayerId, players, readiness, completeness] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
     getActiveInjuriesByPlayerId(),
     getActivePlayers(),
     isCompleted ? Promise.resolve(null) : getMatchReadiness(matchId),
+    isCompleted ? getMatchCompleteness(matchId, teamScore) : Promise.resolve(null),
   ]);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
@@ -240,9 +242,7 @@ async function AdminSection({
       isHome,
       teamScore,
       opponentScore,
-      scorers: goals
-        .filter((g) => g.scorer_player_id || g.is_unknown_scorer)
-        .map((g) => g.scorer_name ?? "Buteur inconnu"),
+      scorers: goals.filter((g) => g.credited_to === "charenton").map((g) => g.scorer_name ?? "Buteur inconnu"),
       assists: goals.filter((g) => g.assist_name).map((g) => g.assist_name!),
       awards: awardResults
         .filter((r) => r.winners.length > 0)
@@ -319,6 +319,27 @@ async function AdminSection({
               ))}
             </ul>
           )}
+        </div>
+      )}
+
+      {completeness && (
+        <div className="mt-4 rounded-xl border border-white/10 bg-navy-card p-3">
+          <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-steel/70">
+            Match complété à {completeness.percent} %
+          </p>
+          <ul className="space-y-1">
+            {completeness.items.map((item) => (
+              <li
+                key={item.label}
+                className={`text-sm ${
+                  item.status === "ok" ? "text-emerald-400" : item.status === "warning" ? "text-gold" : "text-steel"
+                }`}
+              >
+                {item.status === "ok" ? "✅" : item.status === "warning" ? "⚠️" : "❌"} {item.label}
+                {item.detail ? ` (${item.detail})` : ""}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
 

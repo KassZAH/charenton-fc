@@ -76,6 +76,7 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
       .from("goals")
       .select("match_id, scorer_player_id, assist_player_id")
       .in("match_id", matchIds)
+      .eq("credited_to", "charenton")
       .is("deleted_at", null),
     supabaseAdmin.from("cards").select("match_id, player_id").in("match_id", matchIds).is("deleted_at", null),
     supabaseAdmin.from("match_players").select("match_id, player_id").in("match_id", matchIds).eq("was_present", true),

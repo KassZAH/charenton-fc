@@ -5,6 +5,12 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    env: {
+      // Dummy — certains modules server-only instancient un client Supabase à l'import.
+      // Ces valeurs ne sont jamais utilisées pour un vrai appel réseau dans les tests.
+      NEXT_PUBLIC_SUPABASE_URL: "https://test.supabase.co",
+      SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
+    },
   },
   resolve: {
     alias: {

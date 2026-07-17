@@ -1,11 +1,8 @@
 import Link from "next/link";
 import { getMatchGoals } from "@/lib/data/goals";
-import { addGoal, deleteGoal } from "@/lib/data/goals-actions";
+import { deleteGoal } from "@/lib/data/goals-actions";
 import { getActivePlayers } from "@/lib/data/players";
-import { PlayerSelect } from "@/components/ui/PlayerSelect";
-import { Field } from "@/components/ui/Field";
-import { Button } from "@/components/ui/Button";
-import type { Player } from "@/types/models";
+import { AddGoalForm } from "./AddGoalForm";
 
 export async function GoalsSection({ matchId, isAdmin }: { matchId: string; isAdmin: boolean }) {
   const goals = await getMatchGoals(matchId);
@@ -46,6 +43,11 @@ export async function GoalsSection({ matchId, isAdmin }: { matchId: string; isAd
                     )
                   </span>
                 )}
+                {goal.credited_to === "opponent" && (
+                  <span className="ml-1 rounded-full bg-red-400/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-red-300">
+                    Contre nous
+                  </span>
+                )}
                 {goal.minute != null && <span className="text-steel/70"> · {goal.minute}&apos;</span>}
               </div>
               {isAdmin && (
@@ -60,40 +62,12 @@ export async function GoalsSection({ matchId, isAdmin }: { matchId: string; isAd
         </ul>
       )}
 
-      {isAdmin && <AddGoalForm matchId={matchId} players={players} />}
+      {isAdmin && (
+        <AddGoalForm
+          matchId={matchId}
+          players={players.map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+        />
+      )}
     </section>
-  );
-}
-
-function AddGoalForm({ matchId, players }: { matchId: string; players: Player[] }) {
-  const options = players.map((p) => ({ id: p.id, name: p.nickname || p.first_name }));
-
-  return (
-    <form
-      action={addGoal.bind(null, matchId)}
-      className="mt-4 space-y-3 rounded-xl border border-white/10 bg-navy-card p-3"
-    >
-      <div>
-        <PlayerSelect name="scorer_player_id" label="Buteur" players={options} className="text-sm" />
-        <label className="mt-1 flex items-center gap-2 text-xs text-steel">
-          <input type="checkbox" name="unknown_scorer" />
-          Buteur inconnu
-        </label>
-      </div>
-
-      <PlayerSelect
-        name="assist_player_id"
-        label="Passeur (optionnel)"
-        players={options}
-        placeholder="— Aucun —"
-        className="text-sm"
-      />
-
-      <Field label="Minute (optionnel)" name="minute" type="number" min={0} max={130} className="text-sm" />
-
-      <Button type="submit" variant="primary" shape="block">
-        Ajouter le but
-      </Button>
-    </form>
   );
 }

@@ -48,5 +48,8 @@ export type MatchType = "amical" | "championnat" | "tournoi" | "autre";
 /** injuries.status — contrainte check en base */
 export type InjuryStatus = "active" | "closed" | "cancelled";
 
+/** goals.credited_to — contrainte check en base. À qui profite le but (utile pour les CSC). */
+export type GoalCreditedTo = "charenton" | "opponent";
+
 /** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
 export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";

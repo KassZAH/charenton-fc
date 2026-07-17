@@ -9,24 +9,45 @@ import { logChange } from "./audit";
 export async function addGoal(matchId: string, formData: FormData) {
   const user = await requireAdmin();
 
-  const scorerId = String(formData.get("scorer_player_id") ?? "") || null;
-  const assistId = String(formData.get("assist_player_id") ?? "") || null;
+  const kind = String(formData.get("kind") ?? "classique");
   const minuteRaw = String(formData.get("minute") ?? "").trim();
-  const unknownScorer = formData.get("unknown_scorer") === "on";
+  const minute = minuteRaw ? Number(minuteRaw) : null;
 
-  if (!unknownScorer && !scorerId) {
-    throw new Error("Sélectionne un buteur ou coche « Buteur inconnu ».");
+  let payload: {
+    scorer_player_id: string | null;
+    assist_player_id: string | null;
+    is_unknown_scorer: boolean;
+    goal_type: string;
+    credited_to: "charenton" | "opponent";
+  };
+
+  if (kind === "csc_adverse") {
+    // L'adversaire marque contre son camp : ça profite à Charenton, personne n'est crédité.
+    payload = { scorer_player_id: null, assist_player_id: null, is_unknown_scorer: false, goal_type: "csc", credited_to: "charenton" };
+  } else if (kind === "csc_charenton") {
+    // Un joueur de Charenton marque contre son camp : ça profite à l'adversaire, jamais
+    // compté comme un but personnel même si le joueur concerné est renseigné.
+    const ownGoalPlayerId = String(formData.get("own_goal_player_id") ?? "") || null;
+    payload = { scorer_player_id: ownGoalPlayerId, assist_player_id: null, is_unknown_scorer: false, goal_type: "csc", credited_to: "opponent" };
+  } else {
+    const scorerId = String(formData.get("scorer_player_id") ?? "") || null;
+    const assistId = String(formData.get("assist_player_id") ?? "") || null;
+    const unknownScorer = formData.get("unknown_scorer") === "on";
+    if (!unknownScorer && !scorerId) {
+      throw new Error("Sélectionne un buteur ou coche « Buteur inconnu ».");
+    }
+    payload = {
+      scorer_player_id: unknownScorer ? null : scorerId,
+      assist_player_id: assistId,
+      is_unknown_scorer: unknownScorer,
+      goal_type: "classique",
+      credited_to: "charenton",
+    };
   }
 
   const { data: goal, error } = await supabaseAdmin
     .from("goals")
-    .insert({
-      match_id: matchId,
-      scorer_player_id: unknownScorer ? null : scorerId,
-      assist_player_id: assistId,
-      minute: minuteRaw ? Number(minuteRaw) : null,
-      is_unknown_scorer: unknownScorer,
-    })
+    .insert({ match_id: matchId, minute, ...payload })
     .select("*")
     .single();
   if (error) throw new Error(error.message);
@@ -41,8 +62,10 @@ export async function addGoal(matchId: string, formData: FormData) {
   });
 
   try {
-    if (!unknownScorer && scorerId) await checkAndAwardBadges(scorerId);
-    if (assistId) await checkAndAwardBadges(assistId);
+    if (payload.credited_to === "charenton" && payload.scorer_player_id) {
+      await checkAndAwardBadges(payload.scorer_player_id);
+    }
+    if (payload.assist_player_id) await checkAndAwardBadges(payload.assist_player_id);
   } catch {
     // les badges sont secondaires — une erreur ici ne doit pas faire échouer l'ajout du but
   }

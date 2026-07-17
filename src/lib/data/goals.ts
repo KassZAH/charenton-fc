@@ -8,6 +8,19 @@ export type GoalWithNames = Goal & {
   assist_name: string | null;
 };
 
+export function computeScorerName(
+  g: Goal,
+  nameById: Map<string, string>
+): string | null {
+  if (g.goal_type === "csc" && g.credited_to === "charenton") return "CSC adverse";
+  if (g.goal_type === "csc" && g.credited_to === "opponent") {
+    return g.scorer_player_id ? `CSC — ${nameById.get(g.scorer_player_id) ?? "Joueur"}` : "CSC Charenton";
+  }
+  if (g.is_unknown_scorer) return "Buteur inconnu";
+  if (g.scorer_player_id) return nameById.get(g.scorer_player_id) ?? "Joueur";
+  return null;
+}
+
 export async function getMatchGoals(matchId: string): Promise<GoalWithNames[]> {
   const [players, { data: goals, error }] = await Promise.all([
     getActivePlayers(),
@@ -24,11 +37,7 @@ export async function getMatchGoals(matchId: string): Promise<GoalWithNames[]> {
 
   return (goals ?? []).map((g) => ({
     ...g,
-    scorer_name: g.is_unknown_scorer
-      ? "Buteur inconnu"
-      : g.scorer_player_id
-        ? (nameById.get(g.scorer_player_id) ?? "Joueur")
-        : null,
+    scorer_name: computeScorerName(g, nameById),
     assist_name: g.assist_player_id ? (nameById.get(g.assist_player_id) ?? "Joueur") : null,
   }));
 }

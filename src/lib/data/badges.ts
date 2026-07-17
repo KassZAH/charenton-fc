@@ -60,7 +60,11 @@ function longestStreak<T>(items: T[], isHit: (item: T) => boolean): number {
 export async function checkAndAwardBadges(playerId: string): Promise<void> {
   const [{ data: playedRows }, { data: goalRows }, { data: cardRows }] = await Promise.all([
     supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true),
-    supabaseAdmin.from("goals").select("match_id, scorer_player_id, assist_player_id").is("deleted_at", null),
+    supabaseAdmin
+      .from("goals")
+      .select("match_id, scorer_player_id, assist_player_id")
+      .eq("credited_to", "charenton")
+      .is("deleted_at", null),
     supabaseAdmin.from("cards").select("card_type").eq("player_id", playerId).is("deleted_at", null),
   ]);
 

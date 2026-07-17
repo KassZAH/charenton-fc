@@ -249,6 +249,7 @@ export type Database = {
         Row: {
           assist_player_id: string | null
           created_at: string | null
+          credited_to: string
           deleted_at: string | null
           goal_type: string | null
           id: string
@@ -260,6 +261,7 @@ export type Database = {
         Insert: {
           assist_player_id?: string | null
           created_at?: string | null
+          credited_to?: string
           deleted_at?: string | null
           goal_type?: string | null
           id?: string
@@ -271,6 +273,7 @@ export type Database = {
         Update: {
           assist_player_id?: string | null
           created_at?: string | null
+          credited_to?: string
           deleted_at?: string | null
           goal_type?: string | null
           id?: string

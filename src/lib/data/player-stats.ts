@@ -19,11 +19,13 @@ export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
       .from("goals")
       .select("*", { count: "exact", head: true })
       .eq("scorer_player_id", playerId)
+      .eq("credited_to", "charenton")
       .is("deleted_at", null),
     supabaseAdmin
       .from("goals")
       .select("*", { count: "exact", head: true })
       .eq("assist_player_id", playerId)
+      .eq("credited_to", "charenton")
       .is("deleted_at", null),
     supabaseAdmin
       .from("match_players")
@@ -107,6 +109,7 @@ export async function getPlayerAdvancedStats(playerId: string): Promise<PlayerAd
       .from("goals")
       .select("match_id, scorer_player_id, assist_player_id")
       .in("match_id", playedMatchIds)
+      .eq("credited_to", "charenton")
       .is("deleted_at", null),
   ]);
   if (matchesRes.error) throw new Error(matchesRes.error.message);
@@ -217,6 +220,7 @@ export async function getPlayerMatchHistory(playerId: string): Promise<PlayerMat
     .from("goals")
     .select("match_id, scorer_player_id, assist_player_id")
     .in("match_id", matchIds)
+    .eq("credited_to", "charenton")
     .is("deleted_at", null);
   if (goalsError) throw new Error(goalsError.message);
 

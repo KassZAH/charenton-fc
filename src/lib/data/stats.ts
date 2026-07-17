@@ -24,7 +24,7 @@ function countBy(rows: { id: string | null }[], nameById: Map<string, string>): 
 export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: goals, error }] = await Promise.all([
     getActivePlayers(),
-    supabaseAdmin.from("goals").select("scorer_player_id").is("deleted_at", null),
+    supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null),
   ]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
@@ -35,7 +35,7 @@ export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
 export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: goals, error }] = await Promise.all([
     getActivePlayers(),
-    supabaseAdmin.from("goals").select("assist_player_id").is("deleted_at", null),
+    supabaseAdmin.from("goals").select("assist_player_id").eq("credited_to", "charenton").is("deleted_at", null),
   ]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));

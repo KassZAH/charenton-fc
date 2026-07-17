@@ -13,12 +13,20 @@ export default async function MatchesPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Matchs</h1>
         {isElevatedRole(user.role) && (
-          <Link
-            href="/matches/new"
-            className="rounded-full bg-gold px-3 py-1.5 text-xs font-bold text-navy-deep"
-          >
-            + Nouveau match
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              href="/matches/review"
+              className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
+            >
+              À vérifier
+            </Link>
+            <Link
+              href="/matches/new"
+              className="rounded-full bg-gold px-3 py-1.5 text-xs font-bold text-navy-deep"
+            >
+              + Nouveau match
+            </Link>
+          </div>
         )}
       </div>
 
