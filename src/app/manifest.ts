@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Statistiques et convocations de Charenton FC",
     start_url: "/",
     display: "standalone",
-    background_color: "#ffffff",
-    theme_color: "#1c3762",
+    background_color: "#070f1f",
+    theme_color: "#142a4f",
     icons: [
       {
         src: "/icons/192",

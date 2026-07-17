@@ -14,8 +14,8 @@ type PlayerCardData = {
 
 const WIDTH = 1080;
 const HEIGHT = 1350;
-const NAVY = "#1c3762";
-const GOLD = "#e8b53a";
+const NAVY = "#142a4f";
+const GOLD = "#f0b93a";
 
 function roundRect(
   ctx: CanvasRenderingContext2D,
@@ -156,7 +156,7 @@ export function PlayerCardButton({ player }: { player: PlayerCardData }) {
         type="button"
         onClick={generateAndShare}
         disabled={isGenerating}
-        className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70 disabled:opacity-60"
+        className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80 disabled:opacity-60"
       >
         {isGenerating ? "Génération…" : "Carte joueur"}
       </button>

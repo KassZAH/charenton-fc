@@ -123,11 +123,11 @@ export default async function HelpPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-1 text-lg font-bold text-navy">Aide 🙋</h1>
-      <p className="mb-6 text-sm text-navy/60">Le mode d&apos;emploi de l&apos;appli, en deux minutes.</p>
+      <h1 className="mb-1 text-lg font-extrabold text-cream">Aide 🙋</h1>
+      <p className="mb-6 text-sm text-steel/70">Le mode d&apos;emploi de l&apos;appli, en deux minutes.</p>
 
       <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-gold">
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-gold">
           Pour tout le monde
         </h2>
         <ul className="space-y-3">
@@ -138,10 +138,10 @@ export default async function HelpPage() {
       </section>
 
       <section>
-        <h2 className="mb-1 text-sm font-semibold uppercase tracking-wide text-gold">
+        <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-gold">
           🔒 Réservé aux admins
         </h2>
-        <p className="mb-3 text-xs text-navy/50">
+        <p className="mb-3 text-xs text-steel/70">
           Le rôle coach a exactement les mêmes droits, plus la feuille tactique (formation et placement des
           joueurs) sur chaque match.
         </p>
@@ -159,15 +159,15 @@ function HelpCard({ item, admin = false }: { item: Item; admin?: boolean }) {
   return (
     <li
       className={`flex gap-3 rounded-xl border p-3 ${
-        admin ? "border-gold/30 bg-gold/5" : "border-navy/10 bg-white"
+        admin ? "border-gold/30 bg-gold/5" : "border-white/10 bg-navy-card"
       }`}
     >
       <span className="text-xl leading-none" aria-hidden>
         {item.emoji}
       </span>
       <div>
-        <p className="text-sm font-semibold text-navy">{item.title}</p>
-        <p className="mt-0.5 text-xs leading-relaxed text-navy/70">{item.text}</p>
+        <p className="text-sm font-semibold text-cream">{item.title}</p>
+        <p className="mt-0.5 text-xs leading-relaxed text-cream/70">{item.text}</p>
       </div>
     </li>
   );

@@ -48,14 +48,14 @@ export function BulkMatchForm({ opponents }: { opponents: Opponent[] }) {
   return (
     <div className="space-y-4">
       {rows.map((row, i) => (
-        <div key={row.id} className="space-y-2 rounded-xl border border-navy/10 bg-white p-3">
+        <div key={row.id} className="space-y-2 rounded-xl border border-white/10 bg-navy-card p-3">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase text-navy/50">Match {i + 1}</p>
+            <p className="text-xs font-semibold uppercase text-steel/70">Match {i + 1}</p>
             {rows.length > 1 && (
               <button
                 type="button"
                 onClick={() => removeRow(row.id)}
-                className="text-xs font-medium text-navy/40"
+                className="text-xs font-medium text-steel/60"
               >
                 Retirer
               </button>
@@ -65,7 +65,7 @@ export function BulkMatchForm({ opponents }: { opponents: Opponent[] }) {
           <select
             value={row.opponentId}
             onChange={(e) => updateRow(row.id, { opponentId: e.target.value, newOpponentName: "" })}
-            className="w-full rounded-lg border border-navy/20 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
           >
             <option value="">— Adversaire existant —</option>
             {opponents.map((o) => (
@@ -80,14 +80,14 @@ export function BulkMatchForm({ opponents }: { opponents: Opponent[] }) {
             value={row.newOpponentName}
             onChange={(e) => updateRow(row.id, { newOpponentName: e.target.value, opponentId: "" })}
             placeholder="Ou nouvel adversaire"
-            className="w-full rounded-lg border border-navy/20 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream placeholder:text-steel/50"
           />
 
           <input
             type="date"
             value={row.date}
             onChange={(e) => updateRow(row.id, { date: e.target.value })}
-            className="w-full rounded-lg border border-navy/20 px-3 py-2 text-sm"
+            className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
           />
         </div>
       ))}
@@ -95,13 +95,13 @@ export function BulkMatchForm({ opponents }: { opponents: Opponent[] }) {
       <button
         type="button"
         onClick={addRow}
-        className="w-full rounded-lg border border-navy/20 py-2 text-sm font-medium text-navy/70"
+        className="w-full rounded-lg border border-white/15 py-2 text-sm font-medium text-cream/80"
       >
         + Ajouter un match
       </button>
 
       {error && (
-        <p className="text-sm font-medium text-red-600" role="alert">
+        <p className="text-sm font-medium text-red-400" role="alert">
           {error}
         </p>
       )}
@@ -110,7 +110,7 @@ export function BulkMatchForm({ opponents }: { opponents: Opponent[] }) {
         type="button"
         onClick={submit}
         disabled={isPending}
-        className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-gold disabled:opacity-60"
+        className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep disabled:opacity-60"
       >
         {isPending ? "Création..." : rows.length > 1 ? `Créer les ${rows.length} matchs` : "Créer le match"}
       </button>

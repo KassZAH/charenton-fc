@@ -6,7 +6,7 @@ export default async function NewPlayerPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold text-navy">Ajouter un joueur</h1>
+      <h1 className="mb-4 text-lg font-extrabold text-cream">Ajouter un joueur</h1>
 
       <form action={createPlayer} className="space-y-4">
         <Field label="Prénom" name="first_name" required />
@@ -19,14 +19,14 @@ export default async function NewPlayerPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-navy" htmlFor="role">
+          <label className="block text-sm font-medium text-cream" htmlFor="role">
             Rôle
           </label>
           <select
             id="role"
             name="role"
             defaultValue="player"
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           >
             <option value="player">Joueur (PIN à 4 chiffres)</option>
             <option value="admin">Admin (PIN à 6 chiffres)</option>
@@ -36,7 +36,7 @@ export default async function NewPlayerPage() {
 
         <Field label="PIN" name="pin" inputMode="numeric" required />
 
-        <button type="submit" className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-gold">
+        <button type="submit" className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep">
           Ajouter
         </button>
       </form>
@@ -59,7 +59,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-navy" htmlFor={name}>
+      <label className="block text-sm font-medium text-cream" htmlFor={name}>
         {label}
       </label>
       <input
@@ -68,7 +68,7 @@ function Field({
         name={name}
         required={required}
         inputMode={inputMode}
-        className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+        className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
       />
     </div>
   );

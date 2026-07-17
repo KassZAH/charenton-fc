@@ -24,13 +24,13 @@ export default async function LineupPage({ params }: { params: Promise<{ id: str
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-1 text-lg font-bold text-navy">Feuille tactique</h1>
-      <p className="mb-6 text-sm text-navy/60">
+      <h1 className="mb-1 text-lg font-extrabold text-cream">Feuille tactique</h1>
+      <p className="mb-6 text-sm text-steel/70">
         {isHome ? "vs" : "@"} {opponentLabel} · {formatMatchDate(match.match_date)}
       </p>
 
       {presentPlayers.length === 0 ? (
-        <p className="rounded-2xl border border-navy/10 bg-white p-4 text-sm text-navy/60">
+        <p className="rounded-2xl border border-white/10 bg-navy-card p-4 text-sm text-steel/70">
           Aucun joueur n&apos;a encore répondu « Présent » pour ce match — reviens une fois qu&apos;il y a des
           réponses.
         </p>

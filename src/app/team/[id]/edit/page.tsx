@@ -12,7 +12,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold text-navy">Modifier {player.first_name}</h1>
+      <h1 className="mb-4 text-lg font-extrabold text-cream">Modifier {player.first_name}</h1>
 
       <form action={updatePlayer.bind(null, player.id)} className="space-y-4">
         <Field label="Prénom" name="first_name" defaultValue={player.first_name} required />
@@ -30,14 +30,14 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-navy" htmlFor="strong_foot">
+          <label className="block text-sm font-medium text-cream" htmlFor="strong_foot">
             Pied fort
           </label>
           <select
             id="strong_foot"
             name="strong_foot"
             defaultValue={player.strong_foot ?? ""}
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           >
             <option value="">—</option>
             <option value="left">Gauche</option>
@@ -47,7 +47,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-navy" htmlFor="quote">
+          <label className="block text-sm font-medium text-cream" htmlFor="quote">
             Citation
           </label>
           <input
@@ -55,31 +55,31 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
             type="text"
             name="quote"
             defaultValue={player.quote ?? ""}
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-navy" htmlFor="role">
+          <label className="block text-sm font-medium text-cream" htmlFor="role">
             Rôle
           </label>
           <select
             id="role"
             name="role"
             defaultValue={player.role}
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           >
             <option value="player">Joueur (PIN à 4 chiffres)</option>
             <option value="admin">Admin (PIN à 6 chiffres)</option>
             <option value="coach">Coach (PIN à 6 chiffres)</option>
           </select>
-          <p className="mt-1 text-xs text-navy/50">
+          <p className="mt-1 text-xs text-steel/70">
             Un changement de rôle ne prend effet qu&apos;à la prochaine connexion de ce joueur.
           </p>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-navy" htmlFor="new_pin">
+          <label className="block text-sm font-medium text-cream" htmlFor="new_pin">
             Nouveau PIN
           </label>
           <input
@@ -88,11 +88,11 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
             name="new_pin"
             inputMode="numeric"
             placeholder="Laisser vide pour ne pas changer"
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
           />
         </div>
 
-        <button type="submit" className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-gold">
+        <button type="submit" className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep">
           Enregistrer
         </button>
       </form>
@@ -103,7 +103,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
       >
         <button
           type="submit"
-          className="w-full rounded-lg border border-navy/20 py-3 text-sm font-semibold text-navy/70"
+          className="w-full rounded-lg border border-white/15 py-3 text-sm font-semibold text-cream/80"
         >
           {player.status === "archived" ? "Réactiver ce joueur" : "Archiver ce joueur"}
         </button>
@@ -127,7 +127,7 @@ function Field({
 }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-navy" htmlFor={name}>
+      <label className="block text-sm font-medium text-cream" htmlFor={name}>
         {label}
       </label>
       <input
@@ -136,7 +136,7 @@ function Field({
         name={name}
         required={required}
         defaultValue={defaultValue}
-        className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+        className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
       />
     </div>
   );

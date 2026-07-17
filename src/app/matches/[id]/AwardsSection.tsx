@@ -20,8 +20,8 @@ export async function AwardsSection({
   const votablePlayers = players.filter((p) => p.id !== myPlayerId);
 
   return (
-    <section className="mt-8 border-t border-navy/10 pt-6">
-      <h2 className="mb-3 text-sm font-semibold text-navy">Récompenses du match</h2>
+    <section className="mt-8 border-t border-white/10 pt-6">
+      <h2 className="mb-3 text-sm font-bold text-cream">Récompenses du match</h2>
       <div className="space-y-3">
         {results.map((result) => (
           <AwardVoting

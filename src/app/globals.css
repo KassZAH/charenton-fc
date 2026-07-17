@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #070f1f;
+  --foreground: #f2f2ee;
 }
 
 @theme inline {
@@ -11,13 +11,57 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 
-  /* Couleurs du club Charenton FC */
-  --color-navy: #1c3762;
-  --color-gold: #e8b53a;
+  /* Couleurs du club Charenton FC — thème "Le Stade" */
+  --color-navy: #142a4f;
+  --color-navy-light: #1f3d70;
+  --color-navy-mid: #0c1a33;
+  --color-navy-deep: #070f1f;
+  --color-navy-card: #16294d;
+  --color-gold: #f0b93a;
+  --color-cream: #f2f2ee;
+  --color-steel: #9fb0d0;
 }
 
 body {
-  background: var(--background);
+  min-height: 100dvh;
+  background-color: var(--color-navy-deep);
+  background-image: radial-gradient(120% 70% at 50% -10%, var(--color-navy-light) 0%, var(--color-navy-mid) 55%, var(--color-navy-deep) 100%);
+  background-attachment: fixed;
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Filet pointillé façon souche de billet, pour séparer les blocs d'une carte */
+.divider-dashed {
+  height: 1px;
+  background-image: repeating-linear-gradient(to right, rgb(255 255 255 / 0.2) 0 6px, transparent 6px 12px);
+}
+
+/* Fanion façon coin de terrain, posé en haut à droite d'une carte */
+.corner-pennant {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 52px 52px 0;
+  border-color: transparent var(--color-gold) transparent transparent;
+}
+.corner-pennant span {
+  position: absolute;
+  top: 8px;
+  right: -44px;
+  transform: rotate(45deg);
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--color-navy-deep);
+  white-space: nowrap;
+}
+
+/* Titres resserrés façon panneau d'affichage de stade */
+.text-scoreboard {
+  transform: scaleX(0.96);
+  transform-origin: left;
+  letter-spacing: -0.01em;
 }

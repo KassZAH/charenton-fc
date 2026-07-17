@@ -25,13 +25,13 @@ export default async function ComparePage({
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <h1 className="mb-4 text-lg font-bold text-navy">Comparer deux joueurs</h1>
+      <h1 className="mb-4 text-lg font-extrabold text-cream">Comparer deux joueurs</h1>
 
       <form method="get" className="mb-6 grid grid-cols-2 gap-3">
         <select
           name="a"
           defaultValue={a ?? ""}
-          className="rounded-lg border border-navy/20 px-3 py-2 text-sm"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
         >
           <option value="">— Joueur A —</option>
           {players.map((p) => (
@@ -43,7 +43,7 @@ export default async function ComparePage({
         <select
           name="b"
           defaultValue={b ?? ""}
-          className="rounded-lg border border-navy/20 px-3 py-2 text-sm"
+          className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream"
         >
           <option value="">— Joueur B —</option>
           {players.map((p) => (
@@ -54,7 +54,7 @@ export default async function ComparePage({
         </select>
         <button
           type="submit"
-          className="col-span-2 rounded-lg bg-navy py-2 text-sm font-semibold text-gold"
+          className="col-span-2 rounded-lg bg-gold py-2 text-sm font-bold text-navy-deep"
         >
           Comparer
         </button>
@@ -62,7 +62,7 @@ export default async function ComparePage({
 
       {playerA && playerB && statsA && statsB && advA && advB ? (
         <div className="space-y-1.5">
-          <div className="flex items-center justify-between px-1 text-xs font-semibold uppercase text-navy/50">
+          <div className="flex items-center justify-between px-1 text-xs font-bold uppercase tracking-wide text-steel/70">
             <span>{playerA.nickname || playerA.first_name}</span>
             <span>{playerB.nickname || playerB.first_name}</span>
           </div>
@@ -84,7 +84,7 @@ export default async function ComparePage({
           <CompareRow label="Cartons rouges" a={statsA.redCards} b={statsB.redCards} />
         </div>
       ) : (
-        <p className="text-sm text-navy/50">Choisis deux joueurs à comparer.</p>
+        <p className="text-sm text-steel/70">Choisis deux joueurs à comparer.</p>
       )}
     </div>
   );
@@ -104,14 +104,14 @@ function CompareRow({
   const aWins = a > b;
   const bWins = b > a;
   return (
-    <div className="rounded-xl border border-navy/10 bg-white p-3">
-      <p className="mb-1 text-center text-xs text-navy/50">{label}</p>
+    <div className="rounded-xl border border-white/10 bg-navy-card p-3">
+      <p className="mb-1 text-center text-xs text-steel/70">{label}</p>
       <div className="flex items-center justify-between">
-        <span className={`text-base font-bold ${aWins ? "text-gold" : "text-navy"}`}>
+        <span className={`text-base font-bold ${aWins ? "text-gold" : "text-cream"}`}>
           {a}
           {suffix}
         </span>
-        <span className={`text-base font-bold ${bWins ? "text-gold" : "text-navy"}`}>
+        <span className={`text-base font-bold ${bWins ? "text-gold" : "text-cream"}`}>
           {b}
           {suffix}
         </span>

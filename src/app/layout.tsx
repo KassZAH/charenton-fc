@@ -24,7 +24,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#1c3762",
+  themeColor: "#142a4f",
   width: "device-width",
   initialScale: 1,
 };
@@ -41,7 +41,7 @@ export default async function RootLayout({
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-navy">
+      <body className="min-h-full flex flex-col text-cream">
         {user ? <AppShell user={user}>{children}</AppShell> : children}
       </body>
     </html>

@@ -32,38 +32,38 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="flex items-start justify-between">
-        <p className="text-xs font-semibold uppercase tracking-wide text-gold">
+        <p className="text-xs font-bold uppercase tracking-widest text-gold">
           {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
         </p>
         {isElevatedRole(user.role) && (
           <div className="flex gap-2">
             <Link
               href={`/matches/${match.id}/lineup`}
-              className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
+              className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-cream/80"
             >
               Feuille tactique
             </Link>
             <Link
               href={`/matches/${match.id}/edit`}
-              className="rounded-full border border-navy/20 px-3 py-1 text-xs font-medium text-navy/70"
+              className="rounded-full border border-white/15 px-3 py-1 text-xs font-medium text-cream/80"
             >
               Modifier
             </Link>
           </div>
         )}
       </div>
-      <h1 className="mt-1 text-xl font-bold text-navy">
+      <h1 className="text-scoreboard mt-1 text-xl font-extrabold text-cream">
         {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
       </h1>
-      <p className="mt-2 text-sm text-navy/70">{formatMatchDate(match.match_date)}</p>
+      <p className="mt-2 text-sm text-steel">{formatMatchDate(match.match_date)}</p>
       {match.kickoff_time && (
-        <p className="text-sm text-navy/70">Coup d&apos;envoi : {formatTime(match.kickoff_time)}</p>
+        <p className="text-sm text-steel">Coup d&apos;envoi : {formatTime(match.kickoff_time)}</p>
       )}
-      {match.location && <p className="text-sm text-navy/70">{match.location}</p>}
+      {match.location && <p className="text-sm text-steel">{match.location}</p>}
       {match.status !== "completed" && (
         <a
           href={`/matches/${match.id}/calendar`}
-          className="mt-1 inline-block text-xs font-medium text-navy/50 underline underline-offset-2"
+          className="mt-1 inline-block text-xs font-medium text-steel/70 underline underline-offset-2"
         >
           Ajouter à mon calendrier
         </a>
@@ -71,18 +71,18 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {match.status === "completed" ? (
         <>
-          <p className="mt-4 text-3xl font-bold text-navy">
+          <p className="mt-4 text-4xl font-extrabold tabular-nums text-gold">
             {match.team_score} – {match.opponent_score}
           </p>
           {match.description && (
-            <p className="mt-3 rounded-xl border border-navy/10 bg-white p-3 text-sm italic text-navy/70">
+            <p className="mt-3 rounded-xl border border-white/10 bg-navy-card p-3 text-sm italic text-cream/80">
               {match.description}
             </p>
           )}
         </>
       ) : (
         <section className="mt-6">
-          <h2 className="mb-3 text-sm font-semibold text-navy">Ta présence</h2>
+          <h2 className="mb-3 text-sm font-bold text-cream">Ta présence</h2>
           <AvailabilityButtons matchId={match.id} initialStatus={myStatus} />
         </section>
       )}
@@ -190,16 +190,16 @@ async function AdminSection({
   }
 
   return (
-    <section className="mt-8 border-t border-navy/10 pt-6">
-      <h2 className="mb-3 text-sm font-semibold text-navy">Réponses de l&apos;équipe</h2>
+    <section className="mt-8 border-t border-white/10 pt-6">
+      <h2 className="mb-3 text-sm font-bold text-cream">Réponses de l&apos;équipe</h2>
       <div className="space-y-4">
         {GROUP_ORDER.map((key) => (
           <div key={key}>
-            <p className="mb-1.5 text-xs font-semibold uppercase text-navy/50">
+            <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-steel/70">
               {key === "none" ? "Pas encore répondu" : AVAILABILITY_LABELS[key]} ({grouped[key].length})
             </p>
             {grouped[key].length === 0 ? (
-              <p className="text-sm text-navy/40">—</p>
+              <p className="text-sm text-steel/50">—</p>
             ) : (
               <div className="space-y-1.5">
                 {grouped[key].map((g) => (
@@ -222,7 +222,7 @@ async function AdminSection({
           href={whatsappShareUrl(convocationText)}
           target="_blank"
           rel="noopener noreferrer"
-          className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+          className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
         >
           Partager la convocation
         </a>
@@ -231,7 +231,7 @@ async function AdminSection({
             href={whatsappShareUrl(reminderText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+            className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
           >
             Relancer les sans-réponse
           </a>
@@ -241,7 +241,7 @@ async function AdminSection({
             href={whatsappShareUrl(resultText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-full border border-navy/20 px-3 py-1.5 text-xs font-medium text-navy/70"
+            className="rounded-full border border-white/15 px-3 py-1.5 text-xs font-medium text-cream/80"
           >
             Partager le résultat
           </a>
@@ -249,7 +249,7 @@ async function AdminSection({
       </div>
 
       <form action={updateMatchResult.bind(null, matchId)} className="mt-6 flex items-end gap-3">
-        <label className="flex-1 text-sm text-navy">
+        <label className="flex-1 text-sm text-cream">
           Score Charenton
           <input
             type="number"
@@ -257,10 +257,10 @@ async function AdminSection({
             required
             min={0}
             defaultValue={teamScore ?? ""}
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           />
         </label>
-        <label className="flex-1 text-sm text-navy">
+        <label className="flex-1 text-sm text-cream">
           Score adverse
           <input
             type="number"
@@ -268,10 +268,10 @@ async function AdminSection({
             required
             min={0}
             defaultValue={opponentScore ?? ""}
-            className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
           />
         </label>
-        <button type="submit" className="rounded-lg bg-navy px-4 py-2 text-sm font-semibold text-gold">
+        <button type="submit" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy-deep">
           {isCompleted ? "Corriger" : "Valider"}
         </button>
       </form>

@@ -10,7 +10,7 @@ export function ResetButton() {
         );
         if (!ok) e.preventDefault();
       }}
-      className="w-full rounded-lg border border-red-300 bg-red-50 py-3 text-sm font-semibold text-red-600"
+      className="w-full rounded-lg border border-red-400/30 bg-red-500/10 py-3 text-sm font-semibold text-red-300"
     >
       Tout réinitialiser (saison)
     </button>

@@ -33,34 +33,34 @@ export default async function StatsPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-lg font-bold text-navy">Stats</h1>
+        <h1 className="text-scoreboard text-xl font-extrabold text-cream">Stats</h1>
         <div className="flex gap-2 text-xs font-medium">
-          <Link href="/records" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+          <Link href="/records" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
             Records
           </Link>
-          <Link href="/season-recap" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+          <Link href="/season-recap" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
             Bilan
           </Link>
-          <Link href="/team/compare" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+          <Link href="/team/compare" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
             Comparer
           </Link>
           {isElevatedRole(user.role) && (
-            <Link href="/history" className="rounded-full border border-navy/20 px-3 py-1 text-navy/70">
+            <Link href="/history" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
               Historique
             </Link>
           )}
         </div>
       </div>
 
-      <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-navy/60">Équipe</h2>
+      <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
+        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-steel">Équipe</h2>
         <div className="grid grid-cols-4 gap-2 text-center">
           <Stat label="Joués" value={team.played} />
           <Stat label="Gagnés" value={team.wins} />
           <Stat label="Nuls" value={team.draws} />
           <Stat label="Perdus" value={team.losses} />
         </div>
-        <table className="mt-4 w-full border-t border-navy/10 text-sm">
+        <table className="mt-4 w-full border-t border-white/10 text-sm">
           <tbody>
             <TeamStatRow label="Buts marqués" value={team.goalsFor} />
             <TeamStatRow label="Buts encaissés" value={team.goalsAgainst} />
@@ -71,21 +71,21 @@ export default async function StatsPage() {
         </table>
 
         {highlights.currentStreak && (
-          <p className="mt-1 text-sm text-navy/70">
+          <p className="mt-1 text-sm text-cream/80">
             Série en cours : {highlights.currentStreak.count} {STREAK_LABELS[highlights.currentStreak.type]}
           </p>
         )}
         {highlights.bestWinStreak > 1 && (
-          <p className="text-sm text-navy/70">Meilleure série de victoires : {highlights.bestWinStreak}</p>
+          <p className="text-sm text-cream/80">Meilleure série de victoires : {highlights.bestWinStreak}</p>
         )}
         {highlights.biggestWin && (
-          <p className="mt-1 text-sm text-navy/70">
+          <p className="mt-1 text-sm text-cream/80">
             Plus grosse victoire : {highlights.biggestWin.teamScore}–{highlights.biggestWin.opponentScore} vs{" "}
             {highlights.biggestWin.opponentName}
           </p>
         )}
         {highlights.biggestLoss && (
-          <p className="text-sm text-navy/70">
+          <p className="text-sm text-cream/80">
             Plus grosse défaite : {highlights.biggestLoss.teamScore}–{highlights.biggestLoss.opponentScore} vs{" "}
             {highlights.biggestLoss.opponentName}
           </p>
@@ -107,17 +107,17 @@ export default async function StatsPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-lg font-bold text-navy">{value}</p>
-      <p className="text-xs text-navy/50">{label}</p>
+      <p className="text-2xl font-extrabold tabular-nums text-gold">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-steel">{label}</p>
     </div>
   );
 }
 
 function TeamStatRow({ label, value, last = false }: { label: string; value: number | string; last?: boolean }) {
   return (
-    <tr className={last ? "" : "border-b border-navy/5"}>
-      <td className="py-1.5 text-navy/60">{label}</td>
-      <td className="py-1.5 text-right font-semibold tabular-nums text-navy">{value}</td>
+    <tr className={last ? "" : "border-b border-white/8"}>
+      <td className="py-1.5 text-steel">{label}</td>
+      <td className="py-1.5 text-right font-semibold tabular-nums text-cream">{value}</td>
     </tr>
   );
 }
@@ -125,22 +125,22 @@ function TeamStatRow({ label, value, last = false }: { label: string; value: num
 function StatList({ title, rows }: { title: string; rows: PlayerCount[] }) {
   return (
     <section className="mb-6">
-      <h2 className="mb-2 text-sm font-semibold text-navy/60">{title}</h2>
+      <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">{title}</h2>
       {rows.length === 0 ? (
-        <p className="text-sm text-navy/50">Aucune donnée pour le moment.</p>
+        <p className="text-sm text-steel/70">Aucune donnée pour le moment.</p>
       ) : (
         <ol className="space-y-1.5">
           {rows.map((row, i) => (
             <li key={row.playerId}>
               <Link
                 href={`/team/${row.playerId}`}
-                className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2"
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2"
               >
-                <span className="text-sm text-navy">
-                  <span className="mr-2 text-navy/40">{i + 1}.</span>
+                <span className="text-sm text-cream">
+                  <span className="mr-2 text-steel/60">{i + 1}.</span>
                   {row.name}
                 </span>
-                <span className="text-sm font-bold text-navy">{row.count}</span>
+                <span className="text-sm font-bold text-gold">{row.count}</span>
               </Link>
             </li>
           ))}

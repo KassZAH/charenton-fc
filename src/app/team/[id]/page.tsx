@@ -46,27 +46,27 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   return (
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-6 flex items-center gap-4">
-        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-navy text-xl font-bold text-gold">
+        <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-gold text-xl font-extrabold text-navy-deep">
           {initials(player.first_name, player.last_name)}
         </span>
         <div className="flex-1">
-          <h1 className="flex items-center gap-2 text-lg font-bold text-navy">
+          <h1 className="flex items-center gap-2 text-lg font-extrabold text-cream">
             {player.nickname || player.first_name}
             {player.shirt_number != null && (
-              <span className="text-sm font-normal text-navy/50">#{player.shirt_number}</span>
+              <span className="text-sm font-normal text-steel/70">#{player.shirt_number}</span>
             )}
             {player.role === "admin" && (
-              <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy">
+              <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy-deep">
                 Admin
               </span>
             )}
             {player.role === "coach" && (
-              <span className="rounded-full bg-navy px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold">
+              <span className="rounded-full border border-gold/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold">
                 Coach
               </span>
             )}
           </h1>
-          <p className="text-sm text-navy/50">
+          <p className="text-sm text-steel/70">
             {[player.primary_position, player.status === "archived" ? "Archivé" : null]
               .filter(Boolean)
               .join(" · ") || "—"}
@@ -87,7 +87,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
           {isElevatedRole(user.role) && (
             <Link
               href={`/team/${player.id}/edit`}
-              className="text-xs font-medium text-navy/50 underline underline-offset-2"
+              className="text-xs font-medium text-steel/70 underline underline-offset-2"
             >
               Modifier
             </Link>
@@ -96,36 +96,36 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       </div>
 
       {player.quote && (
-        <p className="mb-6 rounded-xl border border-navy/10 bg-white p-3 text-sm italic text-navy/70">
+        <p className="mb-6 rounded-xl border border-white/10 bg-navy-card p-3 text-sm italic text-cream/80">
           « {player.quote} »
         </p>
       )}
 
       {latestMeasurement && (latestMeasurement.weight_kg != null || latestMeasurement.height_cm != null) && (
-        <div className="mb-6 flex items-center justify-between rounded-xl border border-navy/10 bg-white p-3 text-sm text-navy">
+        <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3 text-sm text-cream">
           <span>
             {latestMeasurement.weight_kg != null && `${latestMeasurement.weight_kg} kg`}
             {latestMeasurement.height_cm != null && ` · ${latestMeasurement.height_cm} cm`}
             {weightEvolution != null && (
-              <span className={weightEvolution > 0 ? "text-red-500" : "text-emerald-600"}>
+              <span className={weightEvolution > 0 ? "text-red-400" : "text-emerald-400"}>
                 {" "}
                 ({weightEvolution > 0 ? "+" : ""}
                 {weightEvolution} depuis le début)
               </span>
             )}
           </span>
-          <span className="text-xs text-navy/50">{formatShortDate(latestMeasurement.recorded_at)}</span>
+          <span className="text-xs text-steel/70">{formatShortDate(latestMeasurement.recorded_at)}</span>
         </div>
       )}
 
-      <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4">
+      <section className="mb-6 rounded-2xl border border-white/10 bg-navy-card p-4">
         <div className="grid grid-cols-3 gap-2 text-center">
           <Stat label="Présences" value={stats.matchesPlayed} />
           <Stat label="Buts" value={stats.goals} />
           <Stat label="Passes déc." value={stats.assists} />
         </div>
         {(stats.yellowCards > 0 || stats.redCards > 0) && (
-          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-navy/10 pt-3 text-center">
+          <div className="mt-3 grid grid-cols-2 gap-2 border-t border-white/10 pt-3 text-center">
             <Stat label="Jaunes" value={stats.yellowCards} />
             <Stat label="Rouges" value={stats.redCards} />
           </div>
@@ -134,7 +134,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
 
       {stats.matchesPlayed > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-sm font-semibold text-navy/60">En détail</h2>
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">En détail</h2>
           <ul className="space-y-1.5">
             <DetailRow label="Taux de présence" value={`${advanced.presenceRate}%`} />
             <DetailRow label="Taux de victoire (présent)" value={`${advanced.winRateWhenPresent}%`} />
@@ -150,20 +150,20 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       )}
 
       <section className="mb-6">
-        <h2 className="mb-2 text-sm font-semibold text-navy/60">Récompenses</h2>
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">Récompenses</h2>
         {awardWins.length === 0 ? (
-          <p className="text-sm text-navy/50">Aucune récompense pour le moment.</p>
+          <p className="text-sm text-steel/70">Aucune récompense pour le moment.</p>
         ) : (
           <ul className="space-y-1.5">
             {awardWins.map(({ award, wins }) => (
               <li
                 key={award.id}
-                className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2"
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2"
               >
-                <span className="text-sm text-navy">
+                <span className="text-sm text-cream">
                   {award.emoji} {award.name}
                 </span>
-                <span className="text-sm font-bold text-navy">×{wins}</span>
+                <span className="text-sm font-bold text-gold">×{wins}</span>
               </li>
             ))}
           </ul>
@@ -172,15 +172,15 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
 
       {badges.length > 0 && (
         <section className="mb-6">
-          <h2 className="mb-2 text-sm font-semibold text-navy/60">Badges</h2>
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">Badges</h2>
           <ul className="space-y-1.5">
             {badges.map((b) => (
               <li
                 key={b.badgeKey}
-                className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2"
+                className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2"
               >
-                <span className="text-sm text-navy">{b.label}</span>
-                <span className="text-xs text-navy/50">{formatShortDate(b.earnedAt)}</span>
+                <span className="text-sm text-cream">{b.label}</span>
+                <span className="text-xs text-steel/70">{formatShortDate(b.earnedAt)}</span>
               </li>
             ))}
           </ul>
@@ -188,9 +188,9 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       )}
 
       <section>
-        <h2 className="mb-2 text-sm font-semibold text-navy/60">Matchs joués</h2>
+        <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">Matchs joués</h2>
         {history.length === 0 ? (
-          <p className="text-sm text-navy/50">Aucun match joué pour le moment.</p>
+          <p className="text-sm text-steel/70">Aucun match joué pour le moment.</p>
         ) : (
           <ul className="space-y-2">
             {history.map(({ match, goals, assists }) => {
@@ -207,17 +207,17 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
                 <li key={match.id}>
                   <Link
                     href={`/matches/${match.id}`}
-                    className="flex items-center justify-between rounded-xl border border-navy/10 bg-white p-3"
+                    className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3"
                   >
                     <div>
-                      <p className="text-sm font-semibold text-navy">
+                      <p className="text-sm font-semibold text-cream">
                         {isHome ? "vs" : "@"} {opponentLabel}
                       </p>
-                      <p className="text-xs text-navy/60">{formatMatchDate(match.match_date)}</p>
+                      <p className="text-xs text-steel">{formatMatchDate(match.match_date)}</p>
                       {contributions && <p className="text-xs text-gold">{contributions}</p>}
                     </div>
                     {match.status === "completed" && (
-                      <span className="text-sm font-bold text-navy">
+                      <span className="text-sm font-bold tabular-nums text-gold">
                         {match.team_score}–{match.opponent_score}
                       </span>
                     )}
@@ -235,17 +235,17 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-lg font-bold text-navy">{value}</p>
-      <p className="text-xs text-navy/50">{label}</p>
+      <p className="text-2xl font-extrabold tabular-nums text-gold">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-steel">{label}</p>
     </div>
   );
 }
 
 function DetailRow({ label, value }: { label: string; value: string }) {
   return (
-    <li className="flex items-center justify-between rounded-xl border border-navy/10 bg-white px-3 py-2">
-      <span className="text-sm text-navy/70">{label}</span>
-      <span className="text-sm font-bold text-navy">{value}</span>
+    <li className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2">
+      <span className="text-sm text-cream/80">{label}</span>
+      <span className="text-sm font-bold text-cream">{value}</span>
     </li>
   );
 }

@@ -41,8 +41,10 @@ export function AvailabilityButtons({
             type="button"
             disabled={isPending}
             onClick={() => choose(value)}
-            className={`rounded-xl border py-3 text-sm font-semibold transition disabled:opacity-60 ${
-              status === value ? "border-navy bg-navy text-gold" : "border-navy/15 bg-white text-navy"
+            className={`rounded-xl border py-3 text-sm font-bold transition disabled:opacity-60 ${
+              status === value
+                ? "border-gold bg-gold text-navy-deep"
+                : "border-white/15 bg-white/5 text-cream/80"
             }`}
           >
             {AVAILABILITY_LABELS[value]}
@@ -50,12 +52,12 @@ export function AvailabilityButtons({
         ))}
       </div>
       {needsRefresh && (
-        <div className="mt-2 flex items-center justify-between rounded-xl bg-navy/5 px-3 py-2 text-xs text-navy/70">
+        <div className="mt-2 flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-xs text-cream/80">
           <span>Ça n&apos;a pas pu s&apos;enregistrer. Réactualise la page et réessaie.</span>
           <button
             type="button"
             onClick={() => window.location.reload()}
-            className="ml-2 shrink-0 rounded-full border border-navy/20 px-3 py-1 font-semibold text-navy"
+            className="ml-2 shrink-0 rounded-full border border-white/20 px-3 py-1 font-semibold text-cream"
           >
             Réactualiser
           </button>

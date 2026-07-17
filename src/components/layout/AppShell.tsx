@@ -7,8 +7,8 @@ import { BottomNav } from "./BottomNav";
 export function AppShell({ user, children }: { user: SessionPayload; children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-20 flex items-center justify-between bg-navy px-4 py-3">
-        <Link href="/" className="font-bold text-gold">
+      <header className="sticky top-0 z-20 flex items-center justify-between border-b border-white/5 bg-navy px-4 py-3">
+        <Link href="/" className="text-scoreboard font-extrabold text-gold">
           Charenton FC
         </Link>
         <form action={logout} className="flex items-center gap-3">

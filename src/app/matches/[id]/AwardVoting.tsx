@@ -36,12 +36,12 @@ export function AwardVoting({
   }
 
   return (
-    <div className="rounded-xl border border-navy/10 bg-white p-3">
+    <div className="rounded-xl border border-white/10 bg-navy-card p-3">
       <div className="mb-2 flex items-center justify-between">
-        <p className="text-sm font-semibold text-navy">
+        <p className="text-sm font-semibold text-cream">
           {award.emoji} {award.name}
         </p>
-        <p className="text-xs text-navy/50">
+        <p className="text-xs text-steel/70">
           {totalVotes} vote{totalVotes > 1 ? "s" : ""}
         </p>
       </div>
@@ -65,7 +65,7 @@ export function AwardVoting({
         value={selected ?? ""}
         disabled={isPending}
         onChange={(e) => e.target.value && vote(e.target.value)}
-        className="w-full rounded-lg border border-navy/20 px-3 py-2 text-sm disabled:opacity-60"
+        className="w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream disabled:opacity-60"
       >
         <option value="">{myVote ? "Changer mon vote" : "Voter pour..."}</option>
         {players.map((p) => (

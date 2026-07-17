@@ -64,7 +64,7 @@ export function LineupBoard({
   return (
     <form action={submit} className="space-y-5">
       <div>
-        <label className="block text-sm font-medium text-navy" htmlFor="formation">
+        <label className="block text-sm font-medium text-cream" htmlFor="formation">
           Formation
         </label>
         <select
@@ -72,7 +72,7 @@ export function LineupBoard({
           name="formation"
           value={formation}
           onChange={(e) => changeFormation(e.target.value as FormationKey)}
-          className="mt-1 w-full rounded-lg border border-navy/20 px-3 py-2"
+          className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream"
         >
           {(Object.keys(FORMATIONS) as FormationKey[]).map((key) => (
             <option key={key} value={key}>
@@ -110,7 +110,7 @@ export function LineupBoard({
       <div className="space-y-2">
         {slots.map((slot) => (
           <div key={slot.key} className="flex items-center justify-between gap-2">
-            <label className="w-32 shrink-0 text-xs font-medium text-navy/70" htmlFor={`slot_${slot.key}`}>
+            <label className="w-32 shrink-0 text-xs font-medium text-cream/80" htmlFor={`slot_${slot.key}`}>
               {slot.label}
             </label>
             <select
@@ -118,7 +118,7 @@ export function LineupBoard({
               name={`slot_${slot.key}`}
               value={positions[slot.key] ?? ""}
               onChange={(e) => setSlot(slot.key, e.target.value)}
-              className="flex-1 rounded-lg border border-navy/20 px-2 py-1.5 text-sm"
+              className="flex-1 rounded-lg border border-white/15 bg-white/5 px-2 py-1.5 text-sm text-cream"
             >
               <option value="">—</option>
               {players.map((p) => (
@@ -134,7 +134,7 @@ export function LineupBoard({
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-lg bg-navy py-3 text-sm font-semibold text-gold disabled:opacity-60"
+        className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep disabled:opacity-60"
       >
         {isPending ? "Enregistrement..." : saved ? "Enregistré ✓" : "Enregistrer la composition"}
       </button>

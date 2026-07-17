@@ -35,23 +35,23 @@ export default async function SeasonRecapPage() {
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-gold">Bilan de saison</p>
-      <h1 className="mb-4 text-lg font-bold text-navy">{season?.name ?? "Historique"}</h1>
+      <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Bilan de saison</p>
+      <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">{season?.name ?? "Historique"}</h1>
 
       {team.played === 0 ? (
-        <p className="rounded-2xl border border-navy/10 bg-white p-4 text-sm text-navy/60">
+        <p className="rounded-2xl border border-white/10 bg-navy-card p-4 text-sm text-steel/70">
           Pas encore de match joué cette saison.
         </p>
       ) : (
         <>
-          <section className="mb-6 rounded-2xl border border-navy/10 bg-white p-4">
+          <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
             <div className="grid grid-cols-4 gap-2 text-center">
               <Stat label="Joués" value={team.played} />
               <Stat label="Gagnés" value={team.wins} />
               <Stat label="Nuls" value={team.draws} />
               <Stat label="Perdus" value={team.losses} />
             </div>
-            <table className="mt-4 w-full border-t border-navy/10 text-sm">
+            <table className="mt-4 w-full border-t border-white/10 text-sm">
               <tbody>
                 <TeamStatRow label="Buts marqués" value={team.goalsFor} />
                 <TeamStatRow label="Buts encaissés" value={team.goalsAgainst} />
@@ -71,13 +71,13 @@ export default async function SeasonRecapPage() {
             <RecordRow label="Plus assidu" holder={records.mostMatches} suffix="matchs" />
             <RecordRow label="Plus de cartons" holder={records.mostCards} suffix="cartons" />
             {records.biggestWin && (
-              <div className="rounded-xl border border-navy/10 bg-white p-3">
-                <p className="text-xs font-semibold uppercase text-navy/50">Plus grosse victoire</p>
-                <p className="text-sm font-semibold text-navy">
+              <div className="rounded-xl border border-white/10 bg-navy-card p-3">
+                <p className="text-xs font-semibold uppercase text-steel/70">Plus grosse victoire</p>
+                <p className="text-sm font-semibold text-cream">
                   {records.biggestWin.teamScore}–{records.biggestWin.opponentScore} vs{" "}
                   {records.biggestWin.opponentName}
                 </p>
-                <p className="text-xs text-navy/50">{records.biggestWin.dateLabel}</p>
+                <p className="text-xs text-steel/70">{records.biggestWin.dateLabel}</p>
               </div>
             )}
           </div>
@@ -86,7 +86,7 @@ export default async function SeasonRecapPage() {
             href={whatsappShareUrl(shareText)}
             target="_blank"
             rel="noopener noreferrer"
-            className="block rounded-xl bg-navy px-4 py-3 text-center text-sm font-semibold text-gold"
+            className="block rounded-xl bg-gold px-4 py-3 text-center text-sm font-bold text-navy-deep"
           >
             Partager le bilan
           </a>
@@ -99,17 +99,17 @@ export default async function SeasonRecapPage() {
 function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div>
-      <p className="text-lg font-bold text-navy">{value}</p>
-      <p className="text-xs text-navy/50">{label}</p>
+      <p className="text-2xl font-extrabold tabular-nums text-gold">{value}</p>
+      <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-wide text-steel">{label}</p>
     </div>
   );
 }
 
 function TeamStatRow({ label, value, last = false }: { label: string; value: number | string; last?: boolean }) {
   return (
-    <tr className={last ? "" : "border-b border-navy/5"}>
-      <td className="py-1.5 text-navy/60">{label}</td>
-      <td className="py-1.5 text-right font-semibold tabular-nums text-navy">{value}</td>
+    <tr className={last ? "" : "border-b border-white/8"}>
+      <td className="py-1.5 text-steel">{label}</td>
+      <td className="py-1.5 text-right font-semibold tabular-nums text-cream">{value}</td>
     </tr>
   );
 }
@@ -119,14 +119,14 @@ function RecordRow({ label, holder, suffix }: { label: string; holder: RecordHol
   return (
     <Link
       href={`/team/${holder.playerId}`}
-      className="flex items-center justify-between rounded-xl border border-navy/10 bg-white p-3"
+      className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3"
     >
       <div>
-        <p className="text-xs font-semibold uppercase text-navy/50">{label}</p>
-        <p className="text-sm font-semibold text-navy">{holder.name}</p>
+        <p className="text-xs font-semibold uppercase text-steel/70">{label}</p>
+        <p className="text-sm font-semibold text-cream">{holder.name}</p>
       </div>
-      <span className="text-lg font-bold text-navy">
-        {holder.value} <span className="text-xs font-normal text-navy/50">{suffix}</span>
+      <span className="text-lg font-bold tabular-nums text-gold">
+        {holder.value} <span className="text-xs font-normal text-steel/70">{suffix}</span>
       </span>
     </Link>
   );

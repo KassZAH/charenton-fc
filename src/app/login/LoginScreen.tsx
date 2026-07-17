@@ -28,11 +28,11 @@ export function LoginScreen({ players }: { players: LoginPlayer[] }) {
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col px-4 py-8">
       <div className="mb-8 text-center">
-        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-navy text-2xl font-bold text-gold">
+        <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-gold text-2xl font-extrabold text-navy-deep shadow-lg shadow-black/30">
           CFC
         </div>
-        <h1 className="text-xl font-bold text-navy">Charenton FC</h1>
-        <p className="text-sm text-navy/60">
+        <h1 className="text-scoreboard text-xl font-extrabold text-cream">Charenton FC</h1>
+        <p className="text-sm text-steel">
           {selected ? "Entre ton code" : "Qui es-tu ?"}
         </p>
       </div>
@@ -60,12 +60,12 @@ function PlayerGrid({
           key={player.id}
           type="button"
           onClick={() => onSelect(player)}
-          className="flex flex-col items-center gap-2 rounded-xl border border-navy/10 bg-white p-3 text-center shadow-sm active:scale-95 transition"
+          className="flex flex-col items-center gap-2 rounded-xl border border-white/10 bg-navy-card p-3 text-center shadow-lg shadow-black/20 active:scale-95 transition"
         >
-          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-navy text-sm font-semibold text-gold">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-gold text-sm font-bold text-navy-deep">
             {initials(player)}
           </span>
-          <span className="text-xs font-medium text-navy leading-tight">
+          <span className="text-xs font-medium text-cream leading-tight">
             {displayName(player)}
           </span>
         </button>
@@ -112,7 +112,7 @@ function PinStep({
 
   return (
     <div className="flex flex-col items-center">
-      <p className="mb-4 text-center font-semibold text-navy">
+      <p className="mb-4 text-center font-semibold text-cream">
         {displayName(player)}
       </p>
 
@@ -120,15 +120,15 @@ function PinStep({
         {Array.from({ length: expectedLength }).map((_, i) => (
           <span
             key={i}
-            className={`h-3.5 w-3.5 rounded-full border-2 border-navy ${
-              i < pin.length ? "bg-navy" : "bg-transparent"
+            className={`h-3.5 w-3.5 rounded-full border-2 border-gold ${
+              i < pin.length ? "bg-gold" : "bg-transparent"
             }`}
           />
         ))}
       </div>
 
       {error && (
-        <p className="mb-4 text-sm font-medium text-red-600" role="alert">
+        <p className="mb-4 text-sm font-medium text-red-400" role="alert">
           {error}
         </p>
       )}
@@ -140,7 +140,7 @@ function PinStep({
             type="button"
             onClick={() => pressDigit(digit)}
             disabled={isPending}
-            className="flex h-16 w-16 items-center justify-center rounded-full bg-navy/5 text-xl font-semibold text-navy active:bg-navy/15 disabled:opacity-50"
+            className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-xl font-semibold text-cream active:bg-white/15 disabled:opacity-50"
           >
             {digit}
           </button>
@@ -150,7 +150,7 @@ function PinStep({
           type="button"
           onClick={() => pressDigit("0")}
           disabled={isPending}
-          className="flex h-16 w-16 items-center justify-center rounded-full bg-navy/5 text-xl font-semibold text-navy active:bg-navy/15 disabled:opacity-50"
+          className="flex h-16 w-16 items-center justify-center rounded-full bg-white/5 text-xl font-semibold text-cream active:bg-white/15 disabled:opacity-50"
         >
           0
         </button>
@@ -159,7 +159,7 @@ function PinStep({
           onClick={pressBackspace}
           disabled={isPending}
           aria-label="Effacer"
-          className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold text-navy/60 active:bg-navy/10 disabled:opacity-50"
+          className="flex h-16 w-16 items-center justify-center rounded-full text-xl font-semibold text-steel active:bg-white/10 disabled:opacity-50"
         >
           ⌫
         </button>
@@ -169,7 +169,7 @@ function PinStep({
         type="button"
         onClick={onBack}
         disabled={isPending}
-        className="mt-8 text-sm font-medium text-navy/60 underline underline-offset-2"
+        className="mt-8 text-sm font-medium text-steel underline underline-offset-2"
       >
         Ce n&apos;est pas moi
       </button>
