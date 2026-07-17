@@ -704,6 +704,7 @@ export type Database = {
       players: {
         Row: {
           archived_at: string | null
+          calendar_token: string
           created_at: string | null
           first_name: string
           id: string
@@ -722,6 +723,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          calendar_token?: string
           created_at?: string | null
           first_name: string
           id?: string
@@ -740,6 +742,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          calendar_token?: string
           created_at?: string | null
           first_name?: string
           id?: string

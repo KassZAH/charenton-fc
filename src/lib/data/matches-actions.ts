@@ -6,6 +6,10 @@ import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
 import { syncActiveInjuriesToUpcomingMatches } from "./injuries-actions";
+import { getMatchRoster } from "./roster";
+import { getMatchLineup } from "./lineup";
+import { getMatchEquipment } from "./equipment";
+import { getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "./injuries";
 import type { AvailabilityStatus } from "@/types/models";
 
 async function resolveOpponentId(formData: FormData): Promise<string | null> {
@@ -281,4 +285,104 @@ export async function setCaptain(matchId: string, formData: FormData) {
   if (error) throw new Error(error.message);
 
   revalidatePath(`/matches/${matchId}`);
+}
+
+/**
+ * "Rejouer contre cet adversaire" : crée un nouveau match avec le même adversaire, terrain,
+ * horaires et type — seule la date change. Les présents/composition/matériel/capitaine du
+ * match source peuvent être repris en option, jamais le covoiturage (propre à chaque match).
+ */
+export async function duplicateMatch(sourceMatchId: string, formData: FormData) {
+  await requireAdmin();
+
+  const matchDate = String(formData.get("match_date") ?? "");
+  if (!matchDate) throw new Error("La date du nouveau match est obligatoire.");
+
+  const reuseRoster = formData.get("reuse_roster") === "on";
+  const reuseLineup = formData.get("reuse_lineup") === "on";
+  const reuseEquipment = formData.get("reuse_equipment") === "on";
+  const reuseCaptain = formData.get("reuse_captain") === "on";
+
+  const { data: source, error: sourceError } = await supabaseAdmin
+    .from("matches")
+    .select("*")
+    .eq("id", sourceMatchId)
+    .maybeSingle();
+  if (sourceError) throw new Error(sourceError.message);
+  if (!source) throw new Error("Match introuvable.");
+
+  const { data: activeSeason } = await supabaseAdmin
+    .from("seasons")
+    .select("id")
+    .eq("is_active", true)
+    .maybeSingle();
+
+  const { data: newMatch, error } = await supabaseAdmin
+    .from("matches")
+    .insert({
+      match_date: matchDate,
+      kickoff_time: source.kickoff_time,
+      meeting_time: source.meeting_time,
+      location: source.location,
+      address: source.address,
+      maps_url: source.maps_url,
+      home_or_away: source.home_or_away,
+      match_type: source.match_type,
+      opponent_id: source.opponent_id,
+      season_id: activeSeason?.id ?? null,
+      captain_player_id: reuseCaptain ? source.captain_player_id : null,
+      status: "scheduled",
+    })
+    .select("id")
+    .single();
+  if (error) throw new Error(error.message);
+
+  if (reuseRoster) {
+    const [roster, activeInjuriesByPlayerId] = await Promise.all([
+      getMatchRoster(sourceMatchId),
+      getActiveInjuriesByPlayerId(),
+    ]);
+    // On ne marque pas présent un joueur actuellement blessé pour la période du nouveau match —
+    // sa blessure prévaut, il sera de toute façon re-couvert par syncActiveInjuriesToUpcomingMatches.
+    const eligible = roster.filter(
+      (playerId) => injuryReturnLabelForDate(activeInjuriesByPlayerId.get(playerId), matchDate) === null
+    );
+    if (eligible.length > 0) {
+      const { error: availError } = await supabaseAdmin.from("availability").upsert(
+        eligible.map((playerId) => ({
+          match_id: newMatch.id,
+          player_id: playerId,
+          status: "present" as const,
+          injury_id: null,
+        })),
+        { onConflict: "match_id,player_id" }
+      );
+      if (availError) throw new Error(availError.message);
+    }
+  }
+
+  if (reuseLineup) {
+    const lineup = await getMatchLineup(sourceMatchId);
+    if (lineup) {
+      const { error: lineupError } = await supabaseAdmin
+        .from("match_lineups")
+        .insert({ match_id: newMatch.id, formation: lineup.formation, positions: lineup.positions });
+      if (lineupError) throw new Error(lineupError.message);
+    }
+  }
+
+  if (reuseEquipment) {
+    const items = await getMatchEquipment(sourceMatchId);
+    if (items.length > 0) {
+      const { error: equipmentError } = await supabaseAdmin
+        .from("match_equipment_items")
+        .insert(items.map((item) => ({ match_id: newMatch.id, label: item.label })));
+      if (equipmentError) throw new Error(equipmentError.message);
+    }
+  }
+
+  await syncActiveInjuriesToUpcomingMatches();
+
+  revalidatePath("/matches");
+  redirect(`/matches/${newMatch.id}`);
 }

@@ -26,6 +26,7 @@ import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
 import { CarpoolSection } from "./CarpoolSection";
 import { EquipmentSection } from "./EquipmentSection";
+import { DuplicateMatchForm } from "./DuplicateMatchForm";
 
 const GROUP_ORDER: (AvailabilityStatus | "none")[] = ["present", "uncertain", "absent", "injured", "none"];
 
@@ -115,6 +116,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
             <p className="mt-3 rounded-xl border border-white/10 bg-navy-card p-3 text-sm italic text-cream/80">
               {match.description}
             </p>
+          )}
+          {isElevatedRole(user.role) && match.opponent_id && (
+            <div className="mt-4">
+              <DuplicateMatchForm matchId={match.id} opponentLabel={opponentLabel} />
+            </div>
           )}
         </>
       ) : (

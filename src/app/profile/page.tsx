@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth/current-user";
 import { getPlayerById } from "@/lib/data/players";
 import { getPlayerMeasurements } from "@/lib/data/measurements";
@@ -9,17 +10,22 @@ import { getActiveInjury, getPlayerInjuryHistory } from "@/lib/data/injuries";
 import { formatShortDate } from "@/lib/format";
 import { ResetButton } from "./ResetButton";
 import { InjuryPanel } from "./InjuryPanel";
+import { CalendarSubscribeLink } from "./CalendarSubscribeLink";
 
 export default async function ProfilePage() {
   const user = await requireUser();
   const player = await getPlayerById(user.playerId);
   if (!player) notFound();
 
-  const [measurements, activeInjury, injuryHistory] = await Promise.all([
+  const [measurements, activeInjury, injuryHistory, headerList] = await Promise.all([
     getPlayerMeasurements(player.id),
     getActiveInjury(player.id),
     getPlayerInjuryHistory(player.id),
+    headers(),
   ]);
+  const host = headerList.get("host");
+  const protocol = host?.startsWith("localhost") ? "http" : "https";
+  const calendarUrl = `${protocol}://${host}/calendar/${player.calendar_token}`;
 
   return (
     <div className="mx-auto max-w-md px-4 py-6">
@@ -155,6 +161,11 @@ export default async function ProfilePage() {
             })}
           </ul>
         )}
+      </section>
+
+      <section className="mt-8 border-t border-white/10 pt-6">
+        <h2 className="mb-3 text-sm font-bold text-cream">Calendrier</h2>
+        <CalendarSubscribeLink url={calendarUrl} />
       </section>
 
       <InjuryPanel activeInjury={activeInjury} history={injuryHistory} />

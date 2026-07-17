@@ -21,7 +21,9 @@ export const config = {
      * - fichiers statiques Next.js et assets
      * - manifest PWA et icônes (doivent rester accessibles sans session,
      *   sinon le navigateur ne peut pas proposer "Ajouter à l'écran d'accueil")
+     * - /calendar/[token] (flux .ics abonnable — authentifié par token, pas de
+     *   cookie possible puisque c'est l'appli calendrier qui vient le chercher)
      */
-    "/((?!login|manifest\\.webmanifest|icon$|apple-icon$|icons/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
+    "/((?!login|manifest\\.webmanifest|icon$|apple-icon$|icons/|calendar/|_next/static|_next/image|favicon\\.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };
