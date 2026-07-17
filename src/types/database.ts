@@ -200,6 +200,38 @@ export type Database = {
           },
         ]
       }
+      club_quotes: {
+        Row: {
+          author_label: string | null
+          created_at: string
+          id: string
+          player_id: string | null
+          quote_text: string
+        }
+        Insert: {
+          author_label?: string | null
+          created_at?: string
+          id?: string
+          player_id?: string | null
+          quote_text: string
+        }
+        Update: {
+          author_label?: string | null
+          created_at?: string
+          id?: string
+          player_id?: string | null
+          quote_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "club_quotes_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       dues: {
         Row: {
           amount_due: number
@@ -306,6 +338,47 @@ export type Database = {
           },
         ]
       }
+      hall_of_fame_entries: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          display_name: string | null
+          id: string
+          inducted_at: string
+          player_id: string | null
+          retired_number: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          inducted_at?: string
+          player_id?: string | null
+          retired_number?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string | null
+          id?: string
+          inducted_at?: string
+          player_id?: string | null
+          retired_number?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hall_of_fame_entries_player_id_fkey"
+            columns: ["player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       injuries: {
         Row: {
           actual_return_date: string | null
@@ -352,6 +425,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      jersey_history_entries: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          season_label: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          season_label: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          season_label?: string
+        }
+        Relationships: []
       }
       match_awards: {
         Row: {
@@ -843,6 +940,8 @@ export type Database = {
         Row: {
           access_code: string | null
           created_at: string | null
+          founded_date: string | null
+          founding_note: string | null
           gold_color: string
           id: number
           name: string
@@ -853,6 +952,8 @@ export type Database = {
         Insert: {
           access_code?: string | null
           created_at?: string | null
+          founded_date?: string | null
+          founding_note?: string | null
           gold_color?: string
           id?: number
           name?: string
@@ -863,6 +964,8 @@ export type Database = {
         Update: {
           access_code?: string | null
           created_at?: string | null
+          founded_date?: string | null
+          founding_note?: string | null
           gold_color?: string
           id?: number
           name?: string

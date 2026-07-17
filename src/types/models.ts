@@ -17,6 +17,9 @@ export type MatchLineup = { formation: string; positions: Record<string, string>
 export type Injury = Tables<"injuries">;
 export type MatchEquipmentItem = Tables<"match_equipment_items">;
 export type ReinforcementCall = Tables<"reinforcement_calls">;
+export type HallOfFameEntry = Tables<"hall_of_fame_entries">;
+export type ClubQuote = Tables<"club_quotes">;
+export type JerseyHistoryEntry = Tables<"jersey_history_entries">;
 
 /** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
 export type PlayerRole = "player" | "admin" | "coach";
@@ -63,3 +66,19 @@ export const REINFORCEMENT_POSITION_LABELS: Record<ReinforcementPosition, string
 
 /** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
 export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";
+
+/** hall_of_fame_entries.category — contrainte check en base. */
+export type HallOfFameCategory =
+  | "fondateur"
+  | "capitaine_emblematique"
+  | "meilleur_buteur_historique"
+  | "legende_vestiaire"
+  | "autre";
+
+export const HALL_OF_FAME_CATEGORY_LABELS: Record<HallOfFameCategory, string> = {
+  fondateur: "Fondateur",
+  capitaine_emblematique: "Capitaine emblématique",
+  meilleur_buteur_historique: "Meilleur buteur historique",
+  legende_vestiaire: "Légende du vestiaire",
+  autre: "Autre",
+};

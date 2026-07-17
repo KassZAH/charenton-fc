@@ -48,6 +48,13 @@ Implémenté intégralement, rien d'écarté.
 - Filtres interactifs génériques (saison/mois/année/5 derniers matchs/domicile-extérieur/jour de la semaine) — fait à la place : des répartitions fixes directement affichées sur la page Tendances (bilan domicile/extérieur, bilan par jour, bilan par mois), pas de contrôle de filtre universel
 - Statistiques gardien (matchs comme gardien, clean sheets, buts encaissés, victoires, moyenne encaissée) — nécessite d'abord une UI pour marquer qui a joué gardien par match (la colonne `match_players.goalkeeper` existe déjà en base mais rien ne l'alimente), pas encore construite
 
+## Lot 8 — Mémoire du club
+
+- **Upload direct de photos** (frise, souvenir aléatoire, historique des maillots) — aucune infra Supabase Storage n'existe encore dans l'appli ; fait à la place : un lien externe optionnel (URL d'une photo hébergée ailleurs) sur les maillots uniquement, même choix que pour les adresses de terrain au Lot 2
+- **Mur des citations lié à un match précis** (sélecteur de match) — fait à la place : un champ de contexte libre (« après la victoire 3-1 vs Ivry ») en plus du lien optionnel vers un joueur, pour éviter un sélecteur de match dédié
+- **Trophées de fin de saison** dans la frise — le concept de trophée de saison n'existe pas encore (c'est le Lot 9) ; la frise couvre à la place les intronisations au Hall of Fame comme moments cérémoniels, la première victoire, le premier triplé, la plus grosse victoire et les fins de saison
+- **Numéros retirés** en tant que fonction dédiée — fait à la place : un champ optionnel sur les entrées du Hall of Fame plutôt qu'une table séparée, la roadmap la qualifie elle-même de facultative
+
 ---
 
-_Lots 8 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._
+_Lots 9 à 12 : pas encore commencés — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._

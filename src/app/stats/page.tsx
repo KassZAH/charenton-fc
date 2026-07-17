@@ -48,6 +48,9 @@ export default async function StatsPage() {
         <Link href="/team/compare" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
           Comparer
         </Link>
+        <Link href="/memoire" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Mémoire
+        </Link>
         {isElevatedRole(user.role) && (
           <Link href="/history" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
             Historique

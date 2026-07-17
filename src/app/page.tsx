@@ -13,6 +13,7 @@ import { buildItineraryUrl } from "@/lib/maps";
 import { todayDateString, currentTimeString } from "@/lib/clock";
 import { getActiveInjury, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { recoverFromInjury } from "@/lib/data/injuries-actions";
+import { getThisDayInHistory } from "@/lib/data/club-memory";
 import { isElevatedRole } from "@/types/models";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
@@ -42,11 +43,12 @@ function shortDateBadge(dateLabel: string) {
 export default async function HomePage() {
   const user = await requireUser();
   const isAdmin = isElevatedRole(user.role);
-  const [nextMatch, myStats, teamStats, activeInjury] = await Promise.all([
+  const [nextMatch, myStats, teamStats, activeInjury, thisDay] = await Promise.all([
     getNextMatch(),
     getPlayerStats(user.playerId),
     getTeamStats(),
     getActiveInjury(user.playerId),
+    getThisDayInHistory(),
   ]);
   const myStatus = nextMatch ? await getMyAvailability(nextMatch.id, user.playerId) : null;
 
@@ -250,6 +252,24 @@ export default async function HomePage() {
         </div>
         <p className="mt-3 border-t border-white/10 pt-3 text-sm italic text-steel">{funnyLine}</p>
       </Link>
+
+      {thisDay && (
+        <Link
+          href={`/matches/${thisDay.matchId}`}
+          className="mt-4 block rounded-2xl border border-white/10 bg-navy-card p-4 active:scale-[0.99] transition"
+        >
+          <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Ce jour-là</p>
+          <p className="text-sm text-cream">
+            {thisDay.homeOrAway === "home" ? "vs" : "@"} {thisDay.opponentName} :{" "}
+            <span className="font-bold text-gold">
+              {thisDay.teamScore}–{thisDay.opponentScore}
+            </span>
+          </p>
+          {thisDay.scorers.length > 0 && (
+            <p className="text-xs text-steel/70">Buteurs : {thisDay.scorers.join(", ")}</p>
+          )}
+        </Link>
+      )}
     </div>
   );
 }
