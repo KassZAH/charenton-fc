@@ -10,6 +10,7 @@ import {
 } from "@/lib/data/player-stats";
 import { getPlayerMeasurements } from "@/lib/data/measurements";
 import { getPlayerBadges } from "@/lib/data/badges";
+import { getTeamRecordWithWithoutPlayer } from "@/lib/data/stats-advanced";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
 import { PlayerCardButton } from "./PlayerCardButton";
@@ -25,12 +26,13 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, advanced, awardWins, history, badges] = await Promise.all([
+  const [stats, advanced, awardWins, history, badges, withWithout] = await Promise.all([
     getPlayerStats(player.id),
     getPlayerAdvancedStats(player.id),
     getPlayerAwardWins(player.id),
     getPlayerMatchHistory(player.id),
     getPlayerBadges(player.id),
+    getTeamRecordWithWithoutPlayer(player.id),
   ]);
 
   const canSeeMeasurements =
@@ -146,6 +148,33 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
               <DetailRow label="But + passe déc. même match" value={advanced.goalAndAssistMatches.toString()} />
             )}
           </ul>
+        </section>
+      )}
+
+      {withWithout && (withWithout.withPlayer.played > 0 || withWithout.withoutPlayer.played > 0) && (
+        <section className="mb-6">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">
+            Bilan de l&apos;équipe avec / sans {player.nickname || player.first_name}
+          </h2>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border border-white/10 bg-navy-card p-3 text-center">
+              <p className="text-xs font-semibold uppercase text-steel/70">Avec</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-gold">
+                {withWithout.withPlayer.wins}-{withWithout.withPlayer.draws}-{withWithout.withPlayer.losses}
+              </p>
+              <p className="text-[10px] text-steel/60">{withWithout.withPlayer.played} match(s)</p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-navy-card p-3 text-center">
+              <p className="text-xs font-semibold uppercase text-steel/70">Sans</p>
+              <p className="mt-1 text-lg font-bold tabular-nums text-gold">
+                {withWithout.withoutPlayer.wins}-{withWithout.withoutPlayer.draws}-{withWithout.withoutPlayer.losses}
+              </p>
+              <p className="text-[10px] text-steel/60">{withWithout.withoutPlayer.played} match(s)</p>
+            </div>
+          </div>
+          {!withWithout.sufficientSample && (
+            <p className="mt-2 text-xs text-steel/60">Données indicatives, échantillon limité.</p>
+          )}
         </section>
       )}
 

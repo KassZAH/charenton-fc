@@ -55,6 +55,21 @@ export default async function RecordsPage({
             holder={records.longestScoringStreak}
             suffix="matchs de suite"
           />
+          <RecordRow
+            label="Plus longue série avec une passe déc."
+            holder={records.longestAssistStreak}
+            suffix="matchs de suite"
+          />
+          <RecordRow
+            label="Plus longue série de présence"
+            holder={records.longestPresenceStreak}
+            suffix="matchs de suite"
+          />
+          <RecordRow
+            label="Plus longue série sans carton"
+            holder={records.longestNoCardStreak}
+            suffix="matchs de suite"
+          />
           <RecordRow label="Meilleur taux de présence" holder={records.bestPresenceRate} suffix="%" />
           <RecordRow label="Plus de buts en un match" holder={records.mostGoalsInOneMatch} suffix="buts" />
 

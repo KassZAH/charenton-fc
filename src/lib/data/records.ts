@@ -19,6 +19,9 @@ export type Records = {
   mostBraces: RecordHolder | null;
   mostCards: RecordHolder | null;
   longestScoringStreak: RecordHolder | null;
+  longestPresenceStreak: RecordHolder | null;
+  longestAssistStreak: RecordHolder | null;
+  longestNoCardStreak: RecordHolder | null;
   biggestWin: BiggestWin | null;
   bestPresenceRate: RecordHolder | null;
   mostGoalsInOneMatch: RecordHolder | null;
@@ -33,6 +36,9 @@ const EMPTY_RECORDS: Records = {
   mostBraces: null,
   mostCards: null,
   longestScoringStreak: null,
+  longestPresenceStreak: null,
+  longestAssistStreak: null,
+  longestNoCardStreak: null,
   biggestWin: null,
   bestPresenceRate: null,
   mostGoalsInOneMatch: null,
@@ -101,6 +107,7 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
   const scorerCounts = new Map<string, number>();
   const assistCounts = new Map<string, number>();
   const goalsByMatchAndScorer = new Map<string, Map<string, number>>();
+  const assistedMatchesByPlayer = new Map<string, Set<string>>();
   for (const g of goals) {
     if (g.scorer_player_id) {
       scorerCounts.set(g.scorer_player_id, (scorerCounts.get(g.scorer_player_id) ?? 0) + 1);
@@ -110,6 +117,9 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
     }
     if (g.assist_player_id) {
       assistCounts.set(g.assist_player_id, (assistCounts.get(g.assist_player_id) ?? 0) + 1);
+      const set = assistedMatchesByPlayer.get(g.assist_player_id) ?? new Set<string>();
+      set.add(g.match_id);
+      assistedMatchesByPlayer.set(g.assist_player_id, set);
     }
   }
   const topScorer = topOf(scorerCounts, nameById);
@@ -148,8 +158,13 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
 
   // Cartons
   const cardCounts = new Map<string, number>();
+  const cardedMatchesByPlayer = new Map<string, Set<string>>();
   for (const c of cards) {
-    if (c.player_id) cardCounts.set(c.player_id, (cardCounts.get(c.player_id) ?? 0) + 1);
+    if (!c.player_id) continue;
+    cardCounts.set(c.player_id, (cardCounts.get(c.player_id) ?? 0) + 1);
+    const set = cardedMatchesByPlayer.get(c.player_id) ?? new Set<string>();
+    set.add(c.match_id);
+    cardedMatchesByPlayer.set(c.player_id, set);
   }
   const mostCards = topOf(cardCounts, nameById);
 
@@ -181,6 +196,74 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
     }
     if (best > 0 && (!longestScoringStreak || best > longestScoringStreak.value)) {
       longestScoringStreak = { playerId, name: nameById.get(playerId) ?? "Joueur", value: best };
+    }
+  }
+
+  // Plus longue série de matchs consécutifs avec au moins une passe décisive
+  let longestAssistStreak: RecordHolder | null = null;
+  for (const [playerId, playerMatchIds] of matchIdsByPlayer) {
+    const ordered = [...playerMatchIds].sort(
+      (a, b) => (matchOrderIndex.get(a) ?? 0) - (matchOrderIndex.get(b) ?? 0)
+    );
+    let best = 0;
+    let current = 0;
+    for (const mid of ordered) {
+      const assisted = assistedMatchesByPlayer.get(playerId)?.has(mid) ?? false;
+      if (assisted) {
+        current++;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    }
+    if (best > 0 && (!longestAssistStreak || best > longestAssistStreak.value)) {
+      longestAssistStreak = { playerId, name: nameById.get(playerId) ?? "Joueur", value: best };
+    }
+  }
+
+  // Plus longue série de matchs joués sans carton
+  let longestNoCardStreak: RecordHolder | null = null;
+  for (const [playerId, playerMatchIds] of matchIdsByPlayer) {
+    const ordered = [...playerMatchIds].sort(
+      (a, b) => (matchOrderIndex.get(a) ?? 0) - (matchOrderIndex.get(b) ?? 0)
+    );
+    let best = 0;
+    let current = 0;
+    for (const mid of ordered) {
+      const carded = cardedMatchesByPlayer.get(playerId)?.has(mid) ?? false;
+      if (!carded) {
+        current++;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    }
+    if (best > 0 && (!longestNoCardStreak || best > longestNoCardStreak.value)) {
+      longestNoCardStreak = { playerId, name: nameById.get(playerId) ?? "Joueur", value: best };
+    }
+  }
+
+  // Plus longue série de matchs d'équipe consécutifs où le joueur était présent
+  // (contrairement aux autres séries ci-dessus, on parcourt TOUS les matchs de l'équipe,
+  // pas seulement ceux du joueur, sinon l'absence ne romprait jamais la série).
+  const playedSetByPlayer = new Map<string, Set<string>>();
+  for (const [playerId, ids] of matchIdsByPlayer) {
+    playedSetByPlayer.set(playerId, new Set(ids));
+  }
+  let longestPresenceStreak: RecordHolder | null = null;
+  for (const [playerId, playedSet] of playedSetByPlayer) {
+    let best = 0;
+    let current = 0;
+    for (const m of scopedMatches) {
+      if (playedSet.has(m.id)) {
+        current++;
+        best = Math.max(best, current);
+      } else {
+        current = 0;
+      }
+    }
+    if (best > 0 && (!longestPresenceStreak || best > longestPresenceStreak.value)) {
+      longestPresenceStreak = { playerId, name: nameById.get(playerId) ?? "Joueur", value: best };
     }
   }
 
@@ -217,6 +300,9 @@ export async function getRecords(seasonId: string | null): Promise<Records> {
     mostBraces,
     mostCards,
     longestScoringStreak,
+    longestPresenceStreak,
+    longestAssistStreak,
+    longestNoCardStreak,
     biggestWin,
     bestPresenceRate,
     mostGoalsInOneMatch,

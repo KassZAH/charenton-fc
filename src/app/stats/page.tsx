@@ -34,22 +34,25 @@ export default async function StatsPage() {
     <div className="mx-auto max-w-md px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Stats</h1>
-        <div className="flex gap-2 text-xs font-medium">
-          <Link href="/records" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
-            Records
+      </div>
+      <div className="mb-4 flex flex-wrap gap-2 text-xs font-medium">
+        <Link href="/records" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Records
+        </Link>
+        <Link href="/stats/tendances" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Tendances
+        </Link>
+        <Link href="/season-recap" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Bilan
+        </Link>
+        <Link href="/team/compare" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+          Comparer
+        </Link>
+        {isElevatedRole(user.role) && (
+          <Link href="/history" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
+            Historique
           </Link>
-          <Link href="/season-recap" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
-            Bilan
-          </Link>
-          <Link href="/team/compare" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
-            Comparer
-          </Link>
-          {isElevatedRole(user.role) && (
-            <Link href="/history" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
-              Historique
-            </Link>
-          )}
-        </div>
+        )}
       </div>
 
       <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
