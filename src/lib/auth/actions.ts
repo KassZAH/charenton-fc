@@ -9,12 +9,15 @@ import { pinLengthForRole } from "@/types/models";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 180; // 180 jours
 
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 10;
+
 type LoginResult = { error: string };
 
 export async function login(playerId: string, pin: string): Promise<LoginResult> {
   const { data: player, error } = await supabaseAdmin
     .from("players")
-    .select("id, role, first_name, nickname, pin_hash, status")
+    .select("id, role, first_name, nickname, pin_hash, status, session_version, failed_pin_attempts, locked_until")
     .eq("id", playerId)
     .single();
 
@@ -26,6 +29,11 @@ export async function login(playerId: string, pin: string): Promise<LoginResult>
     return { error: "Profil invalide." };
   }
 
+  if (player.locked_until && new Date(player.locked_until) > new Date()) {
+    const minutesLeft = Math.ceil((new Date(player.locked_until).getTime() - Date.now()) / 60000);
+    return { error: `Trop de tentatives. Réessaie dans ${minutesLeft} min.` };
+  }
+
   const expectedLength = pinLengthForRole(player.role);
   if (pin.length !== expectedLength || !/^\d+$/.test(pin)) {
     return { error: `Le PIN doit contenir ${expectedLength} chiffres.` };
@@ -33,13 +41,28 @@ export async function login(playerId: string, pin: string): Promise<LoginResult>
 
   const valid = await bcrypt.compare(pin, player.pin_hash);
   if (!valid) {
-    return { error: "PIN incorrect." };
+    const attempts = player.failed_pin_attempts + 1;
+    const lockedOut = attempts >= MAX_FAILED_ATTEMPTS;
+    await supabaseAdmin
+      .from("players")
+      .update({
+        failed_pin_attempts: lockedOut ? 0 : attempts,
+        locked_until: lockedOut ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000).toISOString() : null,
+      })
+      .eq("id", player.id);
+    return {
+      error: lockedOut ? `Trop de tentatives. Réessaie dans ${LOCKOUT_MINUTES} min.` : "PIN incorrect.",
+    };
   }
+
+  await supabaseAdmin
+    .from("players")
+    .update({ failed_pin_attempts: 0, locked_until: null })
+    .eq("id", player.id);
 
   const token = await signSession({
     playerId: player.id,
-    role: player.role,
-    name: player.nickname || player.first_name,
+    sessionVersion: player.session_version,
   });
 
   const store = await cookies();

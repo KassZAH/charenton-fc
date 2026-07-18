@@ -54,9 +54,16 @@ export async function createPlayer(formData: FormData) {
 export async function setPlayerStatus(playerId: string, status: "active" | "archived") {
   await requireAdmin();
 
+  const { data: current } = await supabaseAdmin.from("players").select("session_version").eq("id", playerId).maybeSingle();
+
   const { error } = await supabaseAdmin
     .from("players")
-    .update({ status, archived_at: status === "archived" ? new Date().toISOString() : null })
+    .update({
+      status,
+      archived_at: status === "archived" ? new Date().toISOString() : null,
+      // Révoque immédiatement toute session existante (ex. un joueur archivé ne doit plus rien pouvoir faire).
+      session_version: (current?.session_version ?? 1) + 1,
+    })
     .eq("id", playerId);
   if (error) throw new Error(error.message);
 
@@ -84,6 +91,8 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     throw new Error("Rôle invalide.");
   }
 
+  const { data: before } = await supabaseAdmin.from("players").select("*").eq("id", playerId).maybeSingle();
+
   const update: TablesUpdate<"players"> = {
     first_name: firstName,
     last_name: lastName,
@@ -93,6 +102,9 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     primary_position: primaryPosition,
     strong_foot: strongFoot,
     quote,
+    // Révoque immédiatement toute session existante — un changement de rôle ou de PIN
+    // ne doit pas attendre l'expiration du cookie (180 jours) pour prendre effet.
+    session_version: (before?.session_version ?? 1) + 1,
   };
 
   if (newPin) {
@@ -102,8 +114,6 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     }
     update.pin_hash = await bcrypt.hash(newPin, 10);
   }
-
-  const { data: before } = await supabaseAdmin.from("players").select("*").eq("id", playerId).maybeSingle();
 
   const { error } = await supabaseAdmin.from("players").update(update).eq("id", playerId);
   if (error) throw new Error(error.message);

@@ -2,38 +2,35 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth/current-user";
+import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createBackup } from "./backups";
-
-const NIL_UUID = "00000000-0000-0000-0000-000000000000";
+import { getActiveSeason } from "./seasons";
 
 /**
- * Réservé à Amine (vérifié en base, pas via la session, pour rester valide
- * même si le nom a changé récemment). Supprime tous les matchs — ce qui
- * entraîne en cascade buts, cartons, présences, votes — ainsi que les
- * badges. Garde l'effectif, les adversaires, les saisons et les réglages.
+ * Réservé aux admins/coachs (vérifié via le rôle en base, jamais via un nom
+ * modifiable par le joueur lui-même). Supprime uniquement les matchs de la
+ * SAISON ACTIVE — ce qui entraîne en cascade buts, cartons, présences,
+ * votes pour ces matchs-là — jamais l'historique des saisons précédentes.
+ * Confirmation explicite : le nom de la saison doit être retapé.
  */
-export async function resetSeasonData() {
-  const user = await requireUser();
+export async function resetSeasonData(formData: FormData) {
+  const user = await requireAdmin();
 
-  const { data: player } = await supabaseAdmin
-    .from("players")
-    .select("first_name")
-    .eq("id", user.playerId)
-    .maybeSingle();
-
-  if (!player || player.first_name !== "Amine") {
-    throw new Error("Action réservée.");
+  const season = await getActiveSeason();
+  if (!season) {
+    throw new Error("Aucune saison active à réinitialiser.");
   }
 
-  await createBackup("before_reset", "Avant réinitialisation de la saison", user.playerId);
+  const confirmation = String(formData.get("confirm_season_name") ?? "").trim();
+  if (confirmation !== season.name) {
+    throw new Error("Le nom de la saison ne correspond pas — réinitialisation annulée.");
+  }
 
-  const { error: matchesError } = await supabaseAdmin.from("matches").delete().neq("id", NIL_UUID);
+  await createBackup("before_reset", `Avant réinitialisation de "${season.name}"`, user.playerId);
+
+  const { error: matchesError } = await supabaseAdmin.from("matches").delete().eq("season_id", season.id);
   if (matchesError) throw new Error(matchesError.message);
-
-  const { error: badgesError } = await supabaseAdmin.from("player_badges").delete().neq("id", NIL_UUID);
-  if (badgesError) throw new Error(badgesError.message);
 
   revalidatePath("/", "layout");
   redirect("/matches");

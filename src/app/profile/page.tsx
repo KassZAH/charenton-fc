@@ -8,8 +8,10 @@ import { addMeasurement, deleteMeasurement } from "@/lib/data/measurements-actio
 import { getPlayerGoals } from "@/lib/data/player-goals";
 import { addPlayerGoal, toggleGoalAchieved, deletePlayerGoal } from "@/lib/data/player-goals-actions";
 import { resetSeasonData } from "@/lib/data/reset-actions";
+import { getActiveSeason } from "@/lib/data/seasons";
 import { getActiveInjury, getPlayerInjuryHistory } from "@/lib/data/injuries";
 import { formatShortDate } from "@/lib/format";
+import { isElevatedRole } from "@/types/models";
 import { ResetButton } from "./ResetButton";
 import { InjuryPanel } from "./InjuryPanel";
 import { CalendarSubscribeLink } from "./CalendarSubscribeLink";
@@ -26,12 +28,15 @@ export default async function ProfilePage() {
   const player = await getPlayerById(user.playerId);
   if (!player) notFound();
 
-  const [measurements, activeInjury, injuryHistory, goals, headerList] = await Promise.all([
+  const isAdmin = isElevatedRole(user.role);
+
+  const [measurements, activeInjury, injuryHistory, goals, headerList, activeSeason] = await Promise.all([
     getPlayerMeasurements(player.id),
     getActiveInjury(player.id),
     getPlayerInjuryHistory(player.id),
     getPlayerGoals(player.id),
     headers(),
+    isAdmin ? getActiveSeason() : Promise.resolve(null),
   ]);
   const host = headerList.get("host");
   const protocol = host?.startsWith("localhost") ? "http" : "https";
@@ -277,16 +282,17 @@ export default async function ProfilePage() {
 
       <InjuryPanel activeInjury={activeInjury} history={injuryHistory} />
 
-      {player.first_name === "Amine" && (
+      {isAdmin && activeSeason && (
         <section className="mt-8 border-t border-white/10 pt-6">
           <h2 className="mb-2 text-sm font-semibold text-red-400">Zone dangereuse</h2>
           <p className="mb-3 text-xs text-steel/70">
-            Supprime définitivement tous les matchs, buts, cartons, présences, votes et badges.
-            L&apos;effectif et les adversaires restent intacts. Une sauvegarde est créée automatiquement avant
-            (voir Admin &gt; Sauvegardes).
+            Supprime définitivement les matchs, buts, cartons, présences et votes de la saison active
+            (« {activeSeason.name} ») uniquement — les autres saisons ne sont pas touchées. L&apos;effectif et les
+            adversaires restent intacts. Une sauvegarde est créée automatiquement avant (voir Admin &gt;
+            Sauvegardes).
           </p>
           <form action={resetSeasonData}>
-            <ResetButton />
+            <ResetButton seasonName={activeSeason.name} />
           </form>
         </section>
       )}

@@ -23,7 +23,19 @@ export type SessionPayload = {
   name: string;
 };
 
-export async function signSession(payload: SessionPayload): Promise<string> {
+/**
+ * Le JWT ne fait plus foi à lui seul pour le rôle/nom — seul playerId et
+ * sessionVersion en sont extraits ici. getCurrentUser() (current-user.ts)
+ * revérifie systématiquement le joueur en base et reconstruit le payload
+ * avec les valeurs fraîches, ce qui permet de révoquer une session en
+ * incrémentant session_version (changement de rôle, de PIN, archivage).
+ */
+export type RawSessionToken = {
+  playerId: string;
+  sessionVersion: number;
+};
+
+export async function signSession(payload: RawSessionToken): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
@@ -31,17 +43,13 @@ export async function signSession(payload: SessionPayload): Promise<string> {
     .sign(getSecretKey());
 }
 
-export async function verifySessionToken(token: string): Promise<SessionPayload | null> {
+export async function verifySessionToken(token: string): Promise<RawSessionToken | null> {
   try {
     const { payload } = await jwtVerify(token, getSecretKey());
-    if (
-      typeof payload.playerId !== "string" ||
-      (payload.role !== "player" && payload.role !== "admin" && payload.role !== "coach") ||
-      typeof payload.name !== "string"
-    ) {
+    if (typeof payload.playerId !== "string" || typeof payload.sessionVersion !== "number") {
       return null;
     }
-    return { playerId: payload.playerId, role: payload.role, name: payload.name };
+    return { playerId: payload.playerId, sessionVersion: payload.sessionVersion };
   } catch {
     return null;
   }

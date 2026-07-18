@@ -33,6 +33,7 @@ export const BACKUP_TABLES = [
   "jersey_history_entries",
   "monthly_mvp_votes",
   "season_trophies",
+  "player_goals",
 ] as const;
 
 /** Résolue à l'exécution depuis une liste de noms — pas typable statiquement, même choix que audit-actions.ts. */

@@ -940,10 +940,12 @@ export type Database = {
           birthday_visibility: string
           calendar_token: string
           created_at: string | null
+          failed_pin_attempts: number
           first_name: string
           id: string
           is_guest: boolean
           last_name: string | null
+          locked_until: string | null
           measurements_visibility: string
           nickname: string | null
           photo_url: string | null
@@ -954,6 +956,7 @@ export type Database = {
           public_token: string
           quote: string | null
           role: string
+          session_version: number
           shirt_number: number | null
           status: string
           strong_foot: string | null
@@ -965,10 +968,12 @@ export type Database = {
           birthday_visibility?: string
           calendar_token?: string
           created_at?: string | null
+          failed_pin_attempts?: number
           first_name: string
           id?: string
           is_guest?: boolean
           last_name?: string | null
+          locked_until?: string | null
           measurements_visibility?: string
           nickname?: string | null
           photo_url?: string | null
@@ -979,6 +984,7 @@ export type Database = {
           public_token?: string
           quote?: string | null
           role?: string
+          session_version?: number
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null
@@ -990,10 +996,12 @@ export type Database = {
           birthday_visibility?: string
           calendar_token?: string
           created_at?: string | null
+          failed_pin_attempts?: number
           first_name?: string
           id?: string
           is_guest?: boolean
           last_name?: string | null
+          locked_until?: string | null
           measurements_visibility?: string
           nickname?: string | null
           photo_url?: string | null
@@ -1004,6 +1012,7 @@ export type Database = {
           public_token?: string
           quote?: string | null
           role?: string
+          session_version?: number
           shirt_number?: number | null
           status?: string
           strong_foot?: string | null
