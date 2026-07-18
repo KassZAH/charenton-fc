@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { login } from "@/lib/auth/actions";
+import { normalize } from "@/lib/text";
 import { pinLengthForRole, type PlayerRole } from "@/types/models";
 
 type LoginPlayer = {
@@ -23,13 +24,6 @@ function initials(player: LoginPlayer) {
 
 function displayName(player: LoginPlayer) {
   return player.nickname || player.first_name;
-}
-
-function normalize(text: string) {
-  return text
-    .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase();
 }
 
 export function LoginScreen({ players }: { players: LoginPlayer[] }) {

@@ -251,6 +251,20 @@ export default async function HelpPage() {
           ))}
         </ul>
       </section>
+
+      <section className="mt-8 rounded-xl border border-white/10 bg-navy-card p-4">
+        <h2 className="mb-2 text-sm font-bold uppercase tracking-wide text-steel">📲 Installation & limites</h2>
+        <p className="mb-2 text-sm text-cream/80">
+          L&apos;appli s&apos;installe sur l&apos;écran d&apos;accueil (iOS : Partager → « Sur l&apos;écran
+          d&apos;accueil » — Android : menu du navigateur → « Installer l&apos;application »), avec sa propre icône
+          et son écran de démarrage.
+        </p>
+        <p className="text-sm text-cream/70">
+          En revanche, elle ne fonctionne pas hors connexion : il faut du réseau pour l&apos;ouvrir, il n&apos;y a
+          pas de notifications push, et rien ne se synchronise en arrière-plan. Ce n&apos;est pas un bug, juste une
+          limite actuelle.
+        </p>
+      </section>
     </div>
   );
 }
