@@ -156,7 +156,7 @@ Feature flag léger : non nécessaire.
 
 ## 2.1 Registre complet des tables sauvegardées
 
-**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
+**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 terminé et validé en production**
 
 Ce qui existe : `BACKUP_TABLES` (`src/lib/data/backups.ts`) liste 25 tables (`player_goals` inclus). `BACKUP_EXCLUDED_TABLES` documente explicitement les 3 exclusions (`audit_log`, `backups`, `backup_artifacts`) avec leur raison, exposées dans `tables_included`/`tables_excluded`/`exclusion_reasons` sur chaque backup format 2.
 
@@ -168,7 +168,7 @@ Déployable indépendamment : oui — déjà déployé.
 
 ## 2.2 Snapshot cohérent
 
-**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
+**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 terminé et validé en production**
 
 Ce qui existe désormais : `export_backup_snapshot()` reconstruite en **une seule instruction SQL** (`language sql`, 25 sous-requêtes triées `order by t.id`, migration `20260718110100`) — élimine réellement le risque de cohérence inter-tables (pas seulement en théorie : démontré par un protocole à deux sessions concurrentes, ancienne version reproduit le bug, nouvelle version en est immunisée, voir `roadmap-v3-discussion/lot-06-backups-integrite-retention/`). Le snapshot (format 2) porte désormais `format_version`, date, saison active, auteur/contexte, checksum (`sha256-canonical-json-v1`), version de l'application et du schéma réellement appliqué (`get_latest_applied_migration()`).
 
@@ -179,7 +179,7 @@ Déployable indépendamment : oui — déjà déployé.
 
 ## 2.3 Stockage et export
 
-**Statut : PARTIELLEMENT IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
+**Statut : PARTIELLEMENT IMPLÉMENTÉ — Lot 6 terminé et validé en production**
 
 Ce qui existe désormais : téléchargement JSON en deux formats documentés (enveloppe versionnée format 2 avec checksum, brut inchangé pour les 4 backups legacy), export séparé `audit_log` (`backup_artifacts`, artefact dédié, checksum propre), avertissement explicite sur les données sensibles avant tout téléchargement complet, bandeau honnête aligné sur la V2 ("Sauvegarde téléchargeable. La restauration complète reste une opération administrateur assistée."), colonne `protected` posée (backups avant opération sensible protégés par défaut, legacy traités comme protégés).
 
@@ -190,7 +190,7 @@ Déployable indépendamment : oui — déjà déployé.
 
 ## 2.4 Restauration progressive (Paliers A/B/C)
 
-**Statut Palier A : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
+**Statut Palier A : DÉJÀ IMPLÉMENTÉ — Lot 6 terminé et validé en production**
 
 Ce qui existe : téléchargement JSON (deux formats), comparaison des compteurs par table, bandeau honnête, sauvegarde obligatoire avant clôture/réinitialisation/déverrouillage/migration, inventaire explicite des tables (`tables_included`/`tables_excluded` affichés par backup), validation de format et checksum désormais réelle (5 états d'intégrité : legacy-unverifiable, needs-finalization, unverified, ok, mismatch — voir `roadmap-v3-discussion/lot-06-backups-integrite-retention/`). Procédure de restauration manuelle documentée dans le README (§ "Procédure d'urgence").
 
