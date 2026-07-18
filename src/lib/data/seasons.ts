@@ -22,6 +22,12 @@ export async function getActiveSeason(): Promise<{ id: string; name: string } | 
   return data ?? null;
 }
 
+export async function getSeasonById(seasonId: string): Promise<{ id: string; name: string } | null> {
+  const { data, error } = await supabaseAdmin.from("seasons").select("id, name").eq("id", seasonId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data ?? null;
+}
+
 export async function getAllSeasons(): Promise<Season[]> {
   const { data, error } = await supabaseAdmin.from("seasons").select("*").order("start_date", { ascending: false });
   if (error) throw new Error(error.message);

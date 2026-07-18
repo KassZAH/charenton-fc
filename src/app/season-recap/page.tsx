@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
-import { getActiveSeason } from "@/lib/data/seasons";
+import { getActiveSeason, getSeasonById } from "@/lib/data/seasons";
 import { getSeasonTeamRecord } from "@/lib/data/season-recap";
 import { getRecords, type RecordHolder } from "@/lib/data/records";
 import { buildSeasonRecapMessage, whatsappShareUrl } from "@/lib/whatsapp";
 
-export default async function SeasonRecapPage() {
+/** ?seasonId= permet de consulter le bilan d'une saison passée (ex. juste après une clôture, Lot 7) — sans paramètre, comportement inchangé (saison active). */
+export default async function SeasonRecapPage({ searchParams }: { searchParams: Promise<{ seasonId?: string }> }) {
   await requireUser();
-  const season = await getActiveSeason();
+  const { seasonId } = await searchParams;
+  const season = seasonId ? await getSeasonById(seasonId) : await getActiveSeason();
   const [team, records] = await Promise.all([
     getSeasonTeamRecord(season?.id ?? null),
     getRecords(season?.id ?? null),

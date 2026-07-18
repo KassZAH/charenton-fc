@@ -1,17 +1,21 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/auth/current-user";
+import { requireFreshCoach } from "@/lib/auth/current-user";
 import { getAllSeasons, getOpenMatchesInActiveSeason } from "@/lib/data/seasons";
-import { toggleSeasonLock, startNewSeason } from "@/lib/data/seasons-actions";
+import { getMatchesNeedingReviewForSeason } from "@/lib/data/match-completeness";
+import { toggleSeasonLock } from "@/lib/data/seasons-actions";
 import { getActivePlayers } from "@/lib/data/players";
 import { setPlayerStatus } from "@/lib/data/players-actions";
 import { formatShortDateOnly, formatMatchDate } from "@/lib/format";
+import { CloseSeasonForm } from "./CloseSeasonForm";
 
 export default async function SeasonsPage() {
-  await requireAdmin();
-  const [seasons, openMatches, players] = await Promise.all([
-    getAllSeasons(),
+  const user = await requireFreshCoach();
+  const [seasons, players] = await Promise.all([getAllSeasons(), getActivePlayers()]);
+  const activeSeason = seasons.find((s) => s.is_active) ?? null;
+
+  const [openMatches, incompleteMatches] = await Promise.all([
     getOpenMatchesInActiveSeason(),
-    getActivePlayers(),
+    activeSeason ? getMatchesNeedingReviewForSeason(activeSeason.id) : Promise.resolve([]),
   ]);
 
   return (
@@ -35,85 +39,85 @@ export default async function SeasonsPage() {
                   {s.start_date ? formatShortDateOnly(s.start_date) : "—"} →{" "}
                   {s.end_date ? formatShortDateOnly(s.end_date) : "—"}
                 </p>
-              </div>
-              <form action={toggleSeasonLock.bind(null, s.id, !s.is_locked)}>
-                <button
-                  type="submit"
-                  className={`rounded-full border px-3 py-1 text-xs font-bold ${
-                    s.is_locked ? "border-gold/40 text-gold" : "border-white/15 text-cream/80"
-                  }`}
+                <Link
+                  href={`/season-recap?seasonId=${s.id}`}
+                  className="mt-1 inline-block text-xs font-medium text-gold underline underline-offset-2"
                 >
+                  Voir le bilan
+                </Link>
+              </div>
+              {user.isOwner ? (
+                <form action={toggleSeasonLock.bind(null, s.id, !s.is_locked)}>
+                  <button
+                    type="submit"
+                    className={`rounded-full border px-3 py-1 text-xs font-bold ${
+                      s.is_locked ? "border-gold/40 text-gold" : "border-white/15 text-cream/80"
+                    }`}
+                  >
+                    {s.is_locked ? "🔒 Verrouillée" : "🔓 Déverrouillée"}
+                  </button>
+                </form>
+              ) : (
+                <span className="rounded-full border border-white/10 px-3 py-1 text-xs font-medium text-steel/60">
                   {s.is_locked ? "🔒 Verrouillée" : "🔓 Déverrouillée"}
-                </button>
-              </form>
+                </span>
+              )}
             </div>
           </li>
         ))}
       </ul>
 
-      <section className="mb-6 border-t border-white/10 pt-6">
-        <h2 className="mb-3 text-sm font-bold text-cream">Nouvelle saison</h2>
+      {!user.isOwner && (
+        <p className="mb-6 rounded-xl border border-white/10 bg-navy-card p-3 text-xs text-steel/70">
+          Consultation seule — le verrouillage des saisons et la clôture de saison sont réservés au propriétaire du
+          club.
+        </p>
+      )}
 
-        {openMatches.length > 0 && (
-          <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-gold">
-            ⚠️ {openMatches.length} match{openMatches.length > 1 ? "s" : ""} pas encore joué
-            {openMatches.length > 1 ? "s" : ""} dans la saison active :
-            <ul className="mt-1 list-inside list-disc">
-              {openMatches.map((m) => (
-                <li key={m.id}>{formatMatchDate(m.matchDate)}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {user.isOwner && activeSeason && (
+        <section className="mb-6 border-t border-white/10 pt-6">
+          <h2 className="mb-3 text-sm font-bold text-cream">Clôturer « {activeSeason.name} »</h2>
 
-        <form action={startNewSeason} className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-cream/80" htmlFor="name">
-              Nom
-            </label>
-            <input
-              id="name"
-              type="text"
-              name="name"
-              required
-              placeholder="Saison 2026-2027"
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-xs font-medium text-cream/80" htmlFor="start_date">
-                Début
-              </label>
-              <input
-                id="start_date"
-                type="date"
-                name="start_date"
-                required
-                className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream focus:border-gold/50 focus:outline-none"
-              />
+          {openMatches.length > 0 && (
+            <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-gold">
+              ⚠️ {openMatches.length} match{openMatches.length > 1 ? "s" : ""} pas encore joué
+              {openMatches.length > 1 ? "s" : ""} :
+              <ul className="mt-1 list-inside list-disc">
+                {openMatches.map((m) => (
+                  <li key={m.id}>{formatMatchDate(m.matchDate)}</li>
+                ))}
+              </ul>
             </div>
-            <div>
-              <label className="block text-xs font-medium text-cream/80" htmlFor="end_date">
-                Fin (facultatif)
-              </label>
-              <input
-                id="end_date"
-                type="date"
-                name="end_date"
-                className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream focus:border-gold/50 focus:outline-none"
-              />
+          )}
+
+          {incompleteMatches.length > 0 && (
+            <div className="mb-3 rounded-xl border border-gold/30 bg-gold/5 p-3 text-xs text-gold">
+              ⚠️ {incompleteMatches.length} match{incompleteMatches.length > 1 ? "s" : ""} terminé
+              {incompleteMatches.length > 1 ? "s" : ""} mais incomplet{incompleteMatches.length > 1 ? "s" : ""} :
+              <ul className="mt-1 list-inside list-disc">
+                {incompleteMatches.map((r) => (
+                  <li key={r.match.id}>
+                    {formatMatchDate(r.match.match_date)} — {r.completeness.percent}%
+                  </li>
+                ))}
+              </ul>
             </div>
-          </div>
-          <p className="text-xs text-steel/60">
-            Crée une sauvegarde, clôture et verrouille la saison active, puis démarre celle-ci. Les statistiques par
-            saison sont toujours recalculées à la volée : rien à réinitialiser.
+          )}
+
+          <p className="mb-3 text-xs text-steel/60">
+            Crée une sauvegarde protégée, verrouille « {activeSeason.name} » puis démarre la nouvelle saison. Les
+            statistiques par saison sont toujours recalculées à la volée : rien d&apos;autre à réinitialiser.
           </p>
-          <button type="submit" className="w-full rounded-lg bg-gold py-3 text-sm font-bold text-navy-deep">
-            Créer la nouvelle saison
-          </button>
-        </form>
-      </section>
+
+          <CloseSeasonForm
+            oldSeasonId={activeSeason.id}
+            oldSeasonName={activeSeason.name}
+            activePlayers={players
+              .filter((p) => p.id !== user.playerId)
+              .map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+          />
+        </section>
+      )}
 
       <section className="border-t border-white/10 pt-6">
         <h2 className="mb-1 text-sm font-bold text-cream">Effectif</h2>

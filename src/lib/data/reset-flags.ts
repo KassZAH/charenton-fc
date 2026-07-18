@@ -1,7 +1,7 @@
 import "server-only";
 
 /**
- * Roadmap V3, Lot 2 : la clôture non destructive (startNewSeason, dans
+ * Roadmap V3, Lot 2/7 : la clôture non destructive (closeSeasonAction, dans
  * seasons-actions.ts) est désormais l'unique parcours normal pour changer de
  * saison. resetSeasonData() reste dans le code (au cas où) mais est
  * désactivée par défaut — la réactiver est une décision délibérée, pas un

@@ -2,7 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getMatchGoals } from "./goals";
 import { getMatchRoster } from "./roster";
-import { getPastMatches, type MatchWithOpponent } from "./matches";
+import { attachOpponents, getPastMatches, type MatchWithOpponent } from "./matches";
 
 export type CompletenessStatus = "ok" | "warning" | "missing";
 
@@ -61,6 +61,29 @@ export type MatchNeedingReview = { match: MatchWithOpponent; completeness: Match
 /** Page admin "Matchs à vérifier" — matchs terminés dont la complétude n'est pas à 100 %. */
 export async function getMatchesNeedingReview(): Promise<MatchNeedingReview[]> {
   const matches = await getPastMatches();
+  const withCompleteness = await Promise.all(
+    matches.map(async (match) => ({ match, completeness: await getMatchCompleteness(match.id, match.team_score) }))
+  );
+  return withCompleteness.filter((r) => r.completeness.percent < 100);
+}
+
+/**
+ * Équivalent de getMatchesNeedingReview() scopé à une seule saison —
+ * fonction dédiée, seasonId obligatoire (jamais un paramètre optionnel sur
+ * la fonction existante, pour ne jamais retomber accidentellement sur tout
+ * l'historique). Utilisée uniquement par l'assistant de clôture (Lot 7).
+ */
+export async function getMatchesNeedingReviewForSeason(seasonId: string): Promise<MatchNeedingReview[]> {
+  const { data, error } = await supabaseAdmin
+    .from("matches")
+    .select("*")
+    .eq("season_id", seasonId)
+    .eq("status", "completed")
+    .is("deleted_at", null)
+    .order("match_date", { ascending: false });
+  if (error) throw new Error(error.message);
+
+  const matches = await attachOpponents(data ?? []);
   const withCompleteness = await Promise.all(
     matches.map(async (match) => ({ match, completeness: await getMatchCompleteness(match.id, match.team_score) }))
   );

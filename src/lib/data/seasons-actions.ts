@@ -1,18 +1,20 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/current-user";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireOwner } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createBackupWithArtifacts } from "./backups";
+import { computeChecksum, CHECKSUM_ALGORITHM } from "./backup-integrity";
 import { logChange } from "./audit";
 
 /**
- * Déverrouiller crée toujours une sauvegarde + une trace, conformément à la
- * roadmap ("toute modification exceptionnelle doit créer une sauvegarde et
- * être journalisée"). Reverrouiller n'a pas besoin de ces garde-fous.
+ * Verrouiller/déverrouiller une saison est réservé au propriétaire (roadmap
+ * V3, Lot 7) — les coachs gardent un accès en lecture seule à la page des
+ * saisons. Déverrouiller crée toujours une sauvegarde + une trace.
  */
 export async function toggleSeasonLock(seasonId: string, locked: boolean) {
-  const user = await requireAdmin();
+  const user = await requireOwner();
 
   const { data: before } = await supabaseAdmin.from("seasons").select("*").eq("id", seasonId).maybeSingle();
   if (!before) throw new Error("Saison introuvable.");
@@ -45,47 +47,63 @@ export async function toggleSeasonLock(seasonId: string, locked: boolean) {
   revalidatePath("/admin/saisons");
 }
 
-/**
- * Assistant de changement de saison : sauvegarde, clôture de l'ancienne
- * saison (verrouillée), création de la nouvelle. Les statistiques par saison
- * sont toujours recalculées à la volée (jamais stockées) donc la nouvelle
- * saison démarre à zéro sans rien à réinitialiser.
- */
-export async function startNewSeason(formData: FormData) {
-  const user = await requireAdmin();
+type CloseSeasonRpcRow = { backup_id: string; backup_snapshot: unknown; new_season_id: string; archived_count: number };
 
+/**
+ * Assistant de clôture de saison (roadmap V3, Lot 7) — réservé au
+ * propriétaire. Toutes les mutations (backup, clôture, archivage, nouvelle
+ * saison, cotisation, audit) ont lieu dans une seule transaction Postgres
+ * (close_season_and_start_new) : soit tout réussit, soit rien n'est écrit.
+ * Le checksum du backup est finalisé juste après (mécanisme du Lot 6) — un
+ * échec de finalisation laisse le backup "À finaliser", réparable par le
+ * propriétaire, sans jamais faire échouer la clôture elle-même (déjà actée
+ * de façon atomique par la RPC à ce stade).
+ */
+export async function closeSeasonAction(formData: FormData) {
+  const user = await requireOwner();
+
+  const oldSeasonId = String(formData.get("old_season_id") ?? "").trim();
+  const oldSeasonName = String(formData.get("old_season_name") ?? "").trim();
+  const confirmName = String(formData.get("confirm_name") ?? "").trim();
   const name = String(formData.get("name") ?? "").trim();
   const startDate = String(formData.get("start_date") ?? "").trim();
   const endDate = String(formData.get("end_date") ?? "").trim() || null;
+  const dueAmountRaw = String(formData.get("due_amount") ?? "").trim();
+  const dueAmount = dueAmountRaw ? Number(dueAmountRaw) : null;
+  const playerIdsToArchive = formData.getAll("archive_player_id").map(String);
 
-  if (!name || !startDate) {
-    throw new Error("Le nom et la date de début sont obligatoires.");
+  if (!oldSeasonId || !name || !startDate) {
+    throw new Error("Saison source, nom et date de début sont obligatoires.");
+  }
+  // Confirmation forte — vérifiée côté serveur, pas seulement un bouton désactivé côté client.
+  if (confirmName !== oldSeasonName) {
+    throw new Error("Le nom saisi ne correspond pas exactement à la saison à clôturer.");
   }
 
-  await createBackupWithArtifacts({
-    triggerReason: "end_of_season",
-    label: `Fin de saison — avant création de "${name}"`,
-    createdByPlayerId: user.playerId,
-    protectedBackup: true,
-  });
-
-  const { data: currentActive } = await supabaseAdmin.from("seasons").select("id").eq("is_active", true).maybeSingle();
-  if (currentActive) {
-    const { error: closeError } = await supabaseAdmin
-      .from("seasons")
-      .update({ is_active: false, is_locked: true, locked_at: new Date().toISOString() })
-      .eq("id", currentActive.id);
-    if (closeError) throw new Error(closeError.message);
-  }
-
-  const { error } = await supabaseAdmin.from("seasons").insert({
-    name,
-    start_date: startDate,
-    end_date: endDate,
-    is_active: true,
-    is_locked: false,
+  // Le générateur de types Supabase ne connaît pas encore cette fonction sur
+  // tous les environnements (elle n'existe, à dessein, que sur le projet
+  // isolé pendant D7-B) — cast vers le client non typé, même pattern que le
+  // Lot 6 pour les paramètres RPC nullable.
+  const { data, error } = await (supabaseAdmin as unknown as SupabaseClient).rpc("close_season_and_start_new", {
+    p_old_season_id: oldSeasonId,
+    p_new_season_name: name,
+    p_new_season_start_date: startDate,
+    p_new_season_end_date: endDate,
+    p_player_ids_to_archive: playerIdsToArchive,
+    p_new_season_due_amount: dueAmount,
+    p_owner_player_id: user.playerId,
+    p_application_commit: process.env.VERCEL_GIT_COMMIT_SHA ?? null,
   });
   if (error) throw new Error(error.message);
+
+  const row = (data as CloseSeasonRpcRow[])[0];
+
+  try {
+    const checksum = computeChecksum(row.backup_snapshot);
+    await supabaseAdmin.from("backups").update({ checksum, checksum_algorithm: CHECKSUM_ALGORITHM }).eq("id", row.backup_id);
+  } catch {
+    // Non bloquant — le backup reste "À finaliser", réparable par le propriétaire.
+  }
 
   revalidatePath("/admin/saisons");
   revalidatePath("/", "layout");
