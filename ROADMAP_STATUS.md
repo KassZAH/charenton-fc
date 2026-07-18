@@ -156,63 +156,45 @@ Feature flag léger : non nécessaire.
 
 ## 2.1 Registre complet des tables sauvegardées
 
-**Statut : DÉJÀ IMPLÉMENTÉ**
+**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
 
-Ce qui existe : `BACKUP_TABLES` (`src/lib/data/backups.ts`) liste 24 tables, couvrant l'intégralité de la liste demandée par la V2 §2.1 (y compris `player_goals`, ajouté lors du sprint P0). Seule `audit_log` est explicitement exclue du backup (commentaire dans le code : "déjà un historique en soi") — c'est un choix documenté, pas un oubli.
+Ce qui existe : `BACKUP_TABLES` (`src/lib/data/backups.ts`) liste 25 tables (`player_goals` inclus). `BACKUP_EXCLUDED_TABLES` documente explicitement les 3 exclusions (`audit_log`, `backups`, `backup_artifacts`) avec leur raison, exposées dans `tables_included`/`tables_excluded`/`exclusion_reasons` sur chaque backup format 2.
 
-Ce qui manque : le test automatisé "compare le registre aux tables applicatives connues" demandé par la V2 n'existe pas — rien n'empêche aujourd'hui qu'une nouvelle migration ajoute une table métier sans que quelqu'un pense à l'ajouter à `BACKUP_TABLES`.
-Fichiers concernés : `src/lib/data/backups.ts`.
-Tables/migrations : aucune nouvelle.
-Risque sur données existantes : moyen à terme — c'est un risque *futur* (une table oubliée dans les prochains lots ne serait pas sauvegardée), pas un problème sur les données actuelles.
-Effort estimé : **S** pour le test de non-régression (nécessite une requête au catalogue Postgres depuis le test, donc une base de test réelle — accroc avec la philosophie "fonctions pures uniquement").
-Tests déjà présents : aucun.
-Tests à ajouter : le test de comparaison décrit ci-dessus.
-Migration nécessaire : non.
-Déployable indépendamment : oui.
-Feature flag léger : non.
+Ce qui manque : le test automatisé "compare le registre aux tables applicatives connues" est désormais présent (`backup-coverage.test.ts`, RPC `list_public_base_tables()`, s'exécute en conditions réelles quand des identifiants Supabase sont disponibles, sinon repli automatique) — **mais la duplication de la liste entre `BACKUP_TABLES` (TS) et `export_backup_snapshot()` (SQL) n'a pas été éliminée à la source**, voir `ROADMAP_DEFERRED.md`.
+Fichiers concernés : `src/lib/data/backups.ts`, `src/lib/data/backup-coverage.test.ts`, `supabase/migrations/20260718110200_backup_coverage_helper.sql`.
+Tests déjà présents : `backup-coverage.test.ts` (2 tests, conditions réelles).
+Migration nécessaire : non (déjà livrée).
+Déployable indépendamment : oui — déjà déployé.
 
 ## 2.2 Snapshot cohérent
 
-**Statut : PARTIELLEMENT IMPLÉMENTÉ**
+**Statut : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
 
-Ce qui existe (posé ce jour, commits `5a92a59` et fix `20260718010100`) : `export_backup_snapshot()`, fonction PL/pgSQL `security definer`, appelée en un seul aller-retour RPC — élimine le bug des 25 requêtes séparées pouvant capturer des instants différents. **Précision importante :** le commentaire dans `backups.ts` (ligne 43) affirme à tort "REPEATABLE READ" — la tentative d'isoler la transaction à ce niveau a été abandonnée pendant le sprint (`SET TRANSACTION ISOLATION LEVEL` doit être le tout premier ordre d'une transaction, ce qu'un appel RPC ne permet pas). Le comportement réel est **READ COMMITTED** avec un seul appel RPC de haut niveau, ce qui reste correct pour l'objectif recherché (un seul instant partagé par les sous-requêtes), mais le commentaire dans le code est incohérent avec celui, exact, de la migration SQL elle-même.
+Ce qui existe désormais : `export_backup_snapshot()` reconstruite en **une seule instruction SQL** (`language sql`, 25 sous-requêtes triées `order by t.id`, migration `20260718110100`) — élimine réellement le risque de cohérence inter-tables (pas seulement en théorie : démontré par un protocole à deux sessions concurrentes, ancienne version reproduit le bug, nouvelle version en est immunisée, voir `roadmap-v3-discussion/lot-06-backups-integrite-retention/`). Le snapshot (format 2) porte désormais `format_version`, date, saison active, auteur/contexte, checksum (`sha256-canonical-json-v1`), version de l'application et du schéma réellement appliqué (`get_latest_applied_migration()`).
 
-Ce qui manque : le snapshot ne contient pas de version de format, date explicite dans le payload (elle existe au niveau de la ligne `backups.created_at`, pas dans le JSON lui-même), ID de saison active, auteur dans le JSON (l'auteur existe en colonne `created_by_player_id`, pas dans le snapshot), checksum/empreinte, version de l'application.
-
-Fichiers concernés : `src/lib/data/backups.ts`, `supabase/migrations/20260718010000_transactional_backup.sql`, `supabase/migrations/20260718010100_fix_transactional_backup.sql`.
-Tables/migrations : évolution de `export_backup_snapshot()` pour inclure les métadonnées, ou les ajouter côté JS après l'appel RPC (plus simple, pas de nouvelle migration).
-Risque sur données existantes : aucun.
-Effort estimé : **S** (ajout de métadonnées côté JS) à **M** (checksum + versioning formel).
-Tests à ajouter : snapshot contient bien `players`/`matches` (déjà vérifié manuellement ce jour) ; format versionné.
-Migration nécessaire : non si les métadonnées sont ajoutées côté JS après l'appel RPC.
-Déployable indépendamment : oui.
-Feature flag léger : non.
-
-**À corriger en priorité (dette mineure) :** le commentaire "REPEATABLE READ" dans `backups.ts:43` doit être aligné sur le commentaire exact de la migration, pour éviter qu'un futur lecteur (humain ou agent) ne présuppose une garantie d'isolation plus forte que ce qui est réellement livré.
+Ce qui manque : rien par rapport au périmètre du Lot 6. Le commentaire "REPEATABLE READ" erroné a été retiré (remplacé par une description exacte du mécanisme réel).
+Fichiers concernés : `src/lib/data/backups.ts`, `src/lib/data/backup-integrity.ts`, `supabase/migrations/20260718110100_backup_snapshot_secured.sql`.
+Migration nécessaire : non (déjà livrée).
+Déployable indépendamment : oui — déjà déployé.
 
 ## 2.3 Stockage et export
 
-**Statut : PARTIELLEMENT IMPLÉMENTÉ**
+**Statut : PARTIELLEMENT IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
 
-Ce qui existe : téléchargement JSON (`/api/backups/[id]/download`), bandeau explicite ajouté ce jour sur `/admin/sauvegardes` recommandant un export périodique hors Supabase, sauvegarde hebdomadaire automatique (`/api/cron/weekly-backup`), sauvegarde avant réinitialisation et avant déverrouillage de saison.
+Ce qui existe désormais : téléchargement JSON en deux formats documentés (enveloppe versionnée format 2 avec checksum, brut inchangé pour les 4 backups legacy), export séparé `audit_log` (`backup_artifacts`, artefact dédié, checksum propre), avertissement explicite sur les données sensibles avant tout téléchargement complet, bandeau honnête aligné sur la V2 ("Sauvegarde téléchargeable. La restauration complète reste une opération administrateur assistée."), colonne `protected` posée (backups avant opération sensible protégés par défaut, legacy traités comme protégés).
 
-Ce qui manque : pas de "rappel si aucun export externe récent" actif dans l'interface (le bandeau est statique, pas conditionnel à la dernière date de téléchargement réel — on ne peut d'ailleurs pas savoir si un JSON a été *téléchargé* sur un appareil, seulement s'il a été *créé* en base). Pas de rétention configurable des sauvegardes internes (elles s'accumulent indéfiniment dans la table `backups`).
-Fichiers concernés : `src/app/admin/sauvegardes/page.tsx`, `src/lib/data/backups.ts`.
-Tables/migrations : aucune nouvelle nécessaire pour une politique de rétention simple (suppression des sauvegardes `weekly` de plus de N semaines, en gardant les `manual`/`before_reset`/`end_of_season`).
-Risque sur données existantes : si une politique de purge est mal calibrée, elle pourrait supprimer une sauvegarde encore utile — à traiter comme une opération sensible (voir §1.3 de la V2, "aucune opération destructive sans protection").
-Effort estimé : **S** (rétention simple par âge + trigger reason).
-Tests à ajouter : purge ne touche jamais les sauvegardes `before_reset`/`end_of_season`.
-Migration nécessaire : non.
-Déployable indépendamment : oui.
-Feature flag léger : non nécessaire.
+Ce qui manque : purge automatique toujours différée (`protected` et la classification existent, mais aucun cron de purge n'a été construit — voir `ROADMAP_DEFERRED.md`), export expurgé pour les coachs toujours différé.
+Fichiers concernés : `src/app/admin/sauvegardes/page.tsx`, `src/lib/data/backups.ts`, `src/lib/data/backups-actions.ts`.
+Migration nécessaire : non pour ce qui est livré.
+Déployable indépendamment : oui — déjà déployé.
 
 ## 2.4 Restauration progressive (Paliers A/B/C)
 
-**Statut Palier A : DÉJÀ IMPLÉMENTÉ**
+**Statut Palier A : DÉJÀ IMPLÉMENTÉ — Lot 6 déployé en production — en attente de validation utilisateur finale**
 
-Ce qui existe : téléchargement JSON, comparaison des compteurs par table entre la dernière sauvegarde et l'état actuel (déjà affichée sur `/admin/sauvegardes`), bandeau honnête ("Téléchargement uniquement — pas de restauration automatique", ajouté ce jour), sauvegarde obligatoire avant clôture (`startNewSeason`) et avant réinitialisation (`resetSeasonData`). Procédure de restauration manuelle documentée dans le README (§ "Procédure d'urgence").
+Ce qui existe : téléchargement JSON (deux formats), comparaison des compteurs par table, bandeau honnête, sauvegarde obligatoire avant clôture/réinitialisation/déverrouillage/migration, inventaire explicite des tables (`tables_included`/`tables_excluded` affichés par backup), validation de format et checksum désormais réelle (5 états d'intégrité : legacy-unverifiable, needs-finalization, unverified, ok, mismatch — voir `roadmap-v3-discussion/lot-06-backups-integrite-retention/`). Procédure de restauration manuelle documentée dans le README (§ "Procédure d'urgence").
 
-Ce qui manque pour un Palier A strictement complet : validation de format et checksum du JSON (dépend de 2.2), inventaire explicite des tables affiché à côté du téléchargement (les compteurs existent déjà, mais pas un "inventaire" nommé comme tel).
+Ce qui manque pour un Palier A strictement complet : rien d'identifié.
 
 **Statut Palier B : TOUJOURS DIFFÉRÉ**
 
