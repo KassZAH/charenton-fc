@@ -74,23 +74,29 @@ Migration nécessaire : non. Déployable indépendamment : oui (déjà déployé
 
 ## 1.1 Propriétaire explicite du club
 
-**Statut : À IMPLÉMENTER**
+**Statut : TERMINÉ POUR LE MODÈLE DE GOUVERNANCE ACTIF** (Lot 5 de la roadmap V3, étapes A à D2, déployé en production le 18/07/2026)
 
-Ce qui existe : `team_settings` n'a pas de colonne `owner_player_id`. Le rôle `admin` est la permission la plus haute existante ; tous les admins ont des droits identiques (y compris pour des opérations comme le déverrouillage de saison ou la suppression). `team_settings.access_code` existe déjà en base mais n'est utilisé nulle part dans le code applicatif (colonne orpheline, probablement un vestige d'une fonctionnalité jamais branchée).
+**Modèle actif :** Joueur / Coach / Propriétaire — le Propriétaire n'est pas un rôle distinct en base, c'est une surcouche du Coach portée par `team_settings.owner_player_id` (exactement un joueur, toujours `role='coach'`, jamais un rôle métier séparé). `SessionPayload.isOwner` est recalculé à chaque requête par comparaison directe, jamais déduit du prénom, de l'ordre de création ou d'une adresse e-mail.
 
-Ce qui manque : la colonne `owner_player_id`, les helpers `requireOwner()`, et toute distinction entre "admin" et "propriétaire" dans les Server Actions sensibles (transfert de propriété, restauration globale future).
+Le rôle `admin` **n'existe plus comme valeur métier** : 0 ligne `players.role = 'admin'` en base (migrées vers `coach` à l'Étape C), `PlayerRole` réduit à `"player" | "coach"` côté code (Étape D1), et la contrainte SQL `players_role_check` limitée à `CHECK (role = ANY (ARRAY['player'::text, 'coach'::text]))` (Étape D2, migration `20260718100000_remove_legacy_admin_role_constraint.sql`) — `admin` est désormais physiquement rejeté par PostgreSQL, plus seulement absent par convention applicative.
 
-Fichiers concernés : `src/lib/auth/current-user.ts`, `src/types/models.ts`, `supabase/migrations/`.
-Tables/migrations : migration additive sur `team_settings` (`owner_player_id uuid references players(id)`).
-Dépendances techniques : aucune — peut se faire indépendamment, mais n'a de valeur que si des opérations réservées au propriétaire existent déjà (aujourd'hui, aucune ne l'exige explicitement — un seul admin gère le club).
-Risque sur données existantes : faible — colonne nullable, aucun recalcul.
-Effort estimé : **S** pour la colonne + un premier `requireOwner()`, **M** si on l'applique à plusieurs Server Actions.
-Tests à ajouter : opération propriétaire acceptée pour le propriétaire, refusée pour un autre admin.
-Migration nécessaire : oui (additive, nullable).
-Déployable indépendamment : oui.
-Feature flag léger : non nécessaire — la colonne peut rester `null` pour tous tant qu'aucune action ne l'exige.
+Séquence exécutée (expand → migrate → contract, jamais de migration "big bang", chaque étape testée et déployée indépendamment) :
+- **Étape A (expand)** : colonnes additives `team_settings.owner_player_id` (nullable) et `players.pin_length` — `NEW_PIN_LENGTH` découple désormais la longueur de PIN du rôle (plus jamais 4 vs 6 dérivé de `role`).
+- **Étape B (code compatible)** : `requireOwner()`/`requireFreshCoach()`/`requireFreshUser()` ; UI relabellée (badge "👑 Propriétaire" uniquement pour le titulaire de `owner_player_id`, "Coach" pour les autres comptes élevés, plus aucune mention visible "Admin"/"Administrateur") ; `/admin/coachs` (gestion promotion/rétrogradation, réservée au propriétaire).
+- **Étape C (migrate)** : migration transactionnelle des données réelles — `owner_player_id` renseigné vers Amine Zahid, les 3 comptes `admin` réels (Amine Zahid, Ulysse Monneret, Test Admin) convertis en `coach` avec `session_version` incrémenté (révocation immédiate des anciennes sessions), assertion post-migration annulant toute la transaction en cas d'anomalie.
+- **Étape D1 (code final)** : retrait de `admin` de `PlayerRole`, `isElevatedRole()`, gardes de session — 13 sites recensés et corrigés, sans renommage massif.
+- **Étape D2 (contract)** : retrait définitif de `admin` de la contrainte SQL, après vérification transactionnelle qu'aucune ligne ne l'utilisait plus.
 
-**Note de risque produit :** pour un club à un seul admin actif (le cas réel de Charenton FC aujourd'hui, avec un profil "Amine Zahid" à droits complets), ce chantier a une valeur pratique limitée tant qu'il n'y a pas plusieurs admins. À ne pas prioriser avant que le club ait effectivement plusieurs comptes admin actifs.
+Noms internes legacy conservés à l'identique, sans impact fonctionnel : `requireAdmin`/`requireUser` (aliases de compatibilité), routes `/admin/*`, variable locale `isAdmin`, composants `AdminSection`/`AdminAvailabilityRow`.
+
+**Transfert de propriété : TOUJOURS DIFFÉRÉ ET DÉSACTIVÉ.** `transfer_ownership()` (RPC PL/pgSQL transactionnelle) et `transferOwnership()` (Server Action) sont implémentés et relus, mais `OWNERSHIP_TRANSFER_ENABLED = false` (`src/lib/data/team-settings.ts`) bloque tout appel réel — aucun environnement Supabase isolé n'est disponible pour un test d'intégration complet (pas de Docker local, pas de projet Supabase de secours, pas d'accès API au niveau organisation). À revisiter uniquement si un tel environnement devient disponible.
+
+Fichiers concernés : `src/lib/auth/current-user.ts`, `src/lib/auth/session.ts`, `src/types/models.ts`, `src/lib/data/team-settings.ts`, `src/lib/data/ownership-actions.ts`, `src/app/admin/coachs/`, `supabase/migrations/20260718060000_*` à `20260718100000_*`.
+Rollback documenté séparément (sans jamais modifier une migration déjà appliquée) : `docs/rollbacks/lot-5-owner-coach-migration.md`.
+Tests : 79 tests automatisés couvrant `isElevatedRole`, `validateNewPin`, `canView`/`visibility`, `buildOwnershipTransferAuditEntry` ; vérifications fonctionnelles manuelles (Amine reconnu propriétaire, coachs reconnus, joueur refusé, PIN existants fonctionnels, aucune donnée réelle modifiée) à chaque étape.
+Migration nécessaire : oui — 5 migrations additives/correctives, toutes appliquées et immuables une fois exécutées.
+Déployable indépendamment : oui — chaque étape déployée et vérifiée en production séparément.
+Feature flag léger : `OWNERSHIP_TRANSFER_ENABLED` (transfert uniquement, reste à `false`).
 
 ## 1.2 Session courte et révocable
 
