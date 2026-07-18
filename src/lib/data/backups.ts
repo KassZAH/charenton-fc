@@ -201,9 +201,32 @@ export async function getBackupSnapshotForOwner(backupId: string): Promise<Backu
   return data;
 }
 
+/**
+ * Même contenu complet que ci-dessus, mais gardée par requireFreshCoach()
+ * (pas requireOwner()) — réservée à la vérification d'intégrité interne
+ * (backups-actions.ts::checkBackupIntegrityAction), qui recalcule un
+ * checksum côté serveur et ne renvoie jamais `snapshot` au client. Ne pas
+ * utiliser pour un chemin qui exposerait le contenu tel quel (téléchargement,
+ * export) — celui-là doit rester sur getBackupSnapshotForOwner ci-dessus.
+ */
+export async function getBackupSnapshotForIntegrityCheck(backupId: string): Promise<Backup | null> {
+  await requireFreshCoach();
+  const { data, error } = await supabaseAdmin.from("backups").select("*").eq("id", backupId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 /** Même garde intégrée que getBackupSnapshotForOwner() ci-dessus, pour la même raison. */
 export async function getBackupArtifactForOwner(artifactId: string): Promise<BackupArtifact | null> {
   await requireOwner();
+  const { data, error } = await supabaseAdmin.from("backup_artifacts").select("*").eq("id", artifactId).maybeSingle();
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+/** Équivalent de getBackupSnapshotForIntegrityCheck() pour un artefact — même usage, même garde requireFreshCoach(). */
+export async function getBackupArtifactForIntegrityCheck(artifactId: string): Promise<BackupArtifact | null> {
+  await requireFreshCoach();
   const { data, error } = await supabaseAdmin.from("backup_artifacts").select("*").eq("id", artifactId).maybeSingle();
   if (error) throw new Error(error.message);
   return data;
@@ -290,35 +313,91 @@ export async function createAuditLogArtifact(
   return data;
 }
 
+type AtomicCreationRow = {
+  backup_id: string;
+  backup_created_at: string;
+  backup_snapshot: Json;
+  artifact_id: string;
+  artifact_payload: Json;
+  artifact_row_count: number;
+};
+
 /**
- * Orchestration : crée le backup, puis (uniquement pour les trigger_reason
- * "sensibles" : before_restore, before_migration, before_fusion) génère
- * automatiquement son artefact audit_log. Si cet artefact obligatoire
- * échoue, le backup fraîchement créé est supprimé (compensation) et
- * l'erreur est propagée — jamais un backup sensible silencieusement
- * présenté comme complet sans son artefact. Pas une transaction Postgres
- * unique (deux allers-retours distincts, le checksum étant calculé côté
- * Node entre les deux) — voir compte rendu du Lot 6 pour la justification
- * de ce choix face à l'alternative "même transaction".
+ * Crée le backup ET son artefact audit_log dans UNE SEULE transaction
+ * Postgres (RPC create_sensitive_backup_with_audit_artifact, migration
+ * 20260718120000) : soit les deux lignes existent, soit aucune des deux —
+ * garanti par le rollback automatique de la transaction sur toute erreur
+ * SQL, pas par une compensation applicative. Les checksums (calculés en JS,
+ * jamais dupliqués en SQL — voir le commentaire de la migration) sont
+ * complétés juste après par une mise à jour : si cette étape échoue, les
+ * deux lignes existent quand même (jamais orphelines), simplement avec un
+ * statut "Non vérifié" jusqu'à la prochaine vérification.
+ */
+async function createBackupWithArtifactTransactional(
+  params: CreateBackupParams
+): Promise<{ backup: Backup; auditLogArtifact: BackupArtifact }> {
+  const [activeSeason, databaseSchemaVersion] = await Promise.all([
+    getActiveSeasonForBackup(),
+    getDatabaseSchemaVersion(),
+  ]);
+
+  // Le générateur de types Supabase ne reflète pas la nullabilité réelle des
+  // paramètres SQL (tous nullable en base, aucun `not null` déclaré) — cast
+  // vers le client non typé pour ce seul appel, même pattern que `untypedDb`
+  // plus haut dans ce fichier.
+  const { data, error } = await (supabaseAdmin as unknown as SupabaseClient).rpc("create_sensitive_backup_with_audit_artifact", {
+    p_label: params.label,
+    p_trigger_reason: params.triggerReason,
+    p_backup_type: backupTypeForTriggerReason(params.triggerReason),
+    p_protected: params.protectedBackup,
+    p_created_by_player_id: params.createdByPlayerId,
+    p_created_by_context: params.createdByContext ?? null,
+    p_application_commit: getApplicationCommit(),
+    p_database_schema_version: databaseSchemaVersion,
+    p_active_season_id: activeSeason?.id ?? null,
+    p_active_season_name: activeSeason?.name ?? null,
+  });
+  if (error) throw new Error(`Création transactionnelle échouée : ${error.message}`);
+
+  const row = (data as unknown as AtomicCreationRow[])[0];
+
+  const backupChecksum = computeChecksum(row.backup_snapshot);
+  const artifactChecksum = computeChecksum(row.artifact_payload);
+
+  const [{ data: backup, error: backupUpdateError }, { data: auditLogArtifact, error: artifactUpdateError }] =
+    await Promise.all([
+      supabaseAdmin
+        .from("backups")
+        .update({ checksum: backupChecksum, checksum_algorithm: CHECKSUM_ALGORITHM })
+        .eq("id", row.backup_id)
+        .select("*")
+        .single(),
+      supabaseAdmin
+        .from("backup_artifacts")
+        .update({ checksum: artifactChecksum, checksum_algorithm: CHECKSUM_ALGORITHM })
+        .eq("id", row.artifact_id)
+        .select("*")
+        .single(),
+    ]);
+  if (backupUpdateError) throw new Error(backupUpdateError.message);
+  if (artifactUpdateError) throw new Error(artifactUpdateError.message);
+
+  return { backup, auditLogArtifact };
+}
+
+/**
+ * Orchestration : pour les trigger_reason "sensibles" (before_restore,
+ * before_migration, before_fusion), passe par le chemin transactionnel
+ * ci-dessus (backup + artefact garantis ensemble). Pour tous les autres,
+ * simple création du backup, sans artefact.
  */
 export async function createBackupWithArtifacts(
   params: CreateBackupParams
 ): Promise<{ backup: Backup; auditLogArtifact: BackupArtifact | null }> {
+  if (requiresAuditLogArtifact(params.triggerReason)) {
+    return createBackupWithArtifactTransactional(params);
+  }
+
   const backup = await createBackup(params);
-
-  if (!requiresAuditLogArtifact(params.triggerReason)) {
-    return { backup, auditLogArtifact: null };
-  }
-
-  try {
-    const auditLogArtifact = await createAuditLogArtifact(backup.id, backup.created_at, params.createdByPlayerId);
-    return { backup, auditLogArtifact };
-  } catch (artifactError) {
-    await deleteBackupRow(backup.id);
-    throw new Error(
-      `Backup sensible annulé : son artefact audit_log obligatoire a échoué (${
-        artifactError instanceof Error ? artifactError.message : String(artifactError)
-      }).`
-    );
-  }
+  return { backup, auditLogArtifact: null };
 }

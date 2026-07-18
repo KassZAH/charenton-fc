@@ -15,8 +15,8 @@ export function DownloadBackupButton({ backupId, href }: { backupId: string; hre
     e.preventDefault();
     setChecking(true);
     try {
-      const status = await checkBackupIntegrityAction(backupId);
-      if (status === "mismatch") {
+      const { checksumStatus } = await checkBackupIntegrityAction(backupId);
+      if (checksumStatus === "mismatch") {
         const confirmed = window.confirm(
           "Le checksum de cette sauvegarde ne correspond pas à l'attendu.\n\n" +
             "Cause possible : modification, migration antérieure, ou anomalie technique — à examiner. " +

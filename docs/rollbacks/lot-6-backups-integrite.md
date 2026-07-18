@@ -1,20 +1,101 @@
 # Rollback — Lot 6 (backups versionnés, intégrité et rétention)
 
-Document de traçabilité séparé des migrations du Lot 6, qui doivent rester immuables une fois appliquées.
+Document de traçabilité séparé des migrations du Lot 6, qui doivent rester immuables une fois appliquées. Ne jamais modifier une migration déjà appliquée : toute correction passe par une nouvelle migration.
 
 ## Migrations concernées
 
 - `supabase/migrations/20260718110000_backup_versioning_schema.sql` — colonnes additives sur `backups`, table `backup_artifacts`.
-- `supabase/migrations/20260718110100_backup_snapshot_secured.sql` — `export_backup_snapshot()` réécrite, `export_audit_log_snapshot()`, `get_latest_applied_migration()`.
+- `supabase/migrations/20260718110100_backup_snapshot_secured.sql` — `export_backup_snapshot()` **remplacée** (pas additive : la fonction précédente est écrasée par `create or replace function`), `export_audit_log_snapshot()`, `get_latest_applied_migration()`, révocations EXECUTE.
 - `supabase/migrations/20260718110200_backup_coverage_helper.sql` — `list_public_base_tables()`.
+- `supabase/migrations/20260718120000_backup_atomic_creation.sql` — `backup_artifacts.checksum`/`checksum_algorithm` relâchées en nullable, `create_sensitive_backup_with_audit_artifact()`.
 
-## Rollback des colonnes et de la table (si nécessaire)
+## ⚠️ `export_backup_snapshot()` n'est pas un ajout — c'est un remplacement
 
-Toutes les colonnes ajoutées sont nullables, sans `DEFAULT` — aucune ligne existante n'en dépend. Les 4 backups legacy restent utilisables même après un rollback complet (ils n'ont jamais utilisé ces colonnes).
+Contrairement aux colonnes et à `backup_artifacts` (purement additifs), `export_backup_snapshot()` est la **même fonction, remplacée sur place** (`create or replace function`, même nom, même signature zéro-argument, même type de retour `jsonb`). Le rollback de cette fonction spécifiquement n'est donc pas "additif" — c'est une restauration de définition, à traiter avec la même prudence qu'un rollback de contrainte.
+
+### Définition précédente exacte (avant le Lot 6)
+
+Celle posée par `supabase/migrations/20260718010100_fix_transactional_backup.sql` (fichier historique, jamais modifié — source de vérité) :
 
 ```sql
+create or replace function public.export_backup_snapshot()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  result jsonb := '{}'::jsonb;
+begin
+  result := jsonb_set(result, '{players}', coalesce((select jsonb_agg(t) from public.players t), '[]'::jsonb));
+  result := jsonb_set(result, '{opponents}', coalesce((select jsonb_agg(t) from public.opponents t), '[]'::jsonb));
+  -- ... (23 autres tables, une affectation séquentielle par table — voir le
+  -- fichier historique pour la liste complète, jamais reproduite ici pour
+  -- éviter une divergence avec la source de vérité)
+  return result;
+end;
+$$;
+```
+
+**Différence de comportement à connaître avant de restaurer cette version :** cette forme (25 instructions `result := jsonb_set(...)` séquentielles, `language plpgsql`) ne garantit **pas** un instant cohérent unique entre les tables sous READ COMMITTED — c'est précisément le défaut corrigé par le Lot 6 (instruction unique `language sql`, démontré par un protocole à deux sessions concurrentes, voir le compte rendu du lot). Restaurer cette version réintroduit ce défaut.
+
+### Anciens privilèges
+
+Avant le Lot 6, aucun `revoke`/`grant` explicite n'existait sur `export_backup_snapshot()` dans les migrations du dépôt — la fonction s'appuyait donc sur les privilèges par défaut du projet Supabase (`ALTER DEFAULT PRIVILEGES` posé à la création du projet, pas dans ce dépôt). Le comportement par défaut standard d'un projet Supabase accorde EXECUTE sur les fonctions du schéma `public` à `anon`/`authenticated` en plus de `service_role`, sauf révocation explicite — vraisemblablement le cas ici avant le Lot 6, bien que l'état exact n'ait pas été capturé avant la révocation (aucune requête d'audit des privilèges n'existait avant ce lot). C'est précisément ce que le Lot 6 corrige (§2 du plan) : EXECUTE désormais explicitement révoqué à `public`/`anon`/`authenticated`, vérifié fonctionnel uniquement via `service_role`.
+
+### Procédure de restauration de la fonction (si nécessaire)
+
+```sql
+-- 1. Restaurer l'ancienne définition (copier le texte exact du fichier
+--    historique 20260718010100_fix_transactional_backup.sql).
+create or replace function public.export_backup_snapshot()
+returns jsonb
+language plpgsql
+security definer
+set search_path = public
+as $$ ... $$;  -- coller ici le corps exact du fichier historique
+
+-- 2. Restaurer l'absence de révocation explicite (revenir aux privilèges
+--    par défaut du projet) :
+grant execute on function public.export_backup_snapshot() to anon;
+grant execute on function public.export_backup_snapshot() to authenticated;
+```
+
+## Rollback des colonnes et de `backup_artifacts` (additif, sûr)
+
+Toutes les colonnes ajoutées sont nullables, sans `DEFAULT` — aucune ligne existante n'en dépend structurellement. **Mais** si des backups au format 2 ont été créés depuis le Lot 6 (avec des métadonnées, checksums, artefacts réellement utiles), les supprimer ferait perdre cette information de façon irréversible.
+
+```sql
+-- ⚠️ Assertion obligatoire avant tout rollback des colonnes/table : refuse
+-- de continuer si des données format 2 existent encore et doivent être
+-- conservées. À exécuter et faire échouer volontairement la migration si
+-- le compte n'est pas 0 et qu'aucune décision explicite de les sacrifier
+-- n'a été prise.
+do $$
+declare
+  v_format2_backups integer;
+  v_artifacts integer;
+begin
+  select count(*) into v_format2_backups from public.backups where format_version = 2;
+  select count(*) into v_artifacts from public.backup_artifacts;
+
+  if v_format2_backups > 0 or v_artifacts > 0 then
+    raise exception
+      'Rollback refusé : % backup(s) format 2 et % artefact(s) existent encore. '
+      'Exporter/archiver ces données avant de continuer, ou confirmer explicitement leur perte.',
+      v_format2_backups, v_artifacts;
+  end if;
+end $$;
+
 alter table public.backup_artifacts disable row level security;
 drop table if exists public.backup_artifacts;
+
+drop function if exists public.create_sensitive_backup_with_audit_artifact(
+  text, text, text, boolean, uuid, text, text, text, uuid, text
+);
+drop function if exists public.export_audit_log_snapshot(timestamptz);
+drop function if exists public.get_latest_applied_migration();
+drop function if exists public.list_public_base_tables();
 
 alter table public.backups
   drop constraint if exists backups_format_version_check,
@@ -37,31 +118,18 @@ alter table public.backups
   drop column if exists checksum_algorithm;
 
 -- Restreint trigger_reason aux 4 valeurs d'origine — uniquement si aucune
--- ligne n'utilise encore une des 4 nouvelles valeurs (vérifier avant, sinon
--- annuler : avec le même principe d'assertion transactionnelle que l'Étape D2 du Lot 5).
+-- ligne n'utilise encore une des 4 nouvelles valeurs (même principe
+-- d'assertion transactionnelle que l'Étape D2 du Lot 5 — à vérifier avant,
+-- sinon annuler).
 alter table public.backups drop constraint backups_trigger_reason_check;
 alter table public.backups add constraint backups_trigger_reason_check check (
   trigger_reason in ('manual', 'before_reset', 'weekly', 'end_of_season')
 );
 ```
 
-## Rollback des fonctions SQL
-
-```sql
--- Revient à la version multi-instructions (non recommandé — réintroduit le
--- bug de cohérence documenté au Lot 6 ; à n'utiliser qu'en dernier recours).
--- La définition exacte de la version précédente est dans
--- supabase/migrations/20260718010100_fix_transactional_backup.sql
--- (fichier historique, jamais modifié).
-
-drop function if exists public.export_audit_log_snapshot(timestamptz);
-drop function if exists public.get_latest_applied_migration();
-drop function if exists public.list_public_base_tables();
-```
-
 ## Ce que le rollback NE fait jamais
 
-- Ne supprime aucune ligne de `backups` (les 4 backups legacy et tout backup créé au format 2 restent intacts, seules les colonnes de métadonnées disparaissent).
+- Ne supprime aucune ligne de `backups` elle-même (seules les colonnes de métadonnées disparaissent, jamais les lignes) — sauf refus explicite via l'assertion ci-dessus si des données format 2 doivent être sacrifiées.
 - Ne touche à aucune autre table de données (`players`, `matches`, etc.).
 - Ne modifie aucune des migrations déjà appliquées — toujours une nouvelle migration corrective.
 

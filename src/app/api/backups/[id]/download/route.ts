@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOwner } from "@/lib/auth/current-user";
 import { getBackupSnapshotForOwner } from "@/lib/data/backups";
-import { checksumStatus } from "@/lib/data/backup-integrity";
+import { verifyChecksum } from "@/lib/data/backup-integrity";
 
 /**
  * Réservé au propriétaire (roadmap V3, Lot 6) — le snapshot contient
@@ -28,7 +28,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return new NextResponse(JSON.stringify(backup.snapshot, null, 2), { headers });
   }
 
-  const status = checksumStatus(backup.checksum, backup.snapshot);
+  const status = verifyChecksum(backup.checksum, backup.snapshot);
   headers["X-Backup-Integrity"] = status;
 
   const envelope = {

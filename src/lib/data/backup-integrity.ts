@@ -33,12 +33,41 @@ export function computeChecksum(value: unknown): string {
   return createHash("sha256").update(canonicalizeForChecksum(value), "utf8").digest("hex");
 }
 
-export type ChecksumStatus = "ok" | "legacy-unverifiable" | "mismatch";
+/**
+ * Quatre états distincts — ne jamais présenter un backup comme "ok" (Intègre)
+ * uniquement parce qu'un checksum est stocké. "unverified" est l'état par
+ * défaut d'un backup format 2 tant qu'aucun recalcul actif n'a eu lieu dans
+ * la requête en cours ; "ok"/"mismatch" ne sont atteints qu'après un
+ * recalcul réel (voir verifyChecksum ci-dessous, jamais checksumPresenceStatus).
+ */
+export type ChecksumStatus = "legacy-unverifiable" | "unverified" | "ok" | "mismatch";
 
-/** Ne recalcule jamais rien pour une ligne legacy (checksum absent) — "non vérifiable", jamais une erreur. */
-export function checksumStatus(storedChecksum: string | null, snapshot: unknown): ChecksumStatus {
+export const CHECKSUM_STATUS_LABELS: Record<ChecksumStatus, string> = {
+  "legacy-unverifiable": "Non vérifiable — backup legacy",
+  unverified: "Non vérifié — checksum disponible",
+  ok: "Intègre — après recalcul réussi",
+  mismatch: "Divergence détectée — après recalcul différent",
+};
+
+/**
+ * Statut à partir de la seule PRÉSENCE du checksum stocké — jamais un
+ * recalcul, donc jamais "ok"/"mismatch". Seule fonction utilisable dans un
+ * contexte qui ne charge pas le contenu complet (ex. liste des backups
+ * accessible aux coachs, qui ne doit jamais charger `snapshot`).
+ */
+export function checksumPresenceStatus(storedChecksum: string | null): "legacy-unverifiable" | "unverified" {
+  return storedChecksum ? "unverified" : "legacy-unverifiable";
+}
+
+/**
+ * Recalcule réellement le checksum à partir du contenu et compare — seule
+ * fonction qui peut renvoyer "ok" ou "mismatch". Nécessite d'avoir chargé le
+ * contenu complet (snapshot ou payload d'artefact) ; à n'appeler que depuis
+ * une action serveur déjà gardée (requireFreshCoach() au minimum).
+ */
+export function verifyChecksum(storedChecksum: string | null, content: unknown): ChecksumStatus {
   if (!storedChecksum) return "legacy-unverifiable";
-  return computeChecksum(snapshot) === storedChecksum ? "ok" : "mismatch";
+  return computeChecksum(content) === storedChecksum ? "ok" : "mismatch";
 }
 
 /** Tables listées comme incluses mais absentes du snapshot réel — signal d'anomalie, jamais silencieux. */

@@ -3,8 +3,19 @@
 import { revalidatePath } from "next/cache";
 import { requireFreshCoach, requireOwner } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { createAuditLogArtifact, createBackupWithArtifacts, deleteBackupRow, getBackupSnapshotForOwner } from "./backups";
-import { checksumStatus, type ChecksumStatus } from "./backup-integrity";
+import {
+  createAuditLogArtifact,
+  createBackupWithArtifacts,
+  deleteBackupRow,
+  getBackupArtifactForIntegrityCheck,
+  getBackupSnapshotForIntegrityCheck,
+} from "./backups";
+import {
+  detectCountMismatches,
+  detectMissingTables,
+  verifyChecksum,
+  type ChecksumStatus,
+} from "./backup-integrity";
 
 /**
  * Un coach peut créer un backup manuel, jamais protégé (voir §10 du plan
@@ -76,17 +87,40 @@ export async function deleteBackupAction(backupId: string, confirmLabel: string)
   revalidatePath("/admin/sauvegardes");
 }
 
+export type IntegrityCheckResult = {
+  checksumStatus: ChecksumStatus;
+  missingTables: string[];
+  countMismatches: { table: string; declared: number; actual: number }[];
+};
+
 /**
  * Vérification à la demande (jamais automatique sur la liste, pour ne pas
- * charger `snapshot` à chaque affichage) — recalcule le checksum réel avant
- * un téléchargement, pour permettre une confirmation forte en cas de
- * divergence. Ne renvoie jamais le contenu du snapshot au client.
+ * charger `snapshot` à chaque affichage) — accessible à tout coach, pas
+ * seulement au propriétaire : ne renvoie jamais `snapshot`, `pin_hash` ni
+ * aucune donnée de joueur au client, uniquement un statut et des anomalies
+ * structurelles. Le chargement du contenu complet reste interne au serveur
+ * (getBackupSnapshotForIntegrityCheck), jamais transmis tel quel.
  */
-export async function checkBackupIntegrityAction(backupId: string): Promise<ChecksumStatus> {
-  await requireOwner();
+export async function checkBackupIntegrityAction(backupId: string): Promise<IntegrityCheckResult> {
+  await requireFreshCoach();
 
-  const backup = await getBackupSnapshotForOwner(backupId);
+  const backup = await getBackupSnapshotForIntegrityCheck(backupId);
   if (!backup) throw new Error("Sauvegarde introuvable.");
 
-  return checksumStatus(backup.checksum, backup.snapshot);
+  const snapshot = (backup.snapshot ?? {}) as Record<string, unknown>;
+  return {
+    checksumStatus: verifyChecksum(backup.checksum, backup.snapshot),
+    missingTables: backup.tables_included ? detectMissingTables(backup.tables_included, snapshot) : [],
+    countMismatches: detectCountMismatches((backup.table_counts as Record<string, number>) ?? {}, snapshot),
+  };
+}
+
+/** Même principe que checkBackupIntegrityAction, pour un artefact (accessible à tout coach). */
+export async function checkArtifactIntegrityAction(artifactId: string): Promise<ChecksumStatus> {
+  await requireFreshCoach();
+
+  const artifact = await getBackupArtifactForIntegrityCheck(artifactId);
+  if (!artifact) throw new Error("Artefact introuvable.");
+
+  return verifyChecksum(artifact.checksum, artifact.payload);
 }

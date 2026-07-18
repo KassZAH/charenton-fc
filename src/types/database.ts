@@ -167,8 +167,8 @@ export type Database = {
         Row: {
           artifact_type: string
           backup_id: string
-          checksum: string
-          checksum_algorithm: string
+          checksum: string | null
+          checksum_algorithm: string | null
           created_at: string
           created_by_player_id: string | null
           format_version: number
@@ -180,8 +180,8 @@ export type Database = {
         Insert: {
           artifact_type: string
           backup_id: string
-          checksum: string
-          checksum_algorithm: string
+          checksum?: string | null
+          checksum_algorithm?: string | null
           created_at?: string
           created_by_player_id?: string | null
           format_version: number
@@ -193,8 +193,8 @@ export type Database = {
         Update: {
           artifact_type?: string
           backup_id?: string
-          checksum?: string
-          checksum_algorithm?: string
+          checksum?: string | null
+          checksum_algorithm?: string | null
           created_at?: string
           created_by_player_id?: string | null
           format_version?: number
@@ -1373,9 +1373,32 @@ export type Database = {
         Args: { p_match_id: string; p_player_ids: string[] }
         Returns: undefined
       }
+      create_sensitive_backup_with_audit_artifact: {
+        Args: {
+          p_active_season_id: string
+          p_active_season_name: string
+          p_application_commit: string
+          p_backup_type: string
+          p_created_by_context: string
+          p_created_by_player_id: string
+          p_database_schema_version: string
+          p_label: string
+          p_protected: boolean
+          p_trigger_reason: string
+        }
+        Returns: {
+          artifact_id: string
+          artifact_payload: Json
+          artifact_row_count: number
+          backup_created_at: string
+          backup_id: string
+          backup_snapshot: Json
+        }[]
+      }
       export_audit_log_snapshot: { Args: { p_cutoff: string }; Returns: Json }
       export_backup_snapshot: { Args: never; Returns: Json }
       get_latest_applied_migration: { Args: never; Returns: string }
+      list_public_base_tables: { Args: never; Returns: string[] }
       transfer_ownership: {
         Args: { p_new_owner_id: string }
         Returns: undefined

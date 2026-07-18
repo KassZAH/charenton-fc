@@ -3,11 +3,12 @@ import {
   CHECKSUM_ALGORITHM,
   backupTypeForTriggerReason,
   canonicalizeForChecksum,
-  checksumStatus,
+  checksumPresenceStatus,
   computeChecksum,
   detectCountMismatches,
   detectMissingTables,
   requiresAuditLogArtifact,
+  verifyChecksum,
 } from "./backup-integrity";
 
 describe("canonicalizeForChecksum", () => {
@@ -55,20 +56,30 @@ describe("computeChecksum", () => {
   });
 });
 
-describe("checksumStatus", () => {
+describe("checksumPresenceStatus", () => {
+  it("is legacy-unverifiable when no checksum is stored — never claims verified", () => {
+    expect(checksumPresenceStatus(null)).toBe("legacy-unverifiable");
+  });
+
+  it("is unverified when a checksum is stored but not yet recomputed — never claims 'ok' from presence alone", () => {
+    expect(checksumPresenceStatus("abc123")).toBe("unverified");
+  });
+});
+
+describe("verifyChecksum", () => {
   const snapshot = { players: [{ id: "1" }] };
 
   it("is legacy-unverifiable when no checksum is stored", () => {
-    expect(checksumStatus(null, snapshot)).toBe("legacy-unverifiable");
+    expect(verifyChecksum(null, snapshot)).toBe("legacy-unverifiable");
   });
 
-  it("is ok when the stored checksum matches a recomputation", () => {
+  it("is ok only after an actual recomputation matches the stored checksum", () => {
     const stored = computeChecksum(snapshot);
-    expect(checksumStatus(stored, snapshot)).toBe("ok");
+    expect(verifyChecksum(stored, snapshot)).toBe("ok");
   });
 
   it("is mismatch when the stored checksum does not match a recomputation", () => {
-    expect(checksumStatus("0000000000000000000000000000000000000000000000000000000000000000", snapshot)).toBe(
+    expect(verifyChecksum("0000000000000000000000000000000000000000000000000000000000000000", snapshot)).toBe(
       "mismatch"
     );
   });

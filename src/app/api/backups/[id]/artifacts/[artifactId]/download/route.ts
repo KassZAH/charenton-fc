@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { requireOwner } from "@/lib/auth/current-user";
 import { getBackupArtifactForOwner } from "@/lib/data/backups";
-import { checksumStatus } from "@/lib/data/backup-integrity";
+import { verifyChecksum } from "@/lib/data/backup-integrity";
 
 /** Réservé au propriétaire — un artefact audit_log peut contenir des informations sensibles (ex. contexte d'un changement de PIN). */
 export async function GET(_request: Request, { params }: { params: Promise<{ id: string; artifactId: string }> }) {
@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Artefact introuvable." }, { status: 404 });
   }
 
-  const status = checksumStatus(artifact.checksum, artifact.payload);
+  const status = verifyChecksum(artifact.checksum, artifact.payload);
 
   const envelope = {
     format_version: artifact.format_version,

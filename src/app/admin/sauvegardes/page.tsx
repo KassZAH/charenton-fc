@@ -4,8 +4,10 @@ import { getBackupArtifactsMetadata, getBackupMetadata, getLiveTableCounts, type
 import { createManualBackup, exportAuditLogArtifactAction } from "@/lib/data/backups-actions";
 import { formatShortDate } from "@/lib/format";
 import { BACKUP_TRIGGER_LABELS, BACKUP_TYPE_LABELS } from "@/types/models";
+import { checksumPresenceStatus, CHECKSUM_STATUS_LABELS } from "@/lib/data/backup-integrity";
 import { DownloadBackupButton } from "./DownloadBackupButton";
 import { DeleteBackupForm } from "./DeleteBackupForm";
+import { VerifyIntegrityButton } from "./VerifyIntegrityButton";
 
 function protectionLabel(protectedFlag: boolean | null): string {
   if (protectedFlag === null) return "Protégé — backup legacy";
@@ -132,7 +134,7 @@ export default async function BackupsPage() {
                     {protectionLabel(b.protected)}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70">
-                    {b.checksum ? "Checksum présent" : "Checksum absent (legacy)"}
+                    {CHECKSUM_STATUS_LABELS[checksumPresenceStatus(b.checksum)]}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70 tabular-nums">
                     {Object.keys((b.table_counts as Record<string, number>) ?? {}).length} tables · {totalRows(b.table_counts)} lignes
@@ -150,6 +152,8 @@ export default async function BackupsPage() {
                     <p className="mt-1">Non disponible pour ce format historique.</p>
                   )}
                 </details>
+
+                {b.checksum && <VerifyIntegrityButton backupId={b.id} />}
 
                 {user.isOwner && (
                   <div className="mt-2 space-y-1">
