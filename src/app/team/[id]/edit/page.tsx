@@ -2,13 +2,19 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getPlayerById } from "@/lib/data/players";
 import { updatePlayer, setPlayerStatus } from "@/lib/data/players-actions";
+import { getOwnerPlayerId } from "@/lib/data/team-settings";
 
+/**
+ * Ne modifie jamais le rôle — la promotion/rétrogradation est une action
+ * séparée, réservée au propriétaire (voir /admin/coachs, roadmap V3 Lot 5).
+ */
 export default async function EditPlayerPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   await requireAdmin();
 
-  const player = await getPlayerById(id);
+  const [player, ownerPlayerId] = await Promise.all([getPlayerById(id), getOwnerPlayerId()]);
   if (!player) notFound();
+  const isOwnerAccount = player.id === ownerPlayerId;
 
   return (
     <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
@@ -60,27 +66,8 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-cream" htmlFor="role">
-            Rôle
-          </label>
-          <select
-            id="role"
-            name="role"
-            defaultValue={player.role}
-            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-          >
-            <option value="player">Joueur (PIN à 4 chiffres)</option>
-            <option value="admin">Admin (PIN à 6 chiffres)</option>
-            <option value="coach">Coach (PIN à 6 chiffres)</option>
-          </select>
-          <p className="mt-1 text-xs text-steel/70">
-            Un changement de rôle ne prend effet qu&apos;à la prochaine connexion de ce joueur.
-          </p>
-        </div>
-
-        <div>
           <label className="block text-sm font-medium text-cream" htmlFor="new_pin">
-            Nouveau PIN
+            Nouveau PIN (6 chiffres)
           </label>
           <input
             id="new_pin"
@@ -97,17 +84,19 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
         </button>
       </form>
 
-      <form
-        action={setPlayerStatus.bind(null, player.id, player.status === "archived" ? "active" : "archived")}
-        className="mt-4"
-      >
-        <button
-          type="submit"
-          className="w-full rounded-lg border border-white/15 py-3 text-sm font-semibold text-cream/80"
+      {!isOwnerAccount && (
+        <form
+          action={setPlayerStatus.bind(null, player.id, player.status === "archived" ? "active" : "archived")}
+          className="mt-4"
         >
-          {player.status === "archived" ? "Réactiver ce joueur" : "Archiver ce joueur"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            className="w-full rounded-lg border border-white/15 py-3 text-sm font-semibold text-cream/80"
+          >
+            {player.status === "archived" ? "Réactiver ce joueur" : "Archiver ce joueur"}
+          </button>
+        </form>
+      )}
     </div>
   );
 }

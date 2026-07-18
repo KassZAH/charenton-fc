@@ -21,6 +21,8 @@ export type SessionPayload = {
   playerId: string;
   role: "player" | "admin" | "coach";
   name: string;
+  /** true si playerId === team_settings.owner_player_id — jamais déduit du prénom, du rôle ou de l'ordre de création. */
+  isOwner: boolean;
 };
 
 /**

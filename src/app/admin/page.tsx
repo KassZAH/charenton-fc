@@ -3,12 +3,12 @@ import { requireAdmin } from "@/lib/auth/current-user";
 import { getDataHealth } from "@/lib/data/data-health";
 
 export default async function AdminPage() {
-  await requireAdmin();
+  const user = await requireAdmin();
   const health = await getDataHealth();
 
   return (
     <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
-      <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">Administration</h1>
+      <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">Gestion de l&apos;équipe</h1>
 
       {(health.matchesNeedingReview > 0 || health.backupIsStale) && (
         <div className="mb-4 rounded-xl border border-gold/30 bg-gold/5 p-3 text-sm text-gold">
@@ -60,6 +60,16 @@ export default async function AdminPage() {
             🕓 Historique des modifications
           </Link>
         </li>
+        {user.isOwner && (
+          <li>
+            <Link
+              href="/admin/coachs"
+              className="block rounded-xl border border-gold/30 bg-gold/5 p-3 text-sm font-semibold text-gold"
+            >
+              👑 Gestion des coachs
+            </Link>
+          </li>
+        )}
       </ul>
     </div>
   );

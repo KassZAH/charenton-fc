@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
 import { getActivePlayers, getArchivedPlayers } from "@/lib/data/players";
 import { setPlayerStatus } from "@/lib/data/players-actions";
+import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { isElevatedRole, type Player } from "@/types/models";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -10,7 +11,10 @@ export default async function TeamPage() {
   const user = await requireUser();
   const players = await getActivePlayers();
   const isAdmin = isElevatedRole(user.role);
-  const archivedPlayers = isAdmin ? await getArchivedPlayers() : [];
+  const [archivedPlayers, ownerPlayerId] = await Promise.all([
+    isAdmin ? getArchivedPlayers() : Promise.resolve([]),
+    getOwnerPlayerId(),
+  ]);
 
   return (
     <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
@@ -30,7 +34,7 @@ export default async function TeamPage() {
 
       <ul className="space-y-2">
         {players.map((player) => (
-          <PlayerRow key={player.id} player={player} isAdmin={isAdmin} />
+          <PlayerRow key={player.id} player={player} isAdmin={isAdmin} isOwner={player.id === ownerPlayerId} />
         ))}
       </ul>
 
@@ -39,7 +43,7 @@ export default async function TeamPage() {
           <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">Joueurs archivés</h2>
           <ul className="space-y-2">
             {archivedPlayers.map((player) => (
-              <PlayerRow key={player.id} player={player} isAdmin archived />
+              <PlayerRow key={player.id} player={player} isAdmin isOwner={player.id === ownerPlayerId} archived />
             ))}
           </ul>
         </div>
@@ -51,10 +55,12 @@ export default async function TeamPage() {
 function PlayerRow({
   player,
   isAdmin,
+  isOwner,
   archived = false,
 }: {
   player: Player;
   isAdmin: boolean;
+  isOwner: boolean;
   archived?: boolean;
 }) {
   return (
@@ -66,15 +72,16 @@ function PlayerRow({
             {player.shirt_number != null && (
               <span className="text-xs font-normal text-steel/70">#{player.shirt_number}</span>
             )}
-            {player.role === "admin" && (
+            {isOwner ? (
               <span className="rounded-full bg-gold px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-navy-deep">
-                Admin
+                👑 Propriétaire
               </span>
-            )}
-            {player.role === "coach" && (
-              <span className="rounded-full border border-gold/40 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
-                Coach
-              </span>
+            ) : (
+              isElevatedRole(player.role) && (
+                <span className="rounded-full border border-gold/40 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-gold">
+                  Coach
+                </span>
+              )
             )}
           </p>
           <p className="text-xs text-steel/70">{player.primary_position || "—"}</p>
@@ -84,11 +91,13 @@ function PlayerRow({
             <Button href={`/team/${player.id}/edit`} variant="secondary">
               Modifier
             </Button>
-            <form action={setPlayerStatus.bind(null, player.id, archived ? "active" : "archived")}>
-              <Button type="submit" variant="secondary">
-                {archived ? "Réactiver" : "Archiver"}
-              </Button>
-            </form>
+            {!isOwner && (
+              <form action={setPlayerStatus.bind(null, player.id, archived ? "active" : "archived")}>
+                <Button type="submit" variant="secondary">
+                  {archived ? "Réactiver" : "Archiver"}
+                </Button>
+              </form>
+            )}
           </div>
         )}
       </Card>

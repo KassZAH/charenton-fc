@@ -6,7 +6,7 @@ const PLAYER_ITEMS: Item[] = [
   {
     emoji: "🔑",
     title: "Se connecter",
-    text: "Sur l'écran de connexion, clique ton nom dans la liste, puis tape ton code PIN (4 chiffres pour un joueur, 6 pour un admin).",
+    text: "Sur l'écran de connexion, clique ton nom dans la liste, puis tape ton code PIN (4 ou 6 chiffres selon ton compte).",
   },
   {
     emoji: "🏠",
@@ -86,12 +86,12 @@ const PLAYER_ITEMS: Item[] = [
   {
     emoji: "🏛️",
     title: "Mémoire du club",
-    text: "Depuis Stats → Mémoire : frise historique, souvenir du jour, souvenir aléatoire, Hall of Fame, mur des citations, historique des maillots. Les admins peuvent y ajouter des entrées.",
+    text: "Depuis Stats → Mémoire : frise historique, souvenir du jour, souvenir aléatoire, Hall of Fame, mur des citations, historique des maillots. Les coachs peuvent y ajouter des entrées.",
   },
   {
     emoji: "🏅",
     title: "Trophées",
-    text: "Depuis Stats → Trophées : vote pour le joueur du mois parmi 3 candidats sélectionnés automatiquement, bingo de saison, défis collectifs, et les trophées de fin de saison attribués par les admins.",
+    text: "Depuis Stats → Trophées : vote pour le joueur du mois parmi 3 candidats sélectionnés automatiquement, bingo de saison, défis collectifs, et les trophées de fin de saison attribués par les coachs.",
   },
   {
     emoji: "🎖️",
@@ -101,7 +101,7 @@ const PLAYER_ITEMS: Item[] = [
   {
     emoji: "💶",
     title: "Ma cotisation",
-    text: "Depuis Équipe → « Ma cotisation » (ou le lien d'alerte sur l'Accueil si elle n'est pas réglée) : ton propre montant dû et payé, jamais celui des autres. Seuls les admins/coachs peuvent la modifier.",
+    text: "Depuis Équipe → « Ma cotisation » (ou le lien d'alerte sur l'Accueil si elle n'est pas réglée) : ton propre montant dû et payé, jamais celui des autres. Seuls les coachs peuvent la modifier.",
   },
   {
     emoji: "📅",
@@ -208,8 +208,8 @@ const ADMIN_ITEMS: Item[] = [
   },
   {
     emoji: "🛠️",
-    title: "Administration",
-    text: "Depuis Stats → Admin : tableau de santé des données (matchs incomplets, âge de la dernière sauvegarde), sauvegardes (manuelles ou automatiques, aperçu, téléchargement), corbeille (matchs/buts/cartons supprimés, restaurables), et gestion des saisons (verrouillage, nouvelle saison).",
+    title: "Gestion de l'équipe",
+    text: "Depuis Stats → Gestion : tableau de santé des données (matchs incomplets, âge de la dernière sauvegarde), sauvegardes (manuelles ou automatiques, aperçu, téléchargement), corbeille (matchs/buts/cartons supprimés, restaurables), et gestion des saisons (verrouillage, nouvelle saison). Le propriétaire du club y trouve en plus la gestion des coachs (promotion, rétrogradation, transfert de propriété).",
   },
   {
     emoji: "🕓",
@@ -239,11 +239,11 @@ export default async function HelpPage() {
 
       <section>
         <h2 className="mb-1 text-sm font-bold uppercase tracking-wide text-gold">
-          🔒 Réservé aux admins
+          🔒 Réservé aux coachs
         </h2>
         <p className="mb-3 text-xs text-steel/70">
-          Le rôle coach a exactement les mêmes droits, plus la feuille tactique (formation et placement des
-          joueurs) sur chaque match.
+          Le propriétaire du club a en plus la main sur la gestion des coachs (promotion, rétrogradation,
+          transfert de propriété) — voir Gestion de l&apos;équipe.
         </p>
         <ul className="space-y-3">
           {ADMIN_ITEMS.map((item) => (

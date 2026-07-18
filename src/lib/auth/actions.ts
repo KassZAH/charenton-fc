@@ -4,9 +4,8 @@ import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { requireUser } from "./current-user";
+import { requireFreshUser } from "./current-user";
 import { signSession, SESSION_COOKIE_NAME } from "./session";
-import { pinLengthForRole } from "@/types/models";
 
 const SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30; // 30 jours — doit rester aligné sur SESSION_DURATION (session.ts)
 
@@ -18,7 +17,9 @@ type LoginResult = { error: string };
 export async function login(playerId: string, pin: string): Promise<LoginResult> {
   const { data: player, error } = await supabaseAdmin
     .from("players")
-    .select("id, role, first_name, nickname, pin_hash, status, session_version, failed_pin_attempts, locked_until")
+    .select(
+      "id, role, first_name, nickname, pin_hash, pin_length, status, session_version, failed_pin_attempts, locked_until"
+    )
     .eq("id", playerId)
     .single();
 
@@ -35,9 +36,11 @@ export async function login(playerId: string, pin: string): Promise<LoginResult>
     return { error: `Trop de tentatives. Réessaie dans ${minutesLeft} min.` };
   }
 
-  const expectedLength = pinLengthForRole(player.role);
-  if (pin.length !== expectedLength || !/^\d+$/.test(pin)) {
-    return { error: `Le PIN doit contenir ${expectedLength} chiffres.` };
+  // La longueur attendue vient de players.pin_length (propre à chaque compte), plus
+  // jamais du rôle — un PIN existant à 4 ou 6 chiffres reste valide indépendamment
+  // d'une promotion/rétrogradation ultérieure (roadmap V3, Lot 5).
+  if (pin.length !== player.pin_length || !/^\d+$/.test(pin)) {
+    return { error: `Le PIN doit contenir ${player.pin_length} chiffres.` };
   }
 
   const valid = await bcrypt.compare(pin, player.pin_hash);
@@ -91,7 +94,7 @@ export async function logout(): Promise<never> {
  * sur n'importe quel appareil, sans attendre leur expiration.
  */
 export async function logoutAllDevices(): Promise<never> {
-  const user = await requireUser();
+  const user = await requireFreshUser();
 
   const { data: current } = await supabaseAdmin
     .from("players")

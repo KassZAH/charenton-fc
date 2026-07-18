@@ -11,7 +11,7 @@ export default async function LoginPage() {
 
   const { data: players, error } = await supabaseAdmin
     .from("players")
-    .select("id, first_name, last_name, nickname, role")
+    .select("id, first_name, last_name, nickname, role, pin_length")
     .eq("status", "active")
     .order("first_name", { ascending: true });
 

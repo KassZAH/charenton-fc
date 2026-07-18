@@ -29,8 +29,9 @@ export default async function PlusPage() {
       </MenuSection>
 
       {isElevatedRole(user.role) && (
-        <MenuSection title="Administration">
-          <MenuLink href="/admin" label="Administration" emoji="⚙️" />
+        <MenuSection title="Gestion de l'équipe">
+          <MenuLink href="/admin" label="Gestion de l'équipe" emoji="⚙️" />
+          {user.isOwner && <MenuLink href="/admin/coachs" label="Gestion des coachs" emoji="👑" />}
         </MenuSection>
       )}
 

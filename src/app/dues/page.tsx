@@ -75,7 +75,7 @@ export default async function DuesPage() {
             </div>
           </section>
         )}
-        <p className="mt-4 text-xs text-steel/60">Seuls les admins/coachs peuvent modifier les cotisations.</p>
+        <p className="mt-4 text-xs text-steel/60">Seuls les coachs peuvent modifier les cotisations.</p>
       </div>
     );
   }

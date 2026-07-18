@@ -1,8 +1,12 @@
 import { requireAdmin } from "@/lib/auth/current-user";
 import { createPlayer } from "@/lib/data/players-actions";
-import { Field, SelectField } from "@/components/ui/Field";
+import { Field } from "@/components/ui/Field";
 import { Button } from "@/components/ui/Button";
 
+/**
+ * Toujours créé avec role="player" — la promotion en coach est une action
+ * séparée, réservée au propriétaire (roadmap V3, Lot 5).
+ */
 export default async function NewPlayerPage() {
   await requireAdmin();
 
@@ -20,13 +24,7 @@ export default async function NewPlayerPage() {
           <Field label="Poste" name="primary_position" />
         </div>
 
-        <SelectField label="Rôle" name="role" defaultValue="player">
-          <option value="player">Joueur (PIN à 4 chiffres)</option>
-          <option value="admin">Admin (PIN à 6 chiffres)</option>
-          <option value="coach">Coach (PIN à 6 chiffres)</option>
-        </SelectField>
-
-        <Field label="PIN" name="pin" inputMode="numeric" required />
+        <Field label="PIN (6 chiffres)" name="pin" inputMode="numeric" required />
 
         <Button type="submit" variant="primary" shape="block">
           Ajouter

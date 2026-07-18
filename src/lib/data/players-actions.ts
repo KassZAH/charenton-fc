@@ -3,19 +3,24 @@
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { requireAdmin, requireUser } from "@/lib/auth/current-user";
+import { requireFreshCoach, requireFreshUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
+import { getOwnerPlayerId } from "./team-settings";
 import type { TablesUpdate } from "@/types/database";
-import { pinLengthForRole } from "@/types/models";
+import { NEW_PIN_LENGTH } from "@/types/models";
 
+/**
+ * Le rôle n'est plus assignable ici — "player" est la seule valeur possible
+ * à la création. La promotion en coach est une action séparée réservée au
+ * propriétaire (ownership-actions.ts, roadmap V3 Lot 5).
+ */
 export async function createPlayer(formData: FormData) {
-  await requireAdmin();
+  await requireFreshCoach();
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim() || null;
   const nickname = String(formData.get("nickname") ?? "").trim() || null;
-  const role = String(formData.get("role") ?? "player");
   const shirtNumberRaw = String(formData.get("shirt_number") ?? "").trim();
   const primaryPosition = String(formData.get("primary_position") ?? "").trim() || null;
   const pin = String(formData.get("pin") ?? "").trim();
@@ -23,13 +28,10 @@ export async function createPlayer(formData: FormData) {
   if (!firstName) {
     throw new Error("Le prénom est obligatoire.");
   }
-  if (role !== "player" && role !== "admin" && role !== "coach") {
-    throw new Error("Rôle invalide.");
-  }
 
-  const expectedLength = pinLengthForRole(role);
-  if (pin.length !== expectedLength || !/^\d+$/.test(pin)) {
-    throw new Error(`Le PIN doit contenir ${expectedLength} chiffres.`);
+  // Tout nouveau PIN exige 6 chiffres, quel que soit le rôle (roadmap V3, Lot 5).
+  if (pin.length !== NEW_PIN_LENGTH || !/^\d+$/.test(pin)) {
+    throw new Error(`Le PIN doit contenir ${NEW_PIN_LENGTH} chiffres.`);
   }
 
   const pinHash = await bcrypt.hash(pin, 10);
@@ -38,10 +40,11 @@ export async function createPlayer(formData: FormData) {
     first_name: firstName,
     last_name: lastName,
     nickname,
-    role,
+    role: "player",
     shirt_number: shirtNumberRaw ? Number(shirtNumberRaw) : null,
     primary_position: primaryPosition,
     pin_hash: pinHash,
+    pin_length: NEW_PIN_LENGTH,
     status: "active",
   });
 
@@ -52,7 +55,14 @@ export async function createPlayer(formData: FormData) {
 }
 
 export async function setPlayerStatus(playerId: string, status: "active" | "archived") {
-  await requireAdmin();
+  await requireFreshCoach();
+
+  if (status === "archived") {
+    const ownerPlayerId = await getOwnerPlayerId();
+    if (playerId === ownerPlayerId) {
+      throw new Error("Le propriétaire du club ne peut pas être archivé.");
+    }
+  }
 
   const { data: current } = await supabaseAdmin.from("players").select("session_version").eq("id", playerId).maybeSingle();
 
@@ -71,13 +81,17 @@ export async function setPlayerStatus(playerId: string, status: "active" | "arch
   revalidatePath(`/team/${playerId}`);
 }
 
+/**
+ * Édition générique par un coach — ne modifie jamais le rôle. La promotion
+ * en coach et la rétrogradation en joueur sont des actions séparées,
+ * réservées au propriétaire (ownership-actions.ts, roadmap V3 Lot 5).
+ */
 export async function updatePlayer(playerId: string, formData: FormData) {
-  const user = await requireAdmin();
+  const user = await requireFreshCoach();
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim() || null;
   const nickname = String(formData.get("nickname") ?? "").trim() || null;
-  const role = String(formData.get("role") ?? "player");
   const shirtNumberRaw = String(formData.get("shirt_number") ?? "").trim();
   const primaryPosition = String(formData.get("primary_position") ?? "").trim() || null;
   const strongFoot = String(formData.get("strong_foot") ?? "").trim() || null;
@@ -87,9 +101,6 @@ export async function updatePlayer(playerId: string, formData: FormData) {
   if (!firstName) {
     throw new Error("Le prénom est obligatoire.");
   }
-  if (role !== "player" && role !== "admin" && role !== "coach") {
-    throw new Error("Rôle invalide.");
-  }
 
   const { data: before } = await supabaseAdmin.from("players").select("*").eq("id", playerId).maybeSingle();
 
@@ -97,22 +108,22 @@ export async function updatePlayer(playerId: string, formData: FormData) {
     first_name: firstName,
     last_name: lastName,
     nickname,
-    role,
     shirt_number: shirtNumberRaw ? Number(shirtNumberRaw) : null,
     primary_position: primaryPosition,
     strong_foot: strongFoot,
     quote,
-    // Révoque immédiatement toute session existante — un changement de rôle ou de PIN
-    // ne doit pas attendre l'expiration du cookie (180 jours) pour prendre effet.
+    // Révoque immédiatement toute session existante — un changement de PIN
+    // ne doit pas attendre l'expiration du cookie pour prendre effet.
     session_version: (before?.session_version ?? 1) + 1,
   };
 
   if (newPin) {
-    const expectedLength = pinLengthForRole(role);
-    if (newPin.length !== expectedLength || !/^\d+$/.test(newPin)) {
-      throw new Error(`Le nouveau PIN doit contenir ${expectedLength} chiffres.`);
+    // Tout changement volontaire de PIN exige 6 chiffres, quel que soit le rôle (roadmap V3, Lot 5).
+    if (newPin.length !== NEW_PIN_LENGTH || !/^\d+$/.test(newPin)) {
+      throw new Error(`Le nouveau PIN doit contenir ${NEW_PIN_LENGTH} chiffres.`);
     }
     update.pin_hash = await bcrypt.hash(newPin, 10);
+    update.pin_length = NEW_PIN_LENGTH;
   }
 
   const { error } = await supabaseAdmin.from("players").update(update).eq("id", playerId);
@@ -138,7 +149,7 @@ export async function updatePlayer(playerId: string, formData: FormData) {
  * Le numéro de maillot, le rôle et le PIN restent réservés à l'admin.
  */
 export async function updateOwnProfile(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireFreshUser();
 
   const firstName = String(formData.get("first_name") ?? "").trim();
   const lastName = String(formData.get("last_name") ?? "").trim() || null;
@@ -176,7 +187,7 @@ export async function updateOwnProfile(formData: FormData) {
 
 /** Invalide immédiatement l'ancien lien (calendrier ou profil public) en cas de partage accidentel. */
 export async function regenerateCalendarToken() {
-  const user = await requireUser();
+  const user = await requireFreshUser();
   const { error } = await supabaseAdmin
     .from("players")
     .update({ calendar_token: crypto.randomUUID() })
@@ -186,7 +197,7 @@ export async function regenerateCalendarToken() {
 }
 
 export async function regeneratePublicToken() {
-  const user = await requireUser();
+  const user = await requireFreshUser();
   const { error } = await supabaseAdmin
     .from("players")
     .update({ public_token: crypto.randomUUID() })
@@ -199,7 +210,7 @@ const VALID_FIELD_VISIBILITY = new Set(["private", "coach", "team", "public"]);
 
 /** Centre de confidentialité — un niveau par champ personnel, plus l'activation du profil public. */
 export async function updatePrivacySettings(formData: FormData) {
-  const user = await requireUser();
+  const user = await requireFreshUser();
 
   const photoVisibility = String(formData.get("photo_visibility") ?? "team");
   const birthdayVisibility = String(formData.get("birthday_visibility") ?? "team");

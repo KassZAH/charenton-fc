@@ -124,13 +124,14 @@ export default async function ProfilePage() {
       </form>
 
       <p className="mt-2 text-xs text-steel/70">
-        Numéro de maillot, rôle et PIN sont gérés par l&apos;admin de l&apos;équipe.
+        Numéro de maillot et PIN sont gérés par un coach ; le rôle (coach ou joueur) est réservé au propriétaire du
+        club.
       </p>
 
       <section className="mt-8 border-t border-white/10 pt-6">
         <h2 className="mb-1 text-sm font-bold text-cream">Centre de confidentialité</h2>
         <p className="mb-3 text-xs text-steel/70">
-          Qui peut voir chaque info. Toi et les admins/coachs voyez toujours tout.
+          Qui peut voir chaque info. Toi et les coachs voyez toujours tout.
         </p>
         <form action={updatePrivacySettings} className="space-y-3">
           <VisibilitySelect name="photo_visibility" label="Photo" defaultValue={player.photo_visibility} />
@@ -302,7 +303,7 @@ export default async function ProfilePage() {
         <section className="mt-8 border-t border-white/10 pt-6">
           <h2 className="mb-2 text-sm font-semibold text-cream">Changer de saison</h2>
           <p className="mb-3 text-xs text-steel/70">
-            Le changement de saison se fait désormais depuis l&apos;assistant Admin &gt; Saisons : il crée une
+            Le changement de saison se fait désormais depuis l&apos;assistant Gestion &gt; Saisons : il crée une
             sauvegarde, clôture et verrouille la saison active, puis démarre la suivante — sans jamais supprimer de
             match, but ou carton.
           </p>
@@ -310,7 +311,7 @@ export default async function ProfilePage() {
             href="/admin/saisons"
             className="inline-block rounded-lg border border-gold/40 px-4 py-2 text-sm font-semibold text-gold"
           >
-            Admin &gt; Saisons
+            Gestion &gt; Saisons
           </Link>
         </section>
       )}

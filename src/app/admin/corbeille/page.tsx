@@ -14,7 +14,7 @@ export default async function TrashPage() {
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Corbeille</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
-          ← Admin
+          ← Gestion
         </Link>
       </div>
       <p className="mb-4 text-xs text-steel/70">

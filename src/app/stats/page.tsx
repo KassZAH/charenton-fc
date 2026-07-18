@@ -76,7 +76,7 @@ export default async function StatsPage() {
         )}
         {isElevatedRole(user.role) && (
           <Link href="/admin" className="rounded-full border border-white/15 px-3 py-1 text-cream/80">
-            Admin
+            Gestion
           </Link>
         )}
       </div>

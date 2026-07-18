@@ -4,7 +4,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { login } from "@/lib/auth/actions";
 import { normalize } from "@/lib/text";
-import { pinLengthForRole, type PlayerRole } from "@/types/models";
+import type { PlayerRole } from "@/types/models";
 
 type LoginPlayer = {
   id: string;
@@ -12,6 +12,8 @@ type LoginPlayer = {
   last_name: string | null;
   nickname: string | null;
   role: PlayerRole;
+  /** Longueur réelle du PIN de ce compte — jamais déduite du rôle (roadmap V3, Lot 5). */
+  pin_length: number;
 };
 
 const LAST_PLAYER_STORAGE_KEY = "charenton_last_player_id";
@@ -157,7 +159,7 @@ function PinStep({
   player: LoginPlayer;
   onBack: () => void;
 }) {
-  const expectedLength = pinLengthForRole(player.role);
+  const expectedLength = player.pin_length;
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();

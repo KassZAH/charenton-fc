@@ -57,6 +57,14 @@ export async function restoreChange(auditLogId: string) {
   const recordId = entry.record_id;
   const oldData = entry.old_data as Record<string, unknown> | null;
 
+  // Un transfert de propriété a ses propres règles (joueur actif, promotion
+  // en coach, révocation des deux sessions) — un simple retour en arrière du
+  // champ owner_player_id les contournerait toutes. Refait via une nouvelle
+  // action de transfert, jamais via l'historique générique.
+  if (entry.table_name === "team_settings") {
+    throw new Error("Un transfert de propriété ne se restaure pas depuis l'historique — utilise un nouveau transfert.");
+  }
+
   if (isMatchScopedTable(tableName)) {
     const matchId = await resolveMatchId(tableName, recordId, entry.action, oldData);
     if (matchId) await assertMatchSeasonUnlocked(matchId);

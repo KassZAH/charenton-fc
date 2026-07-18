@@ -951,6 +951,7 @@ export type Database = {
           photo_url: string | null
           photo_visibility: string
           pin_hash: string | null
+          pin_length: number
           primary_position: string | null
           public_profile_enabled: boolean
           public_token: string
@@ -979,6 +980,7 @@ export type Database = {
           photo_url?: string | null
           photo_visibility?: string
           pin_hash?: string | null
+          pin_length?: number
           primary_position?: string | null
           public_profile_enabled?: boolean
           public_token?: string
@@ -1007,6 +1009,7 @@ export type Database = {
           photo_url?: string | null
           photo_visibility?: string
           pin_hash?: string | null
+          pin_length?: number
           primary_position?: string | null
           public_profile_enabled?: boolean
           public_token?: string
@@ -1161,6 +1164,7 @@ export type Database = {
           gold_color: string
           id: number
           name: string
+          owner_player_id: string | null
           primary_color: string
           short_name: string
           updated_at: string | null
@@ -1173,6 +1177,7 @@ export type Database = {
           gold_color?: string
           id?: number
           name?: string
+          owner_player_id?: string | null
           primary_color?: string
           short_name?: string
           updated_at?: string | null
@@ -1185,11 +1190,20 @@ export type Database = {
           gold_color?: string
           id?: number
           name?: string
+          owner_player_id?: string | null
           primary_color?: string
           short_name?: string
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "team_settings_owner_player_id_fkey"
+            columns: ["owner_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       votes: {
         Row: {
@@ -1257,6 +1271,10 @@ export type Database = {
         Returns: undefined
       }
       export_backup_snapshot: { Args: never; Returns: Json }
+      transfer_ownership: {
+        Args: { p_new_owner_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

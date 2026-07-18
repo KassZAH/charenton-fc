@@ -13,6 +13,7 @@ import { getPlayerBadges } from "@/lib/data/badges";
 import { getTeamRecordWithWithoutPlayer } from "@/lib/data/stats-advanced";
 import { getVisiblePlayerGoals } from "@/lib/data/player-goals";
 import { getActiveInjury } from "@/lib/data/injuries";
+import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { canView } from "@/lib/visibility";
 import { formatMatchDate, formatShortDate, formatShortDateOnly } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
@@ -30,16 +31,19 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, advanced, awardWins, history, badges, withWithout, goals, activeInjury] = await Promise.all([
-    getPlayerStats(player.id),
-    getPlayerAdvancedStats(player.id),
-    getPlayerAwardWins(player.id),
-    getPlayerMatchHistory(player.id),
-    getPlayerBadges(player.id),
-    getTeamRecordWithWithoutPlayer(player.id),
-    getVisiblePlayerGoals(player.id, { playerId: user.playerId, role: user.role }),
-    getActiveInjury(player.id),
-  ]);
+  const [stats, advanced, awardWins, history, badges, withWithout, goals, activeInjury, ownerPlayerId] =
+    await Promise.all([
+      getPlayerStats(player.id),
+      getPlayerAdvancedStats(player.id),
+      getPlayerAwardWins(player.id),
+      getPlayerMatchHistory(player.id),
+      getPlayerBadges(player.id),
+      getTeamRecordWithWithoutPlayer(player.id),
+      getVisiblePlayerGoals(player.id, { playerId: user.playerId, role: user.role }),
+      getActiveInjury(player.id),
+      getOwnerPlayerId(),
+    ]);
+  const isOwnerAccount = player.id === ownerPlayerId;
 
   const viewer = { playerId: user.playerId, role: user.role };
   const canSeeMeasurements = canView(player.measurements_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
@@ -75,15 +79,16 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
             {player.shirt_number != null && (
               <span className="text-sm font-normal text-steel/70">#{player.shirt_number}</span>
             )}
-            {player.role === "admin" && (
+            {isOwnerAccount ? (
               <span className="rounded-full bg-gold px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-navy-deep">
-                Admin
+                👑 Propriétaire
               </span>
-            )}
-            {player.role === "coach" && (
-              <span className="rounded-full border border-gold/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold">
-                Coach
-              </span>
+            ) : (
+              isElevatedRole(player.role) && (
+                <span className="rounded-full border border-gold/40 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-gold">
+                  Coach
+                </span>
+              )
             )}
           </h1>
           <p className="text-sm text-steel/70">

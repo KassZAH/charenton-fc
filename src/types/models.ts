@@ -25,16 +25,26 @@ export type SeasonTrophy = Tables<"season_trophies">;
 export type Backup = Tables<"backups">;
 export type PlayerGoal = Tables<"player_goals">;
 
-/** players.role — coach a les mêmes droits qu'admin, + la feuille tactique */
+/**
+ * players.role — "admin" est une valeur legacy en cours d'élimination
+ * (roadmap V3, Lot 5, étape "expand" de la stratégie expand/migrate/contract) :
+ * traitée partout à l'identique de "coach", jamais assignée à un nouveau
+ * compte, retirée de la contrainte SQL une fois qu'aucune ligne ne l'utilise
+ * plus. Le propriétaire n'est pas un rôle distinct — voir SessionPayload.isOwner
+ * et team_settings.owner_player_id.
+ */
 export type PlayerRole = "player" | "admin" | "coach";
 
-/** PIN à 4 chiffres pour un joueur, 6 pour un admin ou un coach. */
-export function pinLengthForRole(role: PlayerRole): 4 | 6 {
-  return role === "player" ? 4 : 6;
-}
+/** Longueur de PIN pour un nouveau compte ou un changement volontaire de PIN — plus jamais dérivée du rôle. */
+export const NEW_PIN_LENGTH = 6;
 
-/** Coach a exactement les mêmes droits qu'admin dans toute l'interface. */
-export function isElevatedRole(role: PlayerRole): boolean {
+/**
+ * Coach (et son cas particulier "admin" legacy) a exactement les mêmes droits
+ * dans toute l'interface. Accepte `string` (pas seulement PlayerRole) pour
+ * pouvoir être appelée directement sur players.role tel que renvoyé par
+ * Supabase, sans caster à chaque site d'appel.
+ */
+export function isElevatedRole(role: string): boolean {
   return role === "admin" || role === "coach";
 }
 
