@@ -23,7 +23,7 @@ export default async function LineupPage({ params }: { params: Promise<{ id: str
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-1 text-lg font-extrabold text-cream">Feuille tactique</h1>
       <p className="mb-6 text-sm text-steel/70">
         {isHome ? "vs" : "@"} {opponentLabel} · {formatMatchDate(match.match_date)}

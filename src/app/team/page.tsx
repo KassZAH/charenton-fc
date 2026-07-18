@@ -13,7 +13,7 @@ export default async function TeamPage() {
   const archivedPlayers = isAdmin ? await getArchivedPlayers() : [];
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Équipe</h1>
         <div className="flex gap-2">

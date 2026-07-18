@@ -13,7 +13,7 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
   if (!match) notFound();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-4 text-lg font-extrabold text-cream">Modifier le match</h1>
 
       <form action={updateMatchDetails.bind(null, match.id)} className="space-y-4">

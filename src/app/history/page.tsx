@@ -22,7 +22,7 @@ export default async function HistoryPage() {
   const entries = await getRecentAuditLog();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-1 text-lg font-extrabold text-cream">Historique</h1>
       <p className="mb-6 text-sm text-steel/70">
         Les 30 dernières corrections à fort enjeu (scores, buts, cartons, fiches joueurs), avec possibilité de

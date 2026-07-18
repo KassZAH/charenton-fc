@@ -11,7 +11,7 @@ export default async function MaillotsPage() {
   const entries = await getJerseyHistoryEntries();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Historique des maillots</h1>
         <Link href="/memoire" className="text-xs font-medium text-steel underline underline-offset-2">

@@ -9,7 +9,7 @@ export default async function MatchesPage() {
   const [upcoming, past] = await Promise.all([getUpcomingMatches(), getPastMatches()]);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Matchs</h1>
         {isElevatedRole(user.role) && (

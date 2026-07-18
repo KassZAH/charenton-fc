@@ -7,7 +7,7 @@ export default async function AdminPage() {
   const health = await getDataHealth();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">Administration</h1>
 
       {(health.matchesNeedingReview > 0 || health.backupIsStale) && (

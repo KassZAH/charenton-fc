@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { login } from "@/lib/auth/actions";
 import { pinLengthForRole, type PlayerRole } from "@/types/models";
 
@@ -13,6 +13,8 @@ type LoginPlayer = {
   role: PlayerRole;
 };
 
+const LAST_PLAYER_STORAGE_KEY = "charenton_last_player_id";
+
 function initials(player: LoginPlayer) {
   const first = player.first_name?.[0] ?? "";
   const last = player.last_name?.[0] ?? "";
@@ -23,8 +25,29 @@ function displayName(player: LoginPlayer) {
   return player.nickname || player.first_name;
 }
 
+function normalize(text: string) {
+  return text
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
 export function LoginScreen({ players }: { players: LoginPlayer[] }) {
   const [selected, setSelected] = useState<LoginPlayer | null>(null);
+  const [lastPlayerId, setLastPlayerId] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Lu après le montage (jamais pendant le SSR) pour éviter un décalage d'hydratation.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setLastPlayerId(window.localStorage.getItem(LAST_PLAYER_STORAGE_KEY));
+  }, []);
+
+  function selectPlayer(player: LoginPlayer) {
+    window.localStorage.setItem(LAST_PLAYER_STORAGE_KEY, player.id);
+    setSelected(player);
+  }
+
+  const lastPlayer = players.find((p) => p.id === lastPlayerId) ?? null;
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-sm flex-col px-4 py-8">
@@ -46,8 +69,61 @@ export function LoginScreen({ players }: { players: LoginPlayer[] }) {
       {selected ? (
         <PinStep player={selected} onBack={() => setSelected(null)} />
       ) : (
-        <PlayerGrid players={players} onSelect={setSelected} />
+        <PlayerPicker players={players} lastPlayer={lastPlayer} onSelect={selectPlayer} />
       )}
+    </div>
+  );
+}
+
+function PlayerPicker({
+  players,
+  lastPlayer,
+  onSelect,
+}: {
+  players: LoginPlayer[];
+  lastPlayer: LoginPlayer | null;
+  onSelect: (player: LoginPlayer) => void;
+}) {
+  const [query, setQuery] = useState("");
+  const showSearch = players.length > 12;
+
+  const filtered = useMemo(() => {
+    const q = normalize(query.trim());
+    if (!q) return players;
+    return players.filter((p) => normalize(displayName(p)).includes(q) || normalize(p.last_name ?? "").includes(q));
+  }, [players, query]);
+
+  return (
+    <div>
+      {lastPlayer && !query && (
+        <button
+          type="button"
+          onClick={() => onSelect(lastPlayer)}
+          className="mb-4 flex w-full items-center gap-3 rounded-xl border border-gold/40 bg-gold/10 p-3 text-left active:scale-[0.99] transition"
+        >
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-gold/50 text-sm font-bold text-gold">
+            {initials(lastPlayer)}
+          </span>
+          <span className="text-sm">
+            <span className="block text-cream/70">Continuer en tant que</span>
+            <span className="block font-semibold text-cream">{displayName(lastPlayer)}</span>
+          </span>
+        </button>
+      )}
+
+      {showSearch && (
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher un joueur…"
+          aria-label="Rechercher un joueur"
+          className="mb-4 w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
+        />
+      )}
+
+      <PlayerGrid players={filtered} onSelect={onSelect} />
+      {filtered.length === 0 && <p className="text-center text-sm text-steel/70">Aucun joueur trouvé.</p>}
     </div>
   );
 }
@@ -122,15 +198,19 @@ function PinStep({
         {displayName(player)}
       </p>
 
-      <div className="mb-6 flex gap-3">
+      <div className="mb-6 flex gap-3" role="status">
         {Array.from({ length: expectedLength }).map((_, i) => (
           <span
             key={i}
+            aria-hidden="true"
             className={`h-3.5 w-3.5 rounded-full border-2 border-gold ${
               i < pin.length ? "bg-gold" : "bg-transparent"
             }`}
           />
         ))}
+        <span className="sr-only">
+          {pin.length} chiffre{pin.length > 1 ? "s" : ""} saisi{pin.length > 1 ? "s" : ""} sur {expectedLength}
+        </span>
       </div>
 
       {error && (

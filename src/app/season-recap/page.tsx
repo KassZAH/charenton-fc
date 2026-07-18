@@ -34,7 +34,7 @@ export default async function SeasonRecapPage() {
   });
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Bilan de saison</p>
       <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">{season?.name ?? "Historique"}</h1>
 

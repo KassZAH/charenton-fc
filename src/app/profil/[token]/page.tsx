@@ -21,7 +21,7 @@ export default async function PublicProfilePage({ params }: { params: Promise<{ 
   const trophyCount = awardWins.reduce((sum, w) => sum + w.wins, 0);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-10">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-10">
       <div className="mb-6 flex items-center gap-4">
         {player.photo_visibility === "public" && player.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element

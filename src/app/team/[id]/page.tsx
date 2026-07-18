@@ -55,7 +55,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       : null;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-6 flex items-center gap-4">
         {canSeePhoto && player.photo_url ? (
           // eslint-disable-next-line @next/next/no-img-element

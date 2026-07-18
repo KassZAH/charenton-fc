@@ -37,7 +37,7 @@ export default async function DuesPage() {
   const season = await getActiveSeason();
   if (!season) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6">
+      <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
         <h1 className="mb-2 text-lg font-extrabold text-cream">Cotisations</h1>
         <p className="text-sm text-steel/70">Aucune saison active — impossible de suivre les cotisations.</p>
       </div>
@@ -51,7 +51,7 @@ export default async function DuesPage() {
     const status = dueStatus(amountDue, amountPaid);
 
     return (
-      <div className="mx-auto max-w-md px-4 py-6">
+      <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
         <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Cotisation</p>
         <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">{season.name}</h1>
 
@@ -85,7 +85,7 @@ export default async function DuesPage() {
   const totalPaid = dues.reduce((sum, d) => sum + d.amountPaid, 0);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <p className="mb-1 text-xs font-bold uppercase tracking-widest text-gold">Cotisations</p>
       <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">{season.name}</h1>
 

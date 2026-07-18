@@ -10,7 +10,7 @@ export default async function DataHealthPage() {
   const consistentMatches = health.completedMatchesCount - health.matchesNeedingReview;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Santé des données</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">

@@ -9,7 +9,7 @@ export default async function MatchesReviewPage() {
   const [items, unfinalized] = await Promise.all([getMatchesNeedingReview(), getUnfinalizedPastMatches()]);
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-1 text-lg font-extrabold text-cream">Matchs à vérifier</h1>
       <p className="mb-6 text-sm text-steel/70">
         Matchs terminés dont la fiche n&apos;est pas complète (score, présents, buteurs, récompenses).

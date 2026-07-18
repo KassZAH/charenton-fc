@@ -222,7 +222,7 @@ export default async function HelpPage() {
   await requireUser();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-1 text-lg font-extrabold text-cream">Aide 🙋</h1>
       <p className="mb-6 text-sm text-steel/70">Le mode d&apos;emploi de l&apos;appli, en deux minutes.</p>
 

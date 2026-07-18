@@ -87,7 +87,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="flex items-start justify-between">
         <p className="text-xs font-bold uppercase tracking-widest text-gold">
           {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}

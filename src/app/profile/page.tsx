@@ -49,7 +49,7 @@ export default async function ProfilePage() {
   const publicProfileUrl = `${protocol}://${host}/profil/${player.public_token}`;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-4 text-lg font-extrabold text-cream">Mon profil</h1>
 
       <form action={updateOwnProfile} className="space-y-4">

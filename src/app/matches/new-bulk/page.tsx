@@ -7,7 +7,7 @@ export default async function NewMatchBulkPage() {
   const opponents = await getOpponents();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-1 text-lg font-extrabold text-cream">Ajouter plusieurs matchs</h1>
       <p className="mb-4 text-sm text-steel/70">
         Adversaire et date suffisent pour l&apos;instant — heure et lieu se complètent plus tard, match

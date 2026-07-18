@@ -103,7 +103,7 @@ export default async function HomePage() {
   });
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <p className="text-xs font-bold uppercase tracking-widest text-gold">Salut {user.name}</p>
       <h1 className="text-scoreboard mb-4 text-2xl font-extrabold text-cream">Bienvenue sur l&apos;espace</h1>
 

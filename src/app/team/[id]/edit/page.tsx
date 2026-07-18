@@ -11,7 +11,7 @@ export default async function EditPlayerPage({ params }: { params: Promise<{ id:
   if (!player) notFound();
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <h1 className="mb-4 text-lg font-extrabold text-cream">Modifier {player.first_name}</h1>
 
       <form action={updatePlayer.bind(null, player.id)} className="space-y-4">

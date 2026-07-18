@@ -15,7 +15,7 @@ export default async function SeasonTrophiesPage() {
 
   if (!season) {
     return (
-      <div className="mx-auto max-w-md px-4 py-6">
+      <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
         <p className="text-sm text-steel/70">Aucune saison active pour le moment.</p>
       </div>
     );
@@ -26,7 +26,7 @@ export default async function SeasonTrophiesPage() {
   const awardedCategories = new Set(trophies.map((t) => t.category));
 
   return (
-    <div className="mx-auto max-w-md px-4 py-6">
+    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Trophées — {season.name}</h1>
         <Link href="/trophees" className="text-xs font-medium text-steel underline underline-offset-2">
