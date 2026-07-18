@@ -76,3 +76,23 @@ begin
     raise exception 'Assertion echouee : % ligne(s) role=admin restante(s).', remaining_admin_count;
   end if;
 end $$;
+
+-- Rollback (si nécessaire) — restaure les valeurs EXACTES issues du snapshot
+-- pris juste avant cette migration (backups.id =
+-- 8c90c16d-663d-49a4-bfe7-0d3ad1438590 — voir aussi le compte rendu Lot 5
+-- Étape C), jamais un décrément arithmétique de session_version : ce dernier serait
+-- silencieusement faux si session_version avait déjà changé après cette
+-- migration (nouvelle connexion, changement de rôle ultérieur, etc.).
+--
+--   update public.players set role = 'admin', session_version = 1
+--   where id = 'df419da0-1ed3-4ad5-af67-cf734e57a3fe'; -- Amine Zahid
+--   update public.players set role = 'admin', session_version = 1
+--   where id = 'c2602010-9367-4dab-82aa-c1397608b92d'; -- Ulysse Monneret
+--   update public.players set role = 'admin', session_version = 1
+--   where id = 'a146db21-386b-434f-930f-83e1f59a95e3'; -- Test Admin
+--   update public.team_settings set owner_player_id = null where id = 1;
+--
+-- Solution de secours principale : restauration complète depuis
+-- backups.id = 8c90c16d-663d-49a4-bfe7-0d3ad1438590 (players + team_settings),
+-- complétée par audit_log_snapshot_before_owner_and_coach_migration.json
+-- pour audit_log (non couvert par le mécanisme de sauvegarde standard).

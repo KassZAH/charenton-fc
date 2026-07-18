@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
-import { getOwnerPlayerId, OWNERSHIP_TRANSFER_ENABLED } from "./team-settings";
+import { buildOwnershipTransferAuditEntry, getOwnerPlayerId, OWNERSHIP_TRANSFER_ENABLED } from "./team-settings";
 
 /**
  * Promotion/rétrogradation réservées au propriétaire (roadmap V3, Lot 5).
@@ -105,12 +105,10 @@ export async function transferOwnership(newOwnerPlayerId: string) {
   const { error } = await supabaseAdmin.rpc("transfer_ownership", { p_new_owner_id: newOwnerPlayerId });
   if (error) throw new Error(error.message);
 
+  const auditEntry = buildOwnershipTransferAuditEntry(oldOwnerPlayerId, newOwnerPlayerId);
   await logChange({
-    tableName: "team_settings",
-    recordId: "1",
+    ...auditEntry,
     action: "update",
-    oldData: { owner_player_id: oldOwnerPlayerId },
-    newData: { owner_player_id: newOwnerPlayerId },
     changedByPlayerId: owner.playerId,
     changedByName: owner.name,
   });

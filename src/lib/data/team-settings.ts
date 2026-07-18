@@ -18,3 +18,21 @@ export async function getOwnerPlayerId(): Promise<string | null> {
  * Lot 5). Désactivé par défaut tant que ce test n'a pas eu lieu.
  */
 export const OWNERSHIP_TRANSFER_ENABLED = false;
+
+/**
+ * audit_log.record_id est de type uuid — team_settings n'a pas de clé uuid
+ * (id=1, entier), donc l'entrée d'audit d'un transfert est tracée sur l'uuid
+ * du nouveau propriétaire (seule valeur uuid pertinente ici) ; l'ancien
+ * propriétaire et le nouveau restent tous deux disponibles dans oldData/newData.
+ * Extrait en fonction pure (testable sans base de données ni "use server")
+ * après la découverte que le littéral "1" utilisé avant faisait échouer
+ * l'insertion (22P02, voir Lot 5 Étape C).
+ */
+export function buildOwnershipTransferAuditEntry(oldOwnerPlayerId: string | null, newOwnerPlayerId: string) {
+  return {
+    tableName: "team_settings" as const,
+    recordId: newOwnerPlayerId,
+    oldData: { owner_player_id: oldOwnerPlayerId },
+    newData: { owner_player_id: newOwnerPlayerId },
+  };
+}
