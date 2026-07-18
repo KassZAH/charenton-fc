@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
 
 export type TrashedMatch = { id: string; label: string; deletedAt: string };
@@ -31,7 +31,7 @@ export async function getTrashedMatches(): Promise<TrashedMatch[]> {
 
 export async function getTrashedGoals(): Promise<TrashedGoal[]> {
   const [players, { data: goals, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("goals")
       .select("id, match_id, scorer_player_id, minute, deleted_at")
@@ -51,7 +51,7 @@ export async function getTrashedGoals(): Promise<TrashedGoal[]> {
 
 export async function getTrashedCards(): Promise<TrashedCard[]> {
   const [players, { data: cards, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("cards")
       .select("id, match_id, player_id, card_type, minute, deleted_at")

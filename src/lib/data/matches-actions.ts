@@ -342,48 +342,57 @@ export async function duplicateMatch(sourceMatchId: string, formData: FormData) 
     .single();
   if (error) throw new Error(error.message);
 
-  if (reuseRoster) {
-    const [roster, activeInjuriesByPlayerId] = await Promise.all([
-      getMatchRoster(sourceMatchId),
-      getActiveInjuriesByPlayerId(),
-    ]);
-    // On ne marque pas présent un joueur actuellement blessé pour la période du nouveau match —
-    // sa blessure prévaut, il sera de toute façon re-couvert par syncActiveInjuriesToUpcomingMatches.
-    const eligible = roster.filter(
-      (playerId) => injuryReturnLabelForDate(activeInjuriesByPlayerId.get(playerId), matchDate) === null
-    );
-    if (eligible.length > 0) {
-      const { error: availError } = await supabaseAdmin.from("availability").upsert(
-        eligible.map((playerId) => ({
-          match_id: newMatch.id,
-          player_id: playerId,
-          status: "present" as const,
-          injury_id: null,
-        })),
-        { onConflict: "match_id,player_id" }
+  // La duplication touche plusieurs tables à la suite (disponibilités, composition, matériel) —
+  // pas de vraie transaction possible ici (logique d'éligibilité calculée côté JS), donc en cas
+  // d'échec d'une étape on supprime le match tout juste créé plutôt que de laisser un match
+  // "fantôme" à moitié dupliqué.
+  try {
+    if (reuseRoster) {
+      const [roster, activeInjuriesByPlayerId] = await Promise.all([
+        getMatchRoster(sourceMatchId),
+        getActiveInjuriesByPlayerId(),
+      ]);
+      // On ne marque pas présent un joueur actuellement blessé pour la période du nouveau match —
+      // sa blessure prévaut, il sera de toute façon re-couvert par syncActiveInjuriesToUpcomingMatches.
+      const eligible = roster.filter(
+        (playerId) => injuryReturnLabelForDate(activeInjuriesByPlayerId.get(playerId), matchDate) === null
       );
-      if (availError) throw new Error(availError.message);
+      if (eligible.length > 0) {
+        const { error: availError } = await supabaseAdmin.from("availability").upsert(
+          eligible.map((playerId) => ({
+            match_id: newMatch.id,
+            player_id: playerId,
+            status: "present" as const,
+            injury_id: null,
+          })),
+          { onConflict: "match_id,player_id" }
+        );
+        if (availError) throw new Error(availError.message);
+      }
     }
-  }
 
-  if (reuseLineup) {
-    const lineup = await getMatchLineup(sourceMatchId);
-    if (lineup) {
-      const { error: lineupError } = await supabaseAdmin
-        .from("match_lineups")
-        .insert({ match_id: newMatch.id, formation: lineup.formation, positions: lineup.positions });
-      if (lineupError) throw new Error(lineupError.message);
+    if (reuseLineup) {
+      const lineup = await getMatchLineup(sourceMatchId);
+      if (lineup) {
+        const { error: lineupError } = await supabaseAdmin
+          .from("match_lineups")
+          .insert({ match_id: newMatch.id, formation: lineup.formation, positions: lineup.positions });
+        if (lineupError) throw new Error(lineupError.message);
+      }
     }
-  }
 
-  if (reuseEquipment) {
-    const items = await getMatchEquipment(sourceMatchId);
-    if (items.length > 0) {
-      const { error: equipmentError } = await supabaseAdmin
-        .from("match_equipment_items")
-        .insert(items.map((item) => ({ match_id: newMatch.id, label: item.label })));
-      if (equipmentError) throw new Error(equipmentError.message);
+    if (reuseEquipment) {
+      const items = await getMatchEquipment(sourceMatchId);
+      if (items.length > 0) {
+        const { error: equipmentError } = await supabaseAdmin
+          .from("match_equipment_items")
+          .insert(items.map((item) => ({ match_id: newMatch.id, label: item.label })));
+        if (equipmentError) throw new Error(equipmentError.message);
+      }
     }
+  } catch (err) {
+    await supabaseAdmin.from("matches").delete().eq("id", newMatch.id);
+    throw err;
   }
 
   await syncActiveInjuriesToUpcomingMatches();
