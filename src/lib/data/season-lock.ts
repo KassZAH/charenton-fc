@@ -29,3 +29,25 @@ export async function assertMatchSeasonUnlocked(matchId: string): Promise<void> 
     );
   }
 }
+
+/**
+ * Une entrée de corbeille ou d'historique sur l'une de ces tables concerne
+ * toujours un match précis — réutilisé par trash-actions.ts et
+ * audit-actions.ts pour savoir quand appliquer assertMatchSeasonUnlocked().
+ * Les autres tables (joueurs, cotisations, blessures, saisons...) continuent
+ * de fonctionner sans vérification de verrouillage.
+ */
+export function isMatchScopedTable(tableName: string): boolean {
+  return tableName === "matches" || tableName === "goals" || tableName === "cards";
+}
+
+/**
+ * Pour une suppression annulée depuis l'historique, la ligne n'existe plus
+ * dans la table elle-même : le seul match_id disponible est celui capturé
+ * dans l'instantané pré-suppression (old_data), jamais une valeur reconstruite
+ * autrement.
+ */
+export function matchIdFromDeletedRowSnapshot(oldData: Record<string, unknown> | null | undefined): string | null {
+  const value = oldData?.match_id;
+  return typeof value === "string" ? value : null;
+}
