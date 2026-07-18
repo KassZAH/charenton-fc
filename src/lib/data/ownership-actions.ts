@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { requireOwner } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
-import { getOwnerPlayerId } from "./team-settings";
+import { getOwnerPlayerId, OWNERSHIP_TRANSFER_ENABLED } from "./team-settings";
 
 /**
  * Promotion/rétrogradation réservées au propriétaire (roadmap V3, Lot 5).
@@ -93,6 +93,12 @@ export async function demoteToPlayer(playerId: string) {
  */
 export async function transferOwnership(newOwnerPlayerId: string) {
   const owner = await requireOwner();
+
+  if (!OWNERSHIP_TRANSFER_ENABLED) {
+    throw new Error(
+      "Le transfert de propriété est désactivé en attendant un test d'intégration sur un environnement isolé."
+    );
+  }
 
   const oldOwnerPlayerId = await getOwnerPlayerId();
 

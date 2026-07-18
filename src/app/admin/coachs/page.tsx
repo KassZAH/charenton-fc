@@ -3,6 +3,7 @@ import { requireOwner } from "@/lib/auth/current-user";
 import { getActivePlayers } from "@/lib/data/players";
 import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { promoteToCoach, demoteToPlayer } from "@/lib/data/ownership-actions";
+import { OWNERSHIP_TRANSFER_ENABLED } from "@/lib/data/team-settings";
 import { isElevatedRole } from "@/types/models";
 import { TransferOwnershipForm } from "./TransferOwnershipForm";
 
@@ -76,12 +77,20 @@ export default async function CoachManagementPage() {
 
       <section className="border-t border-white/10 pt-6">
         <h2 className="mb-2 text-sm font-semibold text-red-400">Transférer la propriété</h2>
-        <p className="mb-3 text-xs text-steel/70">
-          Action irréversible sans un nouveau transfert : {owner ? displayName(owner) : "le propriétaire actuel"}{" "}
-          perd ses droits de propriétaire (reste coach) au profit du joueur choisi ci-dessous, qui devient coach
-          s&apos;il ne l&apos;était pas déjà. Toutes les sessions concernées sont immédiatement révoquées.
-        </p>
-        <TransferOwnershipForm candidates={transferCandidates} />
+        {OWNERSHIP_TRANSFER_ENABLED ? (
+          <>
+            <p className="mb-3 text-xs text-steel/70">
+              Action irréversible sans un nouveau transfert : {owner ? displayName(owner) : "le propriétaire actuel"}{" "}
+              perd ses droits de propriétaire (reste coach) au profit du joueur choisi ci-dessous, qui devient coach
+              s&apos;il ne l&apos;était pas déjà. Toutes les sessions concernées sont immédiatement révoquées.
+            </p>
+            <TransferOwnershipForm candidates={transferCandidates} />
+          </>
+        ) : (
+          <p className="rounded-xl border border-white/10 bg-navy-card p-3 text-xs text-steel/70">
+            Temporairement désactivé : cette action n&apos;a pas encore été testée sur un environnement isolé.
+          </p>
+        )}
       </section>
     </div>
   );
