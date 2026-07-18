@@ -1,13 +1,13 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import type { Card, CardType } from "@/types/models";
 
 export type CardWithName = Card & { player_name: string };
 
 export async function getMatchCards(matchId: string): Promise<CardWithName[]> {
   const [players, { data: cards, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("cards")
       .select("*")

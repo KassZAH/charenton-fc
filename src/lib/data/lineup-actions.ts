@@ -4,10 +4,12 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { FORMATIONS, type FormationKey } from "@/lib/formations";
+import { assertMatchSeasonUnlocked } from "./season-lock";
 
 /** Réservé à admin + coach (requireAdmin couvre les deux). */
 export async function saveLineup(matchId: string, formData: FormData) {
   await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const formation = String(formData.get("formation") ?? "") as FormationKey;
   if (!FORMATIONS[formation]) {

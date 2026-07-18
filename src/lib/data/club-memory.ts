@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
 import { HALL_OF_FAME_CATEGORY_LABELS, type HallOfFameEntry, type ClubQuote, type JerseyHistoryEntry } from "@/types/models";
 
@@ -46,7 +46,7 @@ async function getCompletedMatchesWithScorers() {
     opponentIds.length > 0
       ? supabaseAdmin.from("opponents").select("id, name").in("id", opponentIds)
       : Promise.resolve({ data: [], error: null }),
-    getActivePlayers(),
+    getAllPlayers(),
   ]);
   if (goalsRes.error) throw new Error(goalsRes.error.message);
   if (opponentsRes.error) throw new Error(opponentsRes.error.message);
@@ -163,8 +163,8 @@ export async function getClubTimeline(): Promise<TimelineEntry[]> {
     });
   }
 
-  const activePlayers = await getActivePlayers();
-  const playerNameById = new Map(activePlayers.map((p) => [p.id, p.nickname || p.first_name]));
+  const allPlayers = await getAllPlayers();
+  const playerNameById = new Map(allPlayers.map((p) => [p.id, p.nickname || p.first_name]));
   for (const h of hallOfFameRes.data ?? []) {
     const name = h.display_name || (h.player_id ? playerNameById.get(h.player_id) : null) || "Un membre du club";
     entries.push({
@@ -229,7 +229,7 @@ export async function getRandomMemory(): Promise<MatchMemory | null> {
 export async function getHallOfFameEntries(): Promise<(HallOfFameEntry & { playerName: string | null })[]> {
   const [{ data, error }, players] = await Promise.all([
     supabaseAdmin.from("hall_of_fame_entries").select("*").order("inducted_at", { ascending: false }),
-    getActivePlayers(),
+    getAllPlayers(),
   ]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
@@ -239,7 +239,7 @@ export async function getHallOfFameEntries(): Promise<(HallOfFameEntry & { playe
 export async function getClubQuotes(): Promise<(ClubQuote & { playerName: string | null })[]> {
   const [{ data, error }, players] = await Promise.all([
     supabaseAdmin.from("club_quotes").select("*").order("created_at", { ascending: false }),
-    getActivePlayers(),
+    getAllPlayers(),
   ]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));

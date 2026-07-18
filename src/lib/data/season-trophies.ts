@@ -1,11 +1,11 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import type { SeasonTrophy } from "@/types/models";
 
 export async function getSeasonTrophies(seasonId: string): Promise<(SeasonTrophy & { playerName: string | null })[]> {
   const [players, { data, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("season_trophies").select("*").eq("season_id", seasonId).order("awarded_at", { ascending: false }),
   ]);
   if (error) throw new Error(error.message);

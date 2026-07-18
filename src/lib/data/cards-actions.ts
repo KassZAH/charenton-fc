@@ -59,12 +59,19 @@ export async function deleteCard(matchId: string, cardId: string) {
   const user = await requireAdmin();
   await assertMatchSeasonUnlocked(matchId);
 
-  const { data: before } = await supabaseAdmin.from("cards").select("*").eq("id", cardId).maybeSingle();
+  const { data: before } = await supabaseAdmin
+    .from("cards")
+    .select("*")
+    .eq("id", cardId)
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (!before) throw new Error("Carton introuvable pour ce match.");
 
   const { error } = await supabaseAdmin
     .from("cards")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", cardId);
+    .eq("id", cardId)
+    .eq("match_id", matchId);
   if (error) throw new Error(error.message);
 
   if (before) {

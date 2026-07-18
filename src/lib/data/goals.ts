@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import type { Goal } from "@/types/models";
 
 export type GoalWithNames = Goal & {
@@ -23,7 +23,7 @@ export function computeScorerName(
 
 export async function getMatchGoals(matchId: string): Promise<GoalWithNames[]> {
   const [players, { data: goals, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("goals")
       .select("*")

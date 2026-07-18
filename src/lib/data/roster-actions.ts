@@ -4,22 +4,24 @@ import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkAndAwardBadges } from "./badges";
+import { assertMatchSeasonUnlocked } from "./season-lock";
 
-/** Remplace intégralement la feuille de match (qui a vraiment joué) — sert de base aux stats de présence. */
+/**
+ * Remplace intégralement la feuille de match (qui a vraiment joué) — sert de base aux stats
+ * de présence. Suppression + réinsertion faites en un seul appel RPC (confirm_match_roster),
+ * atomique côté Postgres : jamais de feuille vidée par un échec entre les deux étapes.
+ */
 export async function confirmMatchRoster(matchId: string, formData: FormData) {
   await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
 
   const playerIds = [...new Set(formData.getAll("player_id").map(String))];
 
-  const { error: deleteError } = await supabaseAdmin.from("match_players").delete().eq("match_id", matchId);
-  if (deleteError) throw new Error(deleteError.message);
-
-  if (playerIds.length > 0) {
-    const { error: insertError } = await supabaseAdmin
-      .from("match_players")
-      .insert(playerIds.map((playerId) => ({ match_id: matchId, player_id: playerId, was_present: true })));
-    if (insertError) throw new Error(insertError.message);
-  }
+  const { error } = await supabaseAdmin.rpc("confirm_match_roster", {
+    p_match_id: matchId,
+    p_player_ids: playerIds,
+  });
+  if (error) throw new Error(error.message);
 
   try {
     await Promise.all(playerIds.map((playerId) => checkAndAwardBadges(playerId)));

@@ -17,7 +17,11 @@ export async function addEquipmentItem(matchId: string, formData: FormData) {
 
 export async function deleteEquipmentItem(matchId: string, itemId: string) {
   await requireAdmin();
-  const { error } = await supabaseAdmin.from("match_equipment_items").delete().eq("id", itemId);
+  const { error } = await supabaseAdmin
+    .from("match_equipment_items")
+    .delete()
+    .eq("id", itemId)
+    .eq("match_id", matchId);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/matches/${matchId}`);
@@ -25,7 +29,11 @@ export async function deleteEquipmentItem(matchId: string, itemId: string) {
 
 export async function toggleEquipmentBrought(matchId: string, itemId: string, brought: boolean) {
   await requireUser();
-  const { error } = await supabaseAdmin.from("match_equipment_items").update({ brought }).eq("id", itemId);
+  const { error } = await supabaseAdmin
+    .from("match_equipment_items")
+    .update({ brought })
+    .eq("id", itemId)
+    .eq("match_id", matchId);
   if (error) throw new Error(error.message);
 
   revalidatePath(`/matches/${matchId}`);
@@ -38,6 +46,7 @@ export async function claimEquipmentItem(matchId: string, itemId: string) {
     .from("match_equipment_items")
     .update({ assigned_player_id: user.playerId })
     .eq("id", itemId)
+    .eq("match_id", matchId)
     .is("assigned_player_id", null);
   if (error) throw new Error(error.message);
 

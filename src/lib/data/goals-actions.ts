@@ -80,12 +80,19 @@ export async function deleteGoal(matchId: string, goalId: string) {
   const user = await requireAdmin();
   await assertMatchSeasonUnlocked(matchId);
 
-  const { data: before } = await supabaseAdmin.from("goals").select("*").eq("id", goalId).maybeSingle();
+  const { data: before } = await supabaseAdmin
+    .from("goals")
+    .select("*")
+    .eq("id", goalId)
+    .eq("match_id", matchId)
+    .maybeSingle();
+  if (!before) throw new Error("But introuvable pour ce match.");
 
   const { error } = await supabaseAdmin
     .from("goals")
     .update({ deleted_at: new Date().toISOString() })
-    .eq("id", goalId);
+    .eq("id", goalId)
+    .eq("match_id", matchId);
   if (error) throw new Error(error.message);
 
   if (before) {

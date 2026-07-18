@@ -1252,6 +1252,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      confirm_match_roster: {
+        Args: { p_match_id: string; p_player_ids: string[] }
+        Returns: undefined
+      }
       export_backup_snapshot: { Args: never; Returns: Json }
     }
     Enums: {

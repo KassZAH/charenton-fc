@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { todayDateString } from "@/lib/clock";
 import type { Match } from "@/types/models";
 
 export type MatchWithOpponent = Match & { opponent_name: string | null };
@@ -32,6 +33,7 @@ export async function getNextMatch(): Promise<MatchWithOpponent | null> {
     .select("*")
     .eq("status", "scheduled")
     .is("deleted_at", null)
+    .gte("match_date", todayDateString())
     .order("match_date", { ascending: true })
     .limit(1);
   if (error) throw new Error(error.message);
@@ -46,7 +48,21 @@ export async function getUpcomingMatches(): Promise<MatchWithOpponent[]> {
     .select("*")
     .eq("status", "scheduled")
     .is("deleted_at", null)
+    .gte("match_date", todayDateString())
     .order("match_date", { ascending: true });
+  if (error) throw new Error(error.message);
+  return attachOpponents(data ?? []);
+}
+
+/** Matchs "scheduled" dont la date est déjà passée — oubliés, jamais finalisés. Réservé aux admins. */
+export async function getUnfinalizedPastMatches(): Promise<MatchWithOpponent[]> {
+  const { data, error } = await supabaseAdmin
+    .from("matches")
+    .select("*")
+    .eq("status", "scheduled")
+    .is("deleted_at", null)
+    .lt("match_date", todayDateString())
+    .order("match_date", { ascending: false });
   if (error) throw new Error(error.message);
   return attachOpponents(data ?? []);
 }

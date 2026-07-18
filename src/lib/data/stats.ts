@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
 
 /**
@@ -23,7 +23,7 @@ function countBy(rows: { id: string | null }[], nameById: Map<string, string>): 
 
 export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: goals, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null),
   ]);
   if (error) throw new Error(error.message);
@@ -34,7 +34,7 @@ export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
 
 export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: goals, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("goals").select("assist_player_id").eq("credited_to", "charenton").is("deleted_at", null),
   ]);
   if (error) throw new Error(error.message);
@@ -46,7 +46,7 @@ export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
 /** Buts + passes décisives cumulés (contribution directe aux buts). */
 export async function getTopGoalContributions(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: goals, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin
       .from("goals")
       .select("scorer_player_id, assist_player_id")
@@ -68,7 +68,7 @@ export async function getTopGoalContributions(limit = 10): Promise<PlayerCount[]
 
 export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: rows, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("match_players").select("player_id").eq("was_present", true),
   ]);
   if (error) throw new Error(error.message);
@@ -79,7 +79,7 @@ export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
 
 export async function getMostCarded(limit = 10): Promise<PlayerCount[]> {
   const [players, { data: cards, error }] = await Promise.all([
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("cards").select("player_id").is("deleted_at", null),
   ]);
   if (error) throw new Error(error.message);

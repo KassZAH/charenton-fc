@@ -1,6 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { getActivePlayers } from "./players";
+import { getAllPlayers } from "./players";
 import type { Award } from "@/types/models";
 
 /**
@@ -30,7 +30,7 @@ export type AwardResult = {
 export async function getMatchAwardResults(matchId: string): Promise<AwardResult[]> {
   const [awards, players, { data: votes, error }] = await Promise.all([
     getActiveAwards(matchId),
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("votes").select("award_id, voted_player_id").eq("match_id", matchId),
   ]);
   if (error) throw new Error(error.message);
@@ -73,7 +73,7 @@ export type AwardLeaderboard = {
 export async function getAwardLeaderboards(limit = 5): Promise<AwardLeaderboard[]> {
   const [awards, players, { data: votes, error }] = await Promise.all([
     getActiveAwards(),
-    getActivePlayers(),
+    getAllPlayers(),
     supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id"),
   ]);
   if (error) throw new Error(error.message);

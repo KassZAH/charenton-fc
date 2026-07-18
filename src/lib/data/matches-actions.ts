@@ -283,6 +283,7 @@ export async function setAvailabilityAsAdmin(
 
 export async function setCaptain(matchId: string, formData: FormData) {
   await requireAdmin();
+  await assertMatchSeasonUnlocked(matchId);
   const playerId = String(formData.get("captain_player_id") ?? "") || null;
 
   const { error } = await supabaseAdmin.from("matches").update({ captain_player_id: playerId }).eq("id", matchId);
