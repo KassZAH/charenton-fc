@@ -3,7 +3,12 @@ import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth/current-user";
 import { getPlayerById } from "@/lib/data/players";
 import { getPlayerMeasurements } from "@/lib/data/measurements";
-import { updateOwnProfile, updatePrivacySettings } from "@/lib/data/players-actions";
+import {
+  updateOwnProfile,
+  updatePrivacySettings,
+  regenerateCalendarToken,
+  regeneratePublicToken,
+} from "@/lib/data/players-actions";
 import { addMeasurement, deleteMeasurement } from "@/lib/data/measurements-actions";
 import { getPlayerGoals } from "@/lib/data/player-goals";
 import { addPlayerGoal, toggleGoalAchieved, deletePlayerGoal } from "@/lib/data/player-goals-actions";
@@ -147,9 +152,16 @@ export default async function ProfilePage() {
           </button>
         </form>
         {player.public_profile_enabled && (
-          <p className="mt-2 truncate text-xs text-steel/70">
-            Lien public : <span className="text-gold">{publicProfileUrl}</span>
-          </p>
+          <div className="mt-2 flex items-center justify-between gap-2">
+            <p className="truncate text-xs text-steel/70">
+              Lien public : <span className="text-gold">{publicProfileUrl}</span>
+            </p>
+            <form action={regeneratePublicToken}>
+              <button type="submit" className="shrink-0 text-xs font-medium text-steel underline underline-offset-2">
+                Régénérer
+              </button>
+            </form>
+          </div>
         )}
       </section>
 
@@ -276,7 +288,14 @@ export default async function ProfilePage() {
       </section>
 
       <section className="mt-8 border-t border-white/10 pt-6">
-        <h2 className="mb-3 text-sm font-bold text-cream">Calendrier</h2>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-cream">Calendrier</h2>
+          <form action={regenerateCalendarToken}>
+            <button type="submit" className="text-xs font-medium text-steel underline underline-offset-2">
+              Régénérer le lien
+            </button>
+          </form>
+        </div>
         <CalendarSubscribeLink url={calendarUrl} />
       </section>
 

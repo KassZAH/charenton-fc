@@ -174,6 +174,27 @@ export async function updateOwnProfile(formData: FormData) {
   redirect("/profile");
 }
 
+/** Invalide immédiatement l'ancien lien (calendrier ou profil public) en cas de partage accidentel. */
+export async function regenerateCalendarToken() {
+  const user = await requireUser();
+  const { error } = await supabaseAdmin
+    .from("players")
+    .update({ calendar_token: crypto.randomUUID() })
+    .eq("id", user.playerId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile");
+}
+
+export async function regeneratePublicToken() {
+  const user = await requireUser();
+  const { error } = await supabaseAdmin
+    .from("players")
+    .update({ public_token: crypto.randomUUID() })
+    .eq("id", user.playerId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile");
+}
+
 const VALID_FIELD_VISIBILITY = new Set(["private", "coach", "team", "public"]);
 
 /** Centre de confidentialité — un niveau par champ personnel, plus l'activation du profil public. */

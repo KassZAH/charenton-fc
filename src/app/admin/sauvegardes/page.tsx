@@ -19,6 +19,16 @@ export default async function BackupsPage() {
         </Link>
       </div>
 
+      <div className="mb-6 rounded-xl border border-gold/20 bg-gold/5 p-3 text-xs text-gold">
+        <p className="font-semibold">Téléchargement uniquement — pas de restauration automatique.</p>
+        <p className="mt-1 text-cream/70">
+          Ces sauvegardes créent un fichier JSON complet et cohérent, mais il n&apos;y a pas de bouton pour le
+          réimporter. En cas de besoin, la restauration se fait manuellement, table par table. Télécharge aussi une
+          copie de temps en temps sur ton ordinateur (pas seulement dans Supabase) : si le projet Supabase lui-même
+          est perdu ou corrompu, les sauvegardes stockées dedans le sont aussi.
+        </p>
+      </div>
+
       <form action={createManualBackup} className="mb-6 flex items-end gap-2">
         <div className="flex-1">
           <label className="block text-xs font-medium text-cream/80" htmlFor="label">

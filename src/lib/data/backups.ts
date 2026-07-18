@@ -39,19 +39,24 @@ export const BACKUP_TABLES = [
 /** Résolue à l'exécution depuis une liste de noms — pas typable statiquement, même choix que audit-actions.ts. */
 const untypedDb = supabaseAdmin as unknown as SupabaseClient;
 
+/**
+ * Passe par la fonction Postgres export_backup_snapshot() (REPEATABLE READ) :
+ * toutes les tables sont lues au même instant, jamais table par table depuis
+ * le client JS — une écriture concurrente ne peut plus mélanger deux instants
+ * différents dans un même snapshot.
+ */
 export async function createBackup(
   reason: BackupTriggerReason,
   label: string,
   createdByPlayerId: string | null
 ): Promise<void> {
-  const snapshot: Record<string, unknown[]> = {};
-  const tableCounts: Record<string, number> = {};
+  const { data: snapshot, error: rpcError } = await supabaseAdmin.rpc("export_backup_snapshot");
+  if (rpcError) throw new Error(`Sauvegarde échouée : ${rpcError.message}`);
 
+  const snapshotObj = snapshot as unknown as Record<string, unknown[]>;
+  const tableCounts: Record<string, number> = {};
   for (const table of BACKUP_TABLES) {
-    const { data, error } = await untypedDb.from(table).select("*");
-    if (error) throw new Error(`Sauvegarde échouée sur ${table} : ${error.message}`);
-    snapshot[table] = data ?? [];
-    tableCounts[table] = (data ?? []).length;
+    tableCounts[table] = (snapshotObj[table] ?? []).length;
   }
 
   const { error } = await supabaseAdmin.from("backups").insert({

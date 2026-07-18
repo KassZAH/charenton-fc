@@ -1252,7 +1252,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      export_backup_snapshot: { Args: never; Returns: Json }
     }
     Enums: {
       [_ in never]: never
