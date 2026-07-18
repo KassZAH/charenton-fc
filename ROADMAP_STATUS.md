@@ -21,22 +21,19 @@ Statuts possibles : **DÉJÀ IMPLÉMENTÉ** · **PARTIELLEMENT IMPLÉMENTÉ** ·
 
 ## 0.1 Désactiver temporairement la réinitialisation
 
-**Statut : À CORRIGER**
+**Statut : DÉJÀ IMPLÉMENTÉ**
 
-Ce qui existe : `resetSeasonData()` (`src/lib/data/reset-actions.ts`) a été durci lors du sprint P0 (2ad6a2b) — `requireAdmin()` au lieu d'un contrôle par prénom, suppression **scopée à `season_id`** au lieu de toutes les saisons, confirmation par saisie exacte du nom de la saison, sauvegarde automatique avant suppression (`createBackup("before_reset", ...)`). Le bouton (`src/app/profile/ResetButton.tsx`) est toujours visible et actif dans `/profile` pour les admins.
+Ce qui existe : `resetSeasonData()` (`src/lib/data/reset-actions.ts`) a été durci lors du sprint P0 (`2ad6a2b`) — `requireAdmin()` au lieu d'un contrôle par prénom, suppression **scopée à `season_id`** au lieu de toutes les saisons, confirmation par saisie exacte du nom de la saison, sauvegarde automatique avant suppression. **Mis à jour (Lot 2 de la roadmap V3, commit `960cda0`, déployé en production le 18/07/2026) :** l'action est désormais neutralisée par `SEASON_RESET_ENABLED = false` (`src/lib/data/reset-flags.ts`), vérifié tout en haut de la fonction, avant toute lecture de saison ou création de sauvegarde — un appel direct (contournant l'UI) ne modifie donc plus rien du tout. Le bouton a été retiré de `/profile`, remplacé par un lien vers `/admin/saisons` (`startNewSeason`, voir Phase 2.5), qui reste l'unique parcours normal. `ResetButton.tsx` est conservé sur disque mais n'est plus importé nulle part.
 
-Ce qui manque : la V2 (§0.1) demande de **retirer le bouton du parcours normal** et de faire retourner une erreur contrôlée tant que l'assistant de clôture (Phase 2.5) n'est pas prêt. Or l'assistant de clôture existe déjà partiellement (`startNewSeason`, voir Phase 2.5) et constitue une alternative non destructive déjà fonctionnelle — le bouton `resetSeasonData` est donc désormais redondant avec un chemin plus sûr, pas juste dangereux.
+Ce qui manque : rien par rapport au périmètre de ce lot. Le code de `resetSeasonData()` reste dans le dépôt (volontairement, au cas où) — sa suppression définitive n'est pas prévue tant qu'aucun besoin ne l'exige.
 
-Fichiers concernés : `src/app/profile/ResetButton.tsx`, `src/app/profile/page.tsx`, `src/lib/data/reset-actions.ts`.
-Tables/migrations : aucune nouvelle — utilise `seasons`, `matches`.
-Dépendances techniques : Phase 2.5 (assistant de clôture) pour offrir une alternative complète avant de retirer le bouton.
-Risque sur données existantes : faible aujourd'hui (déjà scopé à la saison active + sauvegarde automatique), mais le bouton reste une suppression irréversible en interface — un admin peut encore l'actionner par erreur.
-Effort estimé : **S** (retirer/masquer le bouton, garder le code, ajouter un garde-fou côté action).
-Tests déjà présents : aucun test dédié à `resetSeasonData`.
-Tests à ajouter : reset refusé si confirmation incorrecte ; reset limité à la saison active ; reset crée une sauvegarde avant suppression (comportement déjà vérifié manuellement pendant le sprint P0, pas encore automatisé).
+Fichiers concernés : `src/app/profile/ResetButton.tsx` (orphelin), `src/app/profile/page.tsx`, `src/lib/data/reset-actions.ts`, `src/lib/data/reset-flags.ts`.
+Tables/migrations : aucune.
+Risque sur données existantes : résolu — vérifié en preview et confirmé par requête de contrôle (compteurs `backups`/`matches` identiques avant/après un appel direct refusé).
+Tests ajoutés : `src/lib/data/reset-flags.test.ts` (flag désactivé par défaut).
 Migration nécessaire : non.
-Déployable indépendamment : oui.
-Feature flag léger : oui — un simple flag `SEASON_RESET_ENABLED` (constante ou ligne dans `team_settings`) suffit, pas besoin d'un système complet.
+Déployable indépendamment : oui — déjà déployé.
+Feature flag léger : oui, en place (`SEASON_RESET_ENABLED`, constante de code — pas de colonne `team_settings`, jugé suffisant).
 
 ## 0.2 Baseline de tests
 
@@ -991,7 +988,7 @@ Ces éléments sont en production aujourd'hui mais ne sont mentionnés nulle par
 
 4. **`match_players.goalkeeper` / `availability.goalkeeper_available` / `players.primary_position === "Gardien"` (utilisé en contournement par `getMatchReadiness()`)** — trois façons différentes, aujourd'hui incohérentes entre elles, de savoir "qui est gardien". La Phase 5.4 doit trancher laquelle fait foi (probablement `match_players.goalkeeper`, la plus précise car par match) et migrer `getMatchReadiness()` pour l'utiliser une fois disponible.
 
-5. **`resetSeasonData()` (suppression, sécurisée mais destructive) / `startNewSeason()` (non destructif, déjà en production)** — deux chemins pour "changer de saison" coexistent aujourd'hui, avec des garanties très différentes. Voir Phase 0.1/2.5 — un des objectifs du prochain lot devrait être de converger vers un seul chemin recommandé.
+5. ~~`resetSeasonData()` / `startNewSeason()` coexistaient avec des garanties très différentes~~ — **résolu par le Lot 2 (commit `960cda0`, 18/07/2026)** : `resetSeasonData()` est neutralisée, `startNewSeason()` (`/admin/saisons`) est désormais l'unique parcours actionnable. Le code de `resetSeasonData()` reste présent mais mort — voir Phase 0.1 mise à jour.
 
 6. **`BACKUP_TABLES` (24 tables) / schéma réel (27 tables)** — `audit_log` est la seule table métier absente du registre de sauvegarde, par choix documenté. Ne pas confondre avec un oubli lors d'une future revue.
 
@@ -1036,29 +1033,31 @@ Liste des migrations anticipées par cette analyse, **non exécutées**, classé
 
 # Dette technique restante
 
-**Résolu depuis la dernière analyse :** ~~Restauration depuis la corbeille et annulation depuis l'historique contournant le verrouillage de saison~~ — fermé par le Lot 1 (commit `ed7043c`, 18/07/2026). Voir Phase 3.3/3.4 mises à jour.
+**Résolu depuis la dernière analyse :**
+- ~~Restauration depuis la corbeille et annulation depuis l'historique contournant le verrouillage de saison~~ — fermé par le Lot 1 (commit `ed7043c`, 18/07/2026). Voir Phase 3.3/3.4 mises à jour.
+- ~~Bouton de réinitialisation destructive toujours actif en production~~ — fermé par le Lot 2 (commit `960cda0`, 18/07/2026). Voir Phase 0.1 mise à jour.
 
 Par ordre de gravité décroissante :
 
 1. **Commentaire trompeur dans `backups.ts:43`** ("REPEATABLE READ" alors que le comportement réel est READ COMMITTED via un appel RPC unique) — risque de faire croire à une garantie d'isolation plus forte que celle réellement livrée, pour un futur lecteur humain ou agent.
 
-2. **Bouton de réinitialisation destructive toujours actif en production** (Phase 0.1), alors qu'une alternative non destructive (`startNewSeason`) existe déjà et fonctionne. Le risque a été réduit (scopé à la saison active, sauvegarde automatique) mais pas éliminé.
+2. **Trois mécanismes de token de lien partageable non unifiés** (`reinforcement_calls` avec expiration/révocation ; `calendar_token`/`public_token` sans expiration, régénérables seulement) — pas un bug, mais une incohérence de garanties selon la fonctionnalité utilisée par le joueur.
 
-3. **Trois mécanismes de token de lien partageable non unifiés** (`reinforcement_calls` avec expiration/révocation ; `calendar_token`/`public_token` sans expiration, régénérables seulement) — pas un bug, mais une incohérence de garanties selon la fonctionnalité utilisée par le joueur.
+3. **Colonnes orphelines en base** : `match_players.goalkeeper`, `availability.goalkeeper_available`, `team_settings.access_code`, `players.is_guest` — posées à l'avance pour des fonctionnalités jamais branchées. Sans danger immédiat, mais source de confusion pour quiconque lit le schéma sans le contexte historique (ce document devrait servir de mémoire à ce sujet).
 
-4. **Colonnes orphelines en base** : `match_players.goalkeeper`, `availability.goalkeeper_available`, `team_settings.access_code`, `players.is_guest` — posées à l'avance pour des fonctionnalités jamais branchées. Sans danger immédiat, mais source de confusion pour quiconque lit le schéma sans le contexte historique (ce document devrait servir de mémoire à ce sujet).
+4. **Pas de test automatisé sur les permissions et le verrouillage de saison** (Phase 0.2) — la couverture du verrouillage de saison sur la corbeille/l'historique dispose désormais de tests purs ciblés (`season-lock.test.ts`) et d'une vérification manuelle de bout en bout (Lot 1), mais le reste des permissions (login, rôles, rate limiting) repose encore uniquement sur des vérifications manuelles faites pendant le sprint d'audit, non reproductibles automatiquement à chaque changement futur.
 
-5. **Pas de test automatisé sur les permissions et le verrouillage de saison** (Phase 0.2) — la couverture du verrouillage de saison sur la corbeille/l'historique dispose désormais de tests purs ciblés (`season-lock.test.ts`) et d'une vérification manuelle de bout en bout (Lot 1), mais le reste des permissions (login, rôles, rate limiting) repose encore uniquement sur des vérifications manuelles faites pendant le sprint d'audit, non reproductibles automatiquement à chaque changement futur.
+5. **Contraintes d'unicité potentiellement absentes côté base** sur `availability` (réponse par joueur/match) et `votes` (vote par joueur/match/catégorie) — actuellement garanties uniquement par la logique applicative (upsert avec recherche préalable), pas par une contrainte SQL. Un accès direct à la base ou un bug applicatif pourrait créer un doublon.
 
-6. **Contraintes d'unicité potentiellement absentes côté base** sur `availability` (réponse par joueur/match) et `votes` (vote par joueur/match/catégorie) — actuellement garanties uniquement par la logique applicative (upsert avec recherche préalable), pas par une contrainte SQL. Un accès direct à la base ou un bug applicatif pourrait créer un doublon.
+6. **Aucun `loading.tsx`/`error.tsx`** nulle part dans `src/app` — une erreur non gérée dans un Server Component fait planter la page entière sans état de repli.
 
-7. **Aucun `loading.tsx`/`error.tsx`** nulle part dans `src/app` — une erreur non gérée dans un Server Component fait planter la page entière sans état de repli.
-
-8. **`resetSeasonData()` et `startNewSeason()` coexistent** sans convergence claire — deux façons de faire la même chose fonctionnelle avec des garanties très différentes (voir "Recouvrements", point 5).
+7. **`resetSeasonData()` reste dans le code, désormais neutralisée mais non supprimée** — plus une vraie coexistence avec `startNewSeason()` (le bouton n'existe plus, un seul parcours est actionnable), mais un petit résidu de code mort à trancher un jour : le supprimer pour de bon, ou le garder comme filet en cas de besoin futur documenté.
 
 ---
 
 # Ordre d'implémentation recommandé
+
+_**Note (18/07/2026) :** cette section des « cinq prochains lots » est désormais historique — `ROADMAP_EXECUTION_COMPLETE_CHARENTON_FC_V3.md` est devenue le document directeur unique d'exécution, avec sa propre séquence de 39 lots (0 à 38) qui remplace celle-ci. Conservée ici pour la traçabilité : les Lots 1 et 2 proposés ci-dessous correspondent exactement aux Lots 1 et 2 de la V3, tous deux livrés._
 
 Cinq lots maximum, chacun à objectif unique, petit, déployable indépendamment, testable, réversible, et ne mélangeant pas sécurité / refonte UI / nouvelles fonctionnalités sans nécessité — conformément à la contrainte du brief.
 
@@ -1078,6 +1077,8 @@ Cinq lots maximum, chacun à objectif unique, petit, déployable indépendamment
 **Ordre de déploiement :** en premier, sans dépendance.
 
 ## Lot 2 — Retirer la réinitialisation destructive du parcours normal
+
+**Statut : LIVRÉ — commit `960cda0`, déployé et vérifié en production le 18/07/2026 (Lot 2 de la roadmap V3).**
 
 **But :** achever la Phase 0.1/2.5 en s'appuyant sur l'alternative non destructive déjà en production (`startNewSeason`), au lieu de laisser un bouton de suppression irréversible accessible en permanence.
 
