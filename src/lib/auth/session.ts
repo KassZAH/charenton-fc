@@ -7,7 +7,7 @@ import { SignJWT, jwtVerify } from "jose";
  */
 
 export const SESSION_COOKIE_NAME = "charenton_session";
-const SESSION_DURATION = "180d";
+const SESSION_DURATION = "30d";
 
 function getSecretKey() {
   const secret = process.env.SESSION_SECRET;

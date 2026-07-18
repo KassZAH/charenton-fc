@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth/current-user";
-import { logout } from "@/lib/auth/actions";
+import { logout, logoutAllDevices } from "@/lib/auth/actions";
 import { isElevatedRole } from "@/types/models";
 
 const CLUB_LINKS = [
@@ -44,6 +44,12 @@ export default async function PlusPage() {
           className="w-full rounded-xl border border-white/15 py-3 text-sm font-semibold text-cream/80"
         >
           Déconnexion
+        </button>
+      </form>
+
+      <form action={logoutAllDevices} className="mt-2">
+        <button type="submit" className="w-full py-2 text-xs font-medium text-steel/60 underline underline-offset-2">
+          Déconnecter tous mes appareils
         </button>
       </form>
     </div>
