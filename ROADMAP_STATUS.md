@@ -94,20 +94,18 @@ Feature flag léger : non nécessaire — la colonne peut rester `null` pour tou
 
 ## 1.2 Session courte et révocable
 
-**Statut : PARTIELLEMENT IMPLÉMENTÉ**
+**Statut : DÉJÀ IMPLÉMENTÉ**
 
-Ce qui existe (posé par le sprint P0, `2ad6a2b`) : `players.session_version integer not null default 1`. JWT réduit à `{playerId, sessionVersion}` (`src/lib/auth/session.ts`). `getCurrentUser()` (`src/lib/auth/current-user.ts`) recharge systématiquement rôle/nom/statut depuis la base et compare `session_version` à chaque requête — **exactement** le modèle demandé par la V2 §1.2. `session_version` est incrémenté sur changement de rôle/PIN/statut (`players-actions.ts::updatePlayer`, `setPlayerStatus`).
+Ce qui existe (posé par le sprint P0, `2ad6a2b`) : `players.session_version integer not null default 1`. JWT réduit à `{playerId, sessionVersion}` (`src/lib/auth/session.ts`). `getCurrentUser()` (`src/lib/auth/current-user.ts`) recharge systématiquement rôle/nom/statut depuis la base et compare `session_version` à chaque requête. `session_version` est incrémenté sur changement de rôle/PIN/statut (`players-actions.ts::updatePlayer`, `setPlayerStatus`), et désormais aussi volontairement via `logoutAllDevices()` (voir 1.4). **Mis à jour (Lot 4 de la roadmap V3, commit `52a27f3`, déployé en production le 18/07/2026) :** durée de session réduite de 180 à 30 jours, synchronisée entre le JWT (`SESSION_DURATION`, `session.ts`) et le cookie (`SESSION_MAX_AGE_SECONDS`, `actions.ts`).
 
-Ce qui manque : `last_pin_change_at` et `last_role_change_at` (colonnes demandées par la V2, absentes du schéma — non strictement nécessaires puisque `session_version` suffit déjà à invalider, mais utiles pour l'affichage "dernier changement de PIN" en §1.4). Durée de session encore à **180 jours** (`SESSION_DURATION = "180d"` dans `session.ts`), pas les 30 jours recommandés. Pas de renouvellement contrôlé.
+Ce qui manque : `last_pin_change_at`/`last_role_change_at` — délibérément non ajoutées (aucun endroit dans l'UI ne les afficherait aujourd'hui, cohérent avec la note V3 "dates de changement seulement si utilisées"). Pas de renouvellement glissant de session (un compte inactif 30 jours doit se reconnecter) — explicitement exclu du périmètre du Lot 4, à revisiter seulement si ça s'avère gênant en usage réel.
 
-Fichiers concernés : `src/lib/auth/session.ts`, `src/lib/auth/current-user.ts`, `src/lib/data/players-actions.ts`.
-Tables/migrations : migration additive pour `last_pin_change_at`/`last_role_change_at` si retenu.
-Risque sur données existantes : aucun — réduire la durée de session ne fait que raccourcir les cookies existants, pas de perte de données.
-Effort estimé : **S** (changer `SESSION_DURATION`), **S** (ajouter les deux colonnes de date si besoin).
-Tests déjà présents : aucun automatisé — comportement vérifié manuellement lors du sprint P0 (admin rétrogradé refusé immédiatement, ancien token JWT rejeté).
-Tests à ajouter : voir liste V2 §1.2 (admin rétrogradé, joueur archivé, PIN modifié).
-Migration nécessaire : oui si on ajoute les deux colonnes de date, non pour juste réduire la durée.
-Déployable indépendamment : oui.
+Fichiers concernés : `src/lib/auth/session.ts`, `src/lib/auth/actions.ts`.
+Tables/migrations : aucune.
+Risque sur données existantes : aucun — vérifié (toute session déjà âgée de plus de 30 jours est coupée au prochain accès, comportement attendu et documenté, pas une perte de données).
+Tests déjà présents : aucun automatisé — comportement vérifié manuellement (deux tokens simulant deux navigateurs, cookie à `Max-Age=2592000` exactement après une reconnexion, `sessionVersion` correctement rafraîchi).
+Migration nécessaire : non.
+Déployable indépendamment : oui — déjà déployé.
 Feature flag léger : non nécessaire.
 
 ## 1.3 Rate limiting des PIN
@@ -133,18 +131,17 @@ Feature flag léger : non nécessaire.
 
 ## 1.4 Gestion des sessions
 
-**Statut : À IMPLÉMENTER**
+**Statut : DÉJÀ IMPLÉMENTÉ**
 
-Ce qui existe : aucun bouton "Déconnecter cet appareil" / "Déconnecter tous mes appareils" dans `/profile`. L'incrémentation de `session_version` sur changement de PIN/rôle *a* pour effet secondaire de révoquer toutes les sessions — donc le mécanisme sous-jacent existe, seule l'action volontaire ("je veux me déconnecter partout maintenant, sans changer mon PIN") manque.
+Ce qui existe : `logout()` (déconnexion de l'appareil courant, préexistant) et **désormais `logoutAllDevices()`** (Lot 4, commit `52a27f3`) — incrémente `session_version` du joueur courant (même mécanisme que le changement de rôle/PIN) et supprime le cookie courant, invalidant immédiatement tous les appareils. Bouton « Déconnecter tous mes appareils » sur `/plus`, à côté du bouton de déconnexion simple (emplacement adapté par rapport à la V2 d'origine, qui suggérait `/profile` — le bouton de déconnexion vit désormais dans `/plus` depuis le lot UI de l'audit).
 
-Ce qui manque : un bouton qui appelle une nouvelle action `revokeAllSessions()` (incrémente juste `session_version` sans autre effet), et l'affichage de la date du dernier changement de PIN (dépend de 1.2).
-Fichiers concernés : `src/app/profile/page.tsx`, nouvelle fonction dans `src/lib/data/players-actions.ts`.
+Ce qui manque : affichage de la date du dernier changement de PIN — dépend de 1.2, volontairement non ajoutée (pas d'endroit pour l'afficher aujourd'hui).
+Fichiers concernés : `src/app/plus/page.tsx`, `src/lib/auth/actions.ts`.
 Tables/migrations : aucune nouvelle (réutilise `session_version`).
 Risque sur données existantes : aucun.
-Effort estimé : **S**.
-Tests à ajouter : après clic, l'ancien cookie du même joueur est rejeté.
+Tests déjà présents : aucun automatisé — vérifié manuellement (deux tokens simulant deux navigateurs, révocation globale confirmée sur les deux, reconnexion normale ensuite fonctionnelle).
 Migration nécessaire : non.
-Déployable indépendamment : oui.
+Déployable indépendamment : oui — déjà déployé.
 Feature flag léger : non nécessaire.
 
 ---
@@ -1002,7 +999,7 @@ Liste des migrations anticipées par cette analyse, **non exécutées**, classé
 | Migration probable | Phase | Nature | Risque |
 |---|---|---|---|
 | `team_settings.owner_player_id` | 1.1 | Additive, nullable | Faible |
-| `players.last_pin_change_at`, `last_role_change_at` | 1.2 | Additive, nullable | Faible |
+| `players.last_pin_change_at`, `last_role_change_at` | 1.2 | Additive, nullable — écartée au Lot 4 faute d'usage UI, à reconsidérer si besoin | Faible |
 | `login_attempts` (nouvelle table) | 1.3 | Additive | Faible |
 | ~~Contrainte unique partielle `seasons` (une seule active)~~ | 3.1 | Faite — Lot 3, `20260718040000_season_active_unique.sql` | — |
 | RPC transactionnelles (blessure+dispo, restauration audit, clôture saison, fusion) | 3.2, 8.5 | Fonctions, pas de schéma | Faible par fonction |
