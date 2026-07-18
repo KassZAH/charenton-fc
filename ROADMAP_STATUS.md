@@ -254,19 +254,20 @@ Feature flag léger : non nécessaire.
 
 ## 3.1 Contraintes SQL
 
-**Statut : PARTIELLEMENT IMPLÉMENTÉ**
+**Statut : DÉJÀ IMPLÉMENTÉ**
 
-Ce qui existe (posé ce jour, migration `20260718030000_data_constraints.sql`) : score de match ≥ 0 (entier déjà garanti par le type `integer`), minute de but/carton entre 0 et 130, `available_seats` ≥ 0, `weight_kg` entre 30 et 200, `height_cm` entre 100 et 230, **index unique partiel** empêchant deux blessures actives simultanées pour un même joueur (`injuries_one_active_per_player`).
+**Correction (Lot 3, 18/07/2026) :** cette entrée listait à tort trois contraintes comme manquantes. Une relecture directe de `20260717000000_baseline.sql` (faite avant d'implémenter le Lot 3) a montré qu'elles existent en réalité depuis la toute première migration du projet : `availability` a `UNIQUE (match_id, player_id)` (`availability_match_id_player_id_key`), `votes` a `UNIQUE (match_id, award_id, voter_player_id)` (`votes_match_id_award_id_voter_player_id_key`), et `goals.goal_type` a `CHECK (goal_type IN ('classique','penalty','coup_franc','csc'))` (`goals_goal_type_check`). Cette analyse avait été faite sans relire ligne à ligne la migration baseline — leçon retenue pour la suite : toujours vérifier le schéma réel avant d'affirmer qu'une contrainte manque.
 
-Ce qui manque par rapport à la liste V2 §3.1 : contrainte "une seule saison active" (`seasons.is_active`) — actuellement appliquée uniquement par la logique applicative (`startNewSeason` désactive l'ancienne avant d'activer la nouvelle), pas garantie par un index unique partiel côté base ; unicité des réponses par joueur et match sur `availability` (probablement déjà garantie par un `onConflict: "match_id,player_id"` côté upsert, mais à vérifier qu'une vraie contrainte UNIQUE existe en base, pas seulement une convention côté client) ; unicité des votes par joueur/match/catégorie sur `votes` (même remarque — `castVote` fait un upsert applicatif avec recherche préalable, pas de contrainte UNIQUE(match_id, award_id, voter_player_id) vérifiée) ; type de but valide (`goal_type` est un `text` libre, pas une contrainte `check (goal_type in (...))` ni un enum).
+Ce qui existe désormais, au complet : score de match ≥ 0, minute de but/carton entre 0 et 130, `available_seats` ≥ 0, `weight_kg`/`height_cm` plausibles, une seule blessure active par joueur (`injuries_one_active_per_player`, sprint audit) — **et depuis le Lot 3 (commit `c9ed882`, migration `20260718040000_season_active_unique.sql`) : une seule saison active à la fois** (`seasons_one_active`, même modèle d'index unique partiel). Aucun changement de code applicatif n'a été nécessaire — `startNewSeason()` respectait déjà cet invariant.
 
-Fichiers concernés : nouvelle migration.
-Tables/migrations : `seasons` (index unique partiel `where is_active`), `availability` (UNIQUE si absent), `votes` (UNIQUE si absent), `goals` (`check` sur `goal_type`).
-Risque sur données existantes : **à vérifier avant migration** — si des données existantes violent une contrainte (ex. deux saisons actives simultanément par accident historique, ou un doublon de vote), la migration échouera. Nécessite une requête de vérification préalable avant d'ajouter chaque contrainte (cohérent avec la règle P0 déjà appliquée pendant le sprint : vérifier les plages réelles avant d'ajouter un `check`).
-Effort estimé : **S** par contrainte, **M** pour l'ensemble avec vérifications préalables.
-Tests à ajouter : insertion d'une deuxième saison active refusée ; vote dupliqué refusé au niveau base (pas seulement applicatif) ; `goal_type` invalide refusé.
-Migration nécessaire : oui.
-Déployable indépendamment : oui.
+Ce qui manque : rien de concret par rapport à la liste V2 §3.1. Le point "statut cohérent avec les dates" reste vague et n'a pas de contrainte concrète identifiable à ce stade — pas traité, jugé non prioritaire.
+
+Fichiers concernés : `supabase/migrations/20260718030000_data_constraints.sql`, `supabase/migrations/20260718040000_season_active_unique.sql`.
+Tables/migrations : `matches`, `goals`, `cards`, `availability`, `player_measurements`, `injuries`, `votes`, `seasons` — toutes déjà contraintes.
+Risque sur données existantes : résolu — vérifié avant migration (1/1 saison active, 0 doublon `availability`/`votes`) et après (tentative de double saison active refusée, insertion normale non bloquée), avec des données temporaires nettoyées.
+Tests ajoutés : aucun test automatisé (contrainte SQL pure, pas de logique applicative à isoler) — vérification manuelle en base uniquement, documentée dans le compte rendu du Lot 3.
+Migration nécessaire : non, déjà faite.
+Déployable indépendamment : oui — déjà déployé.
 Feature flag léger : non.
 
 ## 3.2 Transactions PostgreSQL (RPC)
@@ -1003,9 +1004,7 @@ Liste des migrations anticipées par cette analyse, **non exécutées**, classé
 | `team_settings.owner_player_id` | 1.1 | Additive, nullable | Faible |
 | `players.last_pin_change_at`, `last_role_change_at` | 1.2 | Additive, nullable | Faible |
 | `login_attempts` (nouvelle table) | 1.3 | Additive | Faible |
-| Contrainte unique partielle `seasons` (une seule active) | 3.1 | Additive (index) | **À vérifier avant** : aucune violation actuelle ne doit exister |
-| Contraintes UNIQUE `availability`, `votes` si absentes | 3.1 | Additive (index) | **À vérifier avant** : dédoublonnage éventuel nécessaire |
-| `check` sur `goals.goal_type` | 3.1 | Additive | **À vérifier avant** : valeurs actuellement en base |
+| ~~Contrainte unique partielle `seasons` (une seule active)~~ | 3.1 | Faite — Lot 3, `20260718040000_season_active_unique.sql` | — |
 | RPC transactionnelles (blessure+dispo, restauration audit, clôture saison, fusion) | 3.2, 8.5 | Fonctions, pas de schéma | Faible par fonction |
 | `matches.started_at`, `ended_at`, `completion_status`, `validated_at`, `validated_by_player_id` | 5.1 | Additive, nullable | Faible |
 | `player_restrictions` (nouvelle table) | 6.2 | Additive | Faible |
@@ -1105,6 +1104,8 @@ Cinq lots maximum, chacun à objectif unique, petit, déployable indépendamment
 **Ordre de déploiement :** indépendant des Lots 1-2, peut être fait en parallèle.
 
 ## Lot 4 — Contraintes SQL restantes (saison unique, votes, réponses)
+
+**Statut : LIVRÉ — commit `c9ed882`, déployé et vérifié en production le 18/07/2026 (Lot 3 de la roadmap V3). Périmètre réduit en cours de route : les contraintes `availability`/`votes`/`goal_type` existaient déjà depuis la migration baseline — seule l'unicité de la saison active manquait réellement. Voir Phase 3.1 mise à jour.**
 
 **But :** fermer les derniers écarts de la Phase 3.1 — garantir en base ce qui n'est aujourd'hui garanti que par convention applicative.
 
