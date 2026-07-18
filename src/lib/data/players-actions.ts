@@ -8,14 +8,29 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
 import { getOwnerPlayerId } from "./team-settings";
 import type { TablesUpdate } from "@/types/database";
-import { NEW_PIN_LENGTH } from "@/types/models";
+import { NEW_PIN_LENGTH, validateNewPin } from "@/types/models";
+
+export type CreatePlayerState = {
+  success: boolean;
+  fieldErrors?: { first_name?: string; pin?: string };
+  message?: string;
+};
 
 /**
  * Le rôle n'est plus assignable ici — "player" est la seule valeur possible
  * à la création. La promotion en coach est une action séparée réservée au
  * propriétaire (ownership-actions.ts, roadmap V3 Lot 5).
+ *
+ * Retourne un état structuré (jamais une exception non interceptée) pour les
+ * erreurs prévisibles — validation ou échec base de données — afin que le
+ * formulaire (useActionState) puisse les afficher sans faire planter la
+ * route sur l'error boundary globale. Une erreur de validation métier n'est
+ * pas une exception technique fatale.
  */
-export async function createPlayer(formData: FormData) {
+export async function createPlayer(
+  _prevState: CreatePlayerState,
+  formData: FormData
+): Promise<CreatePlayerState> {
   await requireFreshCoach();
 
   const firstName = String(formData.get("first_name") ?? "").trim();
@@ -25,13 +40,16 @@ export async function createPlayer(formData: FormData) {
   const primaryPosition = String(formData.get("primary_position") ?? "").trim() || null;
   const pin = String(formData.get("pin") ?? "").trim();
 
+  const fieldErrors: NonNullable<CreatePlayerState["fieldErrors"]> = {};
   if (!firstName) {
-    throw new Error("Le prénom est obligatoire.");
+    fieldErrors.first_name = "Le prénom est obligatoire.";
   }
-
-  // Tout nouveau PIN exige 6 chiffres, quel que soit le rôle (roadmap V3, Lot 5).
-  if (pin.length !== NEW_PIN_LENGTH || !/^\d+$/.test(pin)) {
-    throw new Error(`Le PIN doit contenir ${NEW_PIN_LENGTH} chiffres.`);
+  const pinError = validateNewPin(pin);
+  if (pinError) {
+    fieldErrors.pin = pinError;
+  }
+  if (Object.keys(fieldErrors).length > 0) {
+    return { success: false, fieldErrors };
   }
 
   const pinHash = await bcrypt.hash(pin, 10);
@@ -48,7 +66,9 @@ export async function createPlayer(formData: FormData) {
     status: "active",
   });
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    return { success: false, message: "La création a échoué. Réessaie." };
+  }
 
   revalidatePath("/team");
   redirect("/team");

@@ -38,6 +38,14 @@ export type PlayerRole = "player" | "admin" | "coach";
 /** Longueur de PIN pour un nouveau compte ou un changement volontaire de PIN — plus jamais dérivée du rôle. */
 export const NEW_PIN_LENGTH = 6;
 
+/** Retourne le message d'erreur si le PIN est invalide, sinon null — utilisé côté serveur (players-actions.ts) et testable sans base de données. */
+export function validateNewPin(pin: string): string | null {
+  if (pin.length !== NEW_PIN_LENGTH || !/^\d+$/.test(pin)) {
+    return `Le PIN doit contenir exactement ${NEW_PIN_LENGTH} chiffres.`;
+  }
+  return null;
+}
+
 /**
  * Coach (et son cas particulier "admin" legacy) a exactement les mêmes droits
  * dans toute l'interface. Accepte `string` (pas seulement PlayerRole) pour
