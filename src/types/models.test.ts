@@ -6,8 +6,8 @@ describe("isElevatedRole", () => {
     expect(isElevatedRole("coach")).toBe(true);
   });
 
-  it("treats legacy admin as elevated (roadmap V3 Lot 5 transition)", () => {
-    expect(isElevatedRole("admin")).toBe(true);
+  it("no longer treats legacy admin as elevated (roadmap V3 Lot 5 Étape D — 0 ligne admin en base depuis l'Étape C)", () => {
+    expect(isElevatedRole("admin")).toBe(false);
   });
 
   it("does not treat player as elevated", () => {

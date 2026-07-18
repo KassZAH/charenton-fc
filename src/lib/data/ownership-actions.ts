@@ -58,7 +58,7 @@ export async function demoteToPlayer(playerId: string) {
     .eq("id", playerId)
     .maybeSingle();
   if (!target) throw new Error("Joueur introuvable.");
-  if (target.role !== "coach" && target.role !== "admin") throw new Error("Ce compte n'est pas coach.");
+  if (target.role !== "coach") throw new Error("Ce compte n'est pas coach.");
 
   const { error } = await supabaseAdmin
     .from("players")

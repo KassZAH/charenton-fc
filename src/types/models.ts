@@ -26,14 +26,15 @@ export type Backup = Tables<"backups">;
 export type PlayerGoal = Tables<"player_goals">;
 
 /**
- * players.role — "admin" est une valeur legacy en cours d'élimination
- * (roadmap V3, Lot 5, étape "expand" de la stratégie expand/migrate/contract) :
- * traitée partout à l'identique de "coach", jamais assignée à un nouveau
- * compte, retirée de la contrainte SQL une fois qu'aucune ligne ne l'utilise
- * plus. Le propriétaire n'est pas un rôle distinct — voir SessionPayload.isOwner
- * et team_settings.owner_player_id.
+ * players.role — "admin" a existé comme valeur legacy jusqu'à l'Étape C du
+ * Lot 5 (roadmap V3) : toutes les lignes ont été migrées vers "coach" (0
+ * ligne "admin" en base). La contrainte SQL players_role_check accepte
+ * encore "admin" jusqu'à l'Étape D2 (retrait prévu, aucune ligne concernée) ;
+ * ce type resserré à "player" | "coach" reflète la valeur métier réellement
+ * utilisée par le code. Le propriétaire n'est pas un rôle distinct — voir
+ * SessionPayload.isOwner et team_settings.owner_player_id.
  */
-export type PlayerRole = "player" | "admin" | "coach";
+export type PlayerRole = "player" | "coach";
 
 /** Longueur de PIN pour un nouveau compte ou un changement volontaire de PIN — plus jamais dérivée du rôle. */
 export const NEW_PIN_LENGTH = 6;
@@ -47,13 +48,13 @@ export function validateNewPin(pin: string): string | null {
 }
 
 /**
- * Coach (et son cas particulier "admin" legacy) a exactement les mêmes droits
- * dans toute l'interface. Accepte `string` (pas seulement PlayerRole) pour
- * pouvoir être appelée directement sur players.role tel que renvoyé par
- * Supabase, sans caster à chaque site d'appel.
+ * Accepte `string` (pas seulement PlayerRole) pour pouvoir être appelée
+ * directement sur players.role tel que renvoyé par Supabase, sans caster à
+ * chaque site d'appel. "admin" n'est plus une valeur élevée reconnue
+ * (roadmap V3, Lot 5, Étape D — 0 ligne "admin" en base depuis l'Étape C).
  */
 export function isElevatedRole(role: string): boolean {
-  return role === "admin" || role === "coach";
+  return role === "coach";
 }
 
 /** players.status — confirmé sur les données de démo (archivage = status "archived" + archived_at renseigné) */

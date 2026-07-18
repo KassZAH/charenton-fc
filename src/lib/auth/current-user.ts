@@ -29,7 +29,7 @@ export async function getCurrentUser(): Promise<SessionPayload | null> {
 
   if (error || !player || player.status !== "active") return null;
   if (player.session_version !== raw.sessionVersion) return null;
-  if (player.role !== "player" && player.role !== "admin" && player.role !== "coach") return null;
+  if (player.role !== "player" && player.role !== "coach") return null;
 
   return {
     playerId: player.id,
@@ -46,14 +46,10 @@ export async function requireFreshUser(): Promise<SessionPayload> {
   return user;
 }
 
-/**
- * À utiliser dans les Server Components/Actions réservés aux coachs.
- * "admin" (legacy, en cours d'élimination — roadmap V3 Lot 5) a exactement
- * les mêmes droits que "coach", donc il passe aussi.
- */
+/** À utiliser dans les Server Components/Actions réservés aux coachs. */
 export async function requireFreshCoach(): Promise<SessionPayload> {
   const user = await requireFreshUser();
-  if (user.role !== "admin" && user.role !== "coach") redirect("/");
+  if (user.role !== "coach") redirect("/");
   return user;
 }
 

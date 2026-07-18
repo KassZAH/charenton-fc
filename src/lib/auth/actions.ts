@@ -27,7 +27,7 @@ export async function login(playerId: string, pin: string): Promise<LoginResult>
     return { error: "Profil introuvable." };
   }
 
-  if (player.role !== "player" && player.role !== "admin" && player.role !== "coach") {
+  if (player.role !== "player" && player.role !== "coach") {
     return { error: "Profil invalide." };
   }
 

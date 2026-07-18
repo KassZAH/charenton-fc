@@ -20,8 +20,8 @@ export default async function LoginPage() {
   }
 
   const validPlayers = (players ?? []).filter(
-    (player): player is typeof player & { role: "player" | "admin" | "coach" } =>
-      player.role === "player" || player.role === "admin" || player.role === "coach"
+    (player): player is typeof player & { role: "player" | "coach" } =>
+      player.role === "player" || player.role === "coach"
   );
 
   return <LoginScreen players={validPlayers} />;
