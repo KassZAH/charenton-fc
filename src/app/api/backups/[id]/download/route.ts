@@ -28,7 +28,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return new NextResponse(JSON.stringify(backup.snapshot, null, 2), { headers });
   }
 
-  const status = verifyChecksum(backup.checksum, backup.snapshot);
+  const status = verifyChecksum(backup.format_version, backup.checksum, backup.snapshot);
   headers["X-Backup-Integrity"] = status;
 
   const envelope = {

@@ -57,31 +57,43 @@ describe("computeChecksum", () => {
 });
 
 describe("checksumPresenceStatus", () => {
-  it("is legacy-unverifiable when no checksum is stored — never claims verified", () => {
-    expect(checksumPresenceStatus(null)).toBe("legacy-unverifiable");
+  it("is legacy-unverifiable when format_version is null and no checksum is stored — never claims verified", () => {
+    expect(checksumPresenceStatus(null, null)).toBe("legacy-unverifiable");
   });
 
-  it("is unverified when a checksum is stored but not yet recomputed — never claims 'ok' from presence alone", () => {
-    expect(checksumPresenceStatus("abc123")).toBe("unverified");
+  it("is unverified when a checksum is stored, format 2, no incomplete artifact — never claims 'ok' from presence alone", () => {
+    expect(checksumPresenceStatus(2, "abc123", false)).toBe("unverified");
+  });
+
+  it("is needs-finalization for a format-2 backup whose own checksum is still null — never confused with legacy", () => {
+    expect(checksumPresenceStatus(2, null, false)).toBe("needs-finalization");
+  });
+
+  it("is needs-finalization for a format-2 backup with a checksum but an incomplete associated artifact", () => {
+    expect(checksumPresenceStatus(2, "abc123", true)).toBe("needs-finalization");
   });
 });
 
 describe("verifyChecksum", () => {
   const snapshot = { players: [{ id: "1" }] };
 
-  it("is legacy-unverifiable when no checksum is stored", () => {
-    expect(verifyChecksum(null, snapshot)).toBe("legacy-unverifiable");
+  it("is legacy-unverifiable when format_version is null and no checksum is stored", () => {
+    expect(verifyChecksum(null, null, snapshot)).toBe("legacy-unverifiable");
+  });
+
+  it("is needs-finalization when format_version is 2 but the checksum is still null — never legacy", () => {
+    expect(verifyChecksum(2, null, snapshot)).toBe("needs-finalization");
   });
 
   it("is ok only after an actual recomputation matches the stored checksum", () => {
     const stored = computeChecksum(snapshot);
-    expect(verifyChecksum(stored, snapshot)).toBe("ok");
+    expect(verifyChecksum(2, stored, snapshot)).toBe("ok");
   });
 
   it("is mismatch when the stored checksum does not match a recomputation", () => {
-    expect(verifyChecksum("0000000000000000000000000000000000000000000000000000000000000000", snapshot)).toBe(
-      "mismatch"
-    );
+    expect(
+      verifyChecksum(2, "0000000000000000000000000000000000000000000000000000000000000000", snapshot)
+    ).toBe("mismatch");
   });
 });
 

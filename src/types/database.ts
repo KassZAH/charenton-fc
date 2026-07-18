@@ -1397,6 +1397,18 @@ export type Database = {
       }
       export_audit_log_snapshot: { Args: { p_cutoff: string }; Returns: Json }
       export_backup_snapshot: { Args: never; Returns: Json }
+      finalize_sensitive_backup_checksums: {
+        Args: {
+          p_artifact_checksum: string
+          p_backup_checksum: string
+          p_backup_id: string
+        }
+        Returns: {
+          artifact_id: string
+          backup_id: string
+          finalized: boolean
+        }[]
+      }
       get_latest_applied_migration: { Args: never; Returns: string }
       list_public_base_tables: { Args: never; Returns: string[] }
       transfer_ownership: {

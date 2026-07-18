@@ -8,9 +8,14 @@ import {
   createBackupWithArtifacts,
   deleteBackupRow,
   getBackupArtifactForIntegrityCheck,
+  getBackupArtifactForOwner,
+  getBackupArtifactsMetadata,
   getBackupSnapshotForIntegrityCheck,
+  getBackupSnapshotForOwner,
 } from "./backups";
 import {
+  CHECKSUM_ALGORITHM,
+  computeChecksum,
   detectCountMismatches,
   detectMissingTables,
   verifyChecksum,
@@ -109,7 +114,7 @@ export async function checkBackupIntegrityAction(backupId: string): Promise<Inte
 
   const snapshot = (backup.snapshot ?? {}) as Record<string, unknown>;
   return {
-    checksumStatus: verifyChecksum(backup.checksum, backup.snapshot),
+    checksumStatus: verifyChecksum(backup.format_version, backup.checksum, backup.snapshot),
     missingTables: backup.tables_included ? detectMissingTables(backup.tables_included, snapshot) : [],
     countMismatches: detectCountMismatches((backup.table_counts as Record<string, number>) ?? {}, snapshot),
   };
@@ -122,5 +127,54 @@ export async function checkArtifactIntegrityAction(artifactId: string): Promise<
   const artifact = await getBackupArtifactForIntegrityCheck(artifactId);
   if (!artifact) throw new Error("Artefact introuvable.");
 
-  return verifyChecksum(artifact.checksum, artifact.payload);
+  return verifyChecksum(artifact.format_version, artifact.checksum, artifact.payload);
+}
+
+/**
+ * Répare un backup format 2 resté au statut "À finaliser — checksum absent"
+ * (ex. crash entre la création transactionnelle backup+artefact et la
+ * finalisation de leurs checksums). Réservée au propriétaire — charge
+ * `snapshot`/`payload` uniquement côté serveur, ne renvoie jamais leur
+ * contenu, ne les logue jamais. Le résultat après réparation est
+ * délibérément "Non vérifié" (checksum désormais présent), jamais "Intègre"
+ * — la vérification reste un acte explicite distinct (checkBackupIntegrityAction).
+ */
+export async function repairBackupIntegrityAction(backupId: string): Promise<ChecksumStatus> {
+  await requireOwner();
+
+  const backup = await getBackupSnapshotForOwner(backupId);
+  if (!backup) throw new Error("Sauvegarde introuvable.");
+  if (backup.format_version !== 2) {
+    throw new Error("Seul un backup au format 2 peut être finalisé.");
+  }
+
+  const backupChecksum = computeChecksum(backup.snapshot);
+  const artifactsMeta = await getBackupArtifactsMetadata(backupId);
+  const auditArtifactMeta = artifactsMeta.find((a) => a.artifact_type === "audit_log");
+
+  if (auditArtifactMeta) {
+    const artifact = await getBackupArtifactForOwner(auditArtifactMeta.id);
+    if (!artifact) throw new Error("Artefact introuvable.");
+    const artifactChecksum = computeChecksum(artifact.payload);
+
+    const { error } = await supabaseAdmin.rpc("finalize_sensitive_backup_checksums", {
+      p_backup_id: backupId,
+      p_backup_checksum: backupChecksum,
+      p_artifact_checksum: artifactChecksum,
+    });
+    if (error) throw new Error(`Finalisation échouée : ${error.message}`);
+  } else {
+    // Backup simple, sans artefact obligatoire : une seule ligne à finaliser,
+    // un UPDATE d'une seule colonne sur une seule ligne est déjà atomique,
+    // aucune RPC dédiée n'est nécessaire.
+    const { error } = await supabaseAdmin
+      .from("backups")
+      .update({ checksum: backupChecksum, checksum_algorithm: CHECKSUM_ALGORITHM })
+      .eq("id", backupId);
+    if (error) throw new Error(`Finalisation échouée : ${error.message}`);
+  }
+
+  revalidatePath("/admin/sauvegardes");
+
+  return "unverified";
 }

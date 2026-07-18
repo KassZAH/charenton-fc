@@ -364,23 +364,30 @@ async function createBackupWithArtifactTransactional(
   const backupChecksum = computeChecksum(row.backup_snapshot);
   const artifactChecksum = computeChecksum(row.artifact_payload);
 
-  const [{ data: backup, error: backupUpdateError }, { data: auditLogArtifact, error: artifactUpdateError }] =
-    await Promise.all([
-      supabaseAdmin
-        .from("backups")
-        .update({ checksum: backupChecksum, checksum_algorithm: CHECKSUM_ALGORITHM })
-        .eq("id", row.backup_id)
-        .select("*")
-        .single(),
-      supabaseAdmin
-        .from("backup_artifacts")
-        .update({ checksum: artifactChecksum, checksum_algorithm: CHECKSUM_ALGORITHM })
-        .eq("id", row.artifact_id)
-        .select("*")
-        .single(),
-    ]);
-  if (backupUpdateError) throw new Error(backupUpdateError.message);
-  if (artifactUpdateError) throw new Error(artifactUpdateError.message);
+  // Persistance atomique des deux checksums (migration 20260718130000) :
+  // remplace les deux UPDATE séparés précédents (risque d'un backup au
+  // format 2 avec un checksum renseigné et son artefact resté NULL, ou
+  // l'inverse, en cas de crash entre les deux). Si cet appel échoue, les
+  // deux lignes existent déjà (garanti par la transaction de création
+  // ci-dessus) mais restent "à finaliser" — état géré explicitement par le
+  // modèle d'intégrité, jamais confondu avec un backup legacy, réparable via
+  // repairBackupIntegrityAction (backups-actions.ts).
+  const { error: finalizeError } = await (supabaseAdmin as unknown as SupabaseClient).rpc(
+    "finalize_sensitive_backup_checksums",
+    {
+      p_backup_id: row.backup_id,
+      p_backup_checksum: backupChecksum,
+      p_artifact_checksum: artifactChecksum,
+    }
+  );
+  if (finalizeError) throw new Error(`Finalisation des checksums échouée : ${finalizeError.message}`);
+
+  const [{ data: backup, error: backupError }, { data: auditLogArtifact, error: artifactError }] = await Promise.all([
+    supabaseAdmin.from("backups").select("*").eq("id", row.backup_id).single(),
+    supabaseAdmin.from("backup_artifacts").select("*").eq("id", row.artifact_id).single(),
+  ]);
+  if (backupError) throw new Error(backupError.message);
+  if (artifactError) throw new Error(artifactError.message);
 
   return { backup, auditLogArtifact };
 }

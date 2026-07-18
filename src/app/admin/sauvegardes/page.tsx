@@ -8,6 +8,7 @@ import { checksumPresenceStatus, CHECKSUM_STATUS_LABELS } from "@/lib/data/backu
 import { DownloadBackupButton } from "./DownloadBackupButton";
 import { DeleteBackupForm } from "./DeleteBackupForm";
 import { VerifyIntegrityButton } from "./VerifyIntegrityButton";
+import { RepairIntegrityButton } from "./RepairIntegrityButton";
 
 function protectionLabel(protectedFlag: boolean | null): string {
   if (protectedFlag === null) return "Protégé — backup legacy";
@@ -110,6 +111,11 @@ export default async function BackupsPage() {
           {backups.map((b: BackupMetadata) => {
             const artifacts = artifactsByBackup.get(b.id) ?? [];
             const auditArtifact = artifacts.find((a) => a.artifact_type === "audit_log");
+            const presenceStatus = checksumPresenceStatus(
+              b.format_version,
+              b.checksum,
+              artifacts.some((a) => a.checksum === null)
+            );
             return (
               <li key={b.id} className="rounded-xl border border-white/10 bg-navy-card p-3">
                 <div className="flex items-start justify-between gap-2">
@@ -134,7 +140,7 @@ export default async function BackupsPage() {
                     {protectionLabel(b.protected)}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70">
-                    {CHECKSUM_STATUS_LABELS[checksumPresenceStatus(b.checksum)]}
+                    {CHECKSUM_STATUS_LABELS[presenceStatus]}
                   </span>
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70 tabular-nums">
                     {Object.keys((b.table_counts as Record<string, number>) ?? {}).length} tables · {totalRows(b.table_counts)} lignes
@@ -153,7 +159,8 @@ export default async function BackupsPage() {
                   )}
                 </details>
 
-                {b.checksum && <VerifyIntegrityButton backupId={b.id} />}
+                {presenceStatus === "unverified" && <VerifyIntegrityButton backupId={b.id} />}
+                {presenceStatus === "needs-finalization" && user.isOwner && <RepairIntegrityButton backupId={b.id} />}
 
                 {user.isOwner && (
                   <div className="mt-2 space-y-1">

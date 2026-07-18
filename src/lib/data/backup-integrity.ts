@@ -34,39 +34,66 @@ export function computeChecksum(value: unknown): string {
 }
 
 /**
- * Quatre états distincts — ne jamais présenter un backup comme "ok" (Intègre)
- * uniquement parce qu'un checksum est stocké. "unverified" est l'état par
- * défaut d'un backup format 2 tant qu'aucun recalcul actif n'a eu lieu dans
- * la requête en cours ; "ok"/"mismatch" ne sont atteints qu'après un
- * recalcul réel (voir verifyChecksum ci-dessous, jamais checksumPresenceStatus).
+ * Cinq états distincts — ne jamais présenter un backup comme "ok" (Intègre)
+ * uniquement parce qu'un checksum est stocké, et ne jamais confondre un
+ * backup au format 2 dont la finalisation a échoué ("needs-finalization")
+ * avec un backup legacy réel (format 1, jamais eu de checksum par
+ * conception). Déterminé à partir de format_version ET checksum, jamais du
+ * checksum seul :
+ *
+ * - legacy-unverifiable : format_version IS NULL et checksum IS NULL.
+ * - needs-finalization : format_version = 2 et (checksum IS NULL ou un
+ *   artefact audit_log associé a lui-même checksum IS NULL).
+ * - unverified : checksum présent, aucun recalcul effectué dans le contexte courant.
+ * - ok / mismatch : uniquement après un recalcul réel (verifyChecksum).
  */
-export type ChecksumStatus = "legacy-unverifiable" | "unverified" | "ok" | "mismatch";
+export type ChecksumStatus = "legacy-unverifiable" | "needs-finalization" | "unverified" | "ok" | "mismatch";
 
 export const CHECKSUM_STATUS_LABELS: Record<ChecksumStatus, string> = {
   "legacy-unverifiable": "Non vérifiable — backup legacy",
+  "needs-finalization": "À finaliser — checksum absent",
   unverified: "Non vérifié — checksum disponible",
   ok: "Intègre — après recalcul réussi",
   mismatch: "Divergence détectée — après recalcul différent",
 };
 
 /**
- * Statut à partir de la seule PRÉSENCE du checksum stocké — jamais un
- * recalcul, donc jamais "ok"/"mismatch". Seule fonction utilisable dans un
- * contexte qui ne charge pas le contenu complet (ex. liste des backups
- * accessible aux coachs, qui ne doit jamais charger `snapshot`).
+ * Statut à partir de la seule PRÉSENCE du checksum stocké (et de
+ * format_version) — jamais un recalcul, donc jamais "ok"/"mismatch". Seule
+ * fonction utilisable dans un contexte qui ne charge pas le contenu complet
+ * (ex. liste des backups accessible aux coachs, qui ne doit jamais charger
+ * `snapshot`). `hasIncompleteArtifact` : vrai si un artefact audit_log
+ * associé existe avec son propre checksum encore NULL — un backup dont le
+ * checksum est renseigné mais dont l'artefact ne l'est pas encore reste
+ * "à finaliser", pas "non vérifié".
  */
-export function checksumPresenceStatus(storedChecksum: string | null): "legacy-unverifiable" | "unverified" {
-  return storedChecksum ? "unverified" : "legacy-unverifiable";
+export function checksumPresenceStatus(
+  formatVersion: number | null,
+  storedChecksum: string | null,
+  hasIncompleteArtifact: boolean = false
+): "legacy-unverifiable" | "needs-finalization" | "unverified" {
+  if (formatVersion === 2 && (storedChecksum === null || hasIncompleteArtifact)) {
+    return "needs-finalization";
+  }
+  if (storedChecksum === null) {
+    return "legacy-unverifiable";
+  }
+  return "unverified";
 }
 
 /**
  * Recalcule réellement le checksum à partir du contenu et compare — seule
  * fonction qui peut renvoyer "ok" ou "mismatch". Nécessite d'avoir chargé le
  * contenu complet (snapshot ou payload d'artefact) ; à n'appeler que depuis
- * une action serveur déjà gardée (requireFreshCoach() au minimum).
+ * une action serveur déjà gardée (requireFreshCoach() au minimum). Si le
+ * checksum est encore NULL sur un backup format 2, renvoie
+ * "needs-finalization" plutôt que de prétendre à tort qu'il s'agit d'un
+ * backup legacy.
  */
-export function verifyChecksum(storedChecksum: string | null, content: unknown): ChecksumStatus {
-  if (!storedChecksum) return "legacy-unverifiable";
+export function verifyChecksum(formatVersion: number | null, storedChecksum: string | null, content: unknown): ChecksumStatus {
+  if (storedChecksum === null) {
+    return formatVersion === 2 ? "needs-finalization" : "legacy-unverifiable";
+  }
   return computeChecksum(content) === storedChecksum ? "ok" : "mismatch";
 }
 

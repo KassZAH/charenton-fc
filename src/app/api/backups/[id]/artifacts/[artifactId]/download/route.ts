@@ -13,7 +13,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: "Artefact introuvable." }, { status: 404 });
   }
 
-  const status = verifyChecksum(artifact.checksum, artifact.payload);
+  const status = verifyChecksum(artifact.format_version, artifact.checksum, artifact.payload);
 
   const envelope = {
     format_version: artifact.format_version,
