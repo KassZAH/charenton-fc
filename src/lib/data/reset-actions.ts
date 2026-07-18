@@ -6,6 +6,7 @@ import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { createBackup } from "./backups";
 import { getActiveSeason } from "./seasons";
+import { SEASON_RESET_ENABLED } from "./reset-flags";
 
 /**
  * Réservé aux admins/coachs (vérifié via le rôle en base, jamais via un nom
@@ -16,6 +17,12 @@ import { getActiveSeason } from "./seasons";
  */
 export async function resetSeasonData(formData: FormData) {
   const user = await requireAdmin();
+
+  if (!SEASON_RESET_ENABLED) {
+    throw new Error(
+      "La réinitialisation manuelle est désactivée — clôture la saison depuis Admin > Saisons, aucune donnée n'est supprimée."
+    );
+  }
 
   const season = await getActiveSeason();
   if (!season) {
