@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { createBackup } from "./backups";
+import { createBackupWithArtifacts } from "./backups";
 import { getActiveSeason } from "./seasons";
 import { SEASON_RESET_ENABLED } from "./reset-flags";
 
@@ -34,7 +34,12 @@ export async function resetSeasonData(formData: FormData) {
     throw new Error("Le nom de la saison ne correspond pas — réinitialisation annulée.");
   }
 
-  await createBackup("before_reset", `Avant réinitialisation de "${season.name}"`, user.playerId);
+  await createBackupWithArtifacts({
+    triggerReason: "before_reset",
+    label: `Avant réinitialisation de "${season.name}"`,
+    createdByPlayerId: user.playerId,
+    protectedBackup: true,
+  });
 
   const { error: matchesError } = await supabaseAdmin.from("matches").delete().eq("season_id", season.id);
   if (matchesError) throw new Error(matchesError.message);

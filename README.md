@@ -85,11 +85,32 @@ Variables d'environnement Supabase/`SESSION_SECRET` à configurer aussi côté V
 
 ## Sauvegardes
 
-`/admin/sauvegardes` génère un export JSON complet et cohérent (toutes les tables, un seul appel transactionnel côté base). C'est un **téléchargement**, pas une sauvegarde automatique ni un point de restauration en un clic :
+`/admin/sauvegardes` génère un export JSON complet et cohérent (toutes les tables, une seule instruction SQL côté base — voir "Cohérence du snapshot" ci-dessous). Sauvegarde téléchargeable. La restauration complète reste une opération administrateur assistée :
 
 - il n'y a pas de bouton "restaurer" — une restauration se fait manuellement, table par table, depuis l'éditeur SQL Supabase ou l'interface Supabase ;
 - les sauvegardes sont stockées dans la même base Supabase que les données elles-mêmes : si le projet Supabase est perdu ou corrompu, les sauvegardes qu'il contient le sont aussi. Télécharger régulièrement une copie du JSON en dehors de Supabase (ordinateur, stockage externe) ;
 - une sauvegarde hebdomadaire automatique tourne via `/api/cron/weekly-backup` (cron Vercel), mais reste stockée dans Supabase — même limite que ci-dessus.
+
+### Permissions (roadmap V3, Lot 6)
+
+Tout coach peut créer un backup et voir la liste (métadonnées : libellé, date, auteur, saison, compteurs, statut du checksum) — jamais le contenu complet. Seul le **propriétaire du club** peut télécharger le snapshot complet, exporter/télécharger l'artefact `audit_log`, ou supprimer un backup (non protégé uniquement, confirmation par saisie exacte du libellé). Le fichier complet contient `players.pin_hash` et l'ensemble des données personnelles de l'effectif — à conserver dans un emplacement sécurisé, jamais partagé tel quel.
+
+### Deux formats de téléchargement
+
+- **Format 2** (backups créés depuis le Lot 6) : une enveloppe JSON contenant toutes les métadonnées (`format_version`, `backup_type`, `label`, `trigger_reason`, `protected`, dates, auteur/contexte, saison active, version applicative, version du schéma réellement appliqué, `table_counts`, `tables_included`/`tables_excluded`/`exclusion_reasons`, `checksum`, `checksum_algorithm`) puis les tables elles-mêmes sous la clé `tables`.
+- **Format 1** (les backups créés avant le Lot 6) : le JSON brut des tables uniquement, comme avant — jamais réécrit ni changé rétroactivement.
+
+### Cohérence du snapshot
+
+`export_backup_snapshot()` lit les 25 tables sauvegardées en une seule instruction SQL (chaque table est une sous-requête d'un unique `SELECT`) — sous PostgreSQL, une seule instruction partage un seul et même snapshot pour toutes ses sous-requêtes, garantie du modèle d'exécution, pas une simple convention. Vérifié par un protocole à deux sessions concurrentes (une écriture pendant l'export ne peut apparaître dans aucune des tables lues, contrairement à l'ancienne version en plusieurs instructions séquentielles).
+
+### Checksum et intégrité
+
+Chaque backup au format 2 porte un `checksum` SHA-256 (`checksum_algorithm = "sha256-canonical-json-v1"`) calculé sur une forme canonique du snapshot (clés triées alphabétiquement de façon récursive, tableaux jamais réordonnés). Recalculé à chaque téléchargement complet : `Intègre` si identique, `Non vérifiable — backup legacy` si le backup est au format 1 (pas de checksum), `Divergence détectée` sinon — dans ce dernier cas, une confirmation est demandée mais le téléchargement reste possible ; rien n'est jamais supprimé ou remplacé automatiquement.
+
+### Rétention
+
+Chaque backup est `protected` (jamais purgeable depuis l'interface) ou non. Les backups créés avant des opérations sensibles (réinitialisation, déverrouillage, migration, fin de saison) sont protégés par défaut. Les backups legacy (avant le Lot 6, `protected` absent) sont traités comme protégés par défaut. Aucune purge automatique n'existe à ce jour — seule la suppression manuelle (propriétaire uniquement, backup non protégé, confirmation par libellé exact) est disponible.
 
 ## Procédure d'urgence
 

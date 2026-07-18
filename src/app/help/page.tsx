@@ -209,7 +209,7 @@ const ADMIN_ITEMS: Item[] = [
   {
     emoji: "🛠️",
     title: "Gestion de l'équipe",
-    text: "Depuis Stats → Gestion : tableau de santé des données (matchs incomplets, âge de la dernière sauvegarde), sauvegardes (manuelles ou automatiques, aperçu, téléchargement), corbeille (matchs/buts/cartons supprimés, restaurables), et gestion des saisons (verrouillage, nouvelle saison). Le propriétaire du club y trouve en plus la gestion des coachs (promotion, rétrogradation, transfert de propriété).",
+    text: "Depuis Stats → Gestion : tableau de santé des données (matchs incomplets, âge de la dernière sauvegarde), sauvegardes (manuelles ou automatiques, métadonnées et statut d'intégrité visibles par tout coach ; téléchargement complet, export audit_log et suppression réservés au propriétaire du club — le fichier complet contient des données sensibles, à conserver en lieu sûr), corbeille (matchs/buts/cartons supprimés, restaurables), et gestion des saisons (verrouillage, nouvelle saison). Le propriétaire du club y trouve en plus la gestion des coachs (promotion, rétrogradation, transfert de propriété).",
   },
   {
     emoji: "🕓",

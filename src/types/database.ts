@@ -163,35 +163,138 @@ export type Database = {
           },
         ]
       }
-      backups: {
+      backup_artifacts: {
         Row: {
+          artifact_type: string
+          backup_id: string
+          checksum: string
+          checksum_algorithm: string
           created_at: string
           created_by_player_id: string | null
+          format_version: number
+          id: string
+          payload: Json
+          row_count: number
+          source_cutoff_at: string
+        }
+        Insert: {
+          artifact_type: string
+          backup_id: string
+          checksum: string
+          checksum_algorithm: string
+          created_at?: string
+          created_by_player_id?: string | null
+          format_version: number
+          id?: string
+          payload: Json
+          row_count: number
+          source_cutoff_at: string
+        }
+        Update: {
+          artifact_type?: string
+          backup_id?: string
+          checksum?: string
+          checksum_algorithm?: string
+          created_at?: string
+          created_by_player_id?: string | null
+          format_version?: number
+          id?: string
+          payload?: Json
+          row_count?: number
+          source_cutoff_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "backup_artifacts_backup_id_fkey"
+            columns: ["backup_id"]
+            isOneToOne: false
+            referencedRelation: "backups"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "backup_artifacts_created_by_player_id_fkey"
+            columns: ["created_by_player_id"]
+            isOneToOne: false
+            referencedRelation: "players"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      backups: {
+        Row: {
+          active_season_id: string | null
+          active_season_name: string | null
+          application_commit: string | null
+          backup_type: string | null
+          checksum: string | null
+          checksum_algorithm: string | null
+          created_at: string
+          created_by_context: string | null
+          created_by_player_id: string | null
+          database_schema_version: string | null
+          exclusion_reasons: Json | null
+          format_version: number | null
           id: string
           label: string
+          protected: boolean | null
           snapshot: Json
           table_counts: Json
+          tables_excluded: string[] | null
+          tables_included: string[] | null
           trigger_reason: string
         }
         Insert: {
+          active_season_id?: string | null
+          active_season_name?: string | null
+          application_commit?: string | null
+          backup_type?: string | null
+          checksum?: string | null
+          checksum_algorithm?: string | null
           created_at?: string
+          created_by_context?: string | null
           created_by_player_id?: string | null
+          database_schema_version?: string | null
+          exclusion_reasons?: Json | null
+          format_version?: number | null
           id?: string
           label: string
+          protected?: boolean | null
           snapshot: Json
           table_counts: Json
+          tables_excluded?: string[] | null
+          tables_included?: string[] | null
           trigger_reason: string
         }
         Update: {
+          active_season_id?: string | null
+          active_season_name?: string | null
+          application_commit?: string | null
+          backup_type?: string | null
+          checksum?: string | null
+          checksum_algorithm?: string | null
           created_at?: string
+          created_by_context?: string | null
           created_by_player_id?: string | null
+          database_schema_version?: string | null
+          exclusion_reasons?: Json | null
+          format_version?: number | null
           id?: string
           label?: string
+          protected?: boolean | null
           snapshot?: Json
           table_counts?: Json
+          tables_excluded?: string[] | null
+          tables_included?: string[] | null
           trigger_reason?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "backups_active_season_id_fkey"
+            columns: ["active_season_id"]
+            isOneToOne: false
+            referencedRelation: "seasons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "backups_created_by_player_id_fkey"
             columns: ["created_by_player_id"]
@@ -980,7 +1083,7 @@ export type Database = {
           photo_url?: string | null
           photo_visibility?: string
           pin_hash?: string | null
-          pin_length?: number
+          pin_length: number
           primary_position?: string | null
           public_profile_enabled?: boolean
           public_token?: string
@@ -1270,7 +1373,9 @@ export type Database = {
         Args: { p_match_id: string; p_player_ids: string[] }
         Returns: undefined
       }
+      export_audit_log_snapshot: { Args: { p_cutoff: string }; Returns: Json }
       export_backup_snapshot: { Args: never; Returns: Json }
+      get_latest_applied_migration: { Args: never; Returns: string }
       transfer_ownership: {
         Args: { p_new_owner_id: string }
         Returns: undefined

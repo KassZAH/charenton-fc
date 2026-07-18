@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { createBackup } from "./backups";
+import { createBackupWithArtifacts } from "./backups";
 import { logChange } from "./audit";
 
 /**
@@ -18,7 +18,12 @@ export async function toggleSeasonLock(seasonId: string, locked: boolean) {
   if (!before) throw new Error("Saison introuvable.");
 
   if (!locked) {
-    await createBackup("manual", `Avant déverrouillage — ${before.name}`, user.playerId);
+    await createBackupWithArtifacts({
+      triggerReason: "before_unlock",
+      label: `Avant déverrouillage — ${before.name}`,
+      createdByPlayerId: user.playerId,
+      protectedBackup: true,
+    });
   }
 
   const { error } = await supabaseAdmin
@@ -57,7 +62,12 @@ export async function startNewSeason(formData: FormData) {
     throw new Error("Le nom et la date de début sont obligatoires.");
   }
 
-  await createBackup("end_of_season", `Fin de saison — avant création de "${name}"`, user.playerId);
+  await createBackupWithArtifacts({
+    triggerReason: "end_of_season",
+    label: `Fin de saison — avant création de "${name}"`,
+    createdByPlayerId: user.playerId,
+    protectedBackup: true,
+  });
 
   const { data: currentActive } = await supabaseAdmin.from("seasons").select("id").eq("is_active", true).maybeSingle();
   if (currentActive) {
