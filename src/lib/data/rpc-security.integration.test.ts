@@ -64,6 +64,13 @@ describe("RPC sensibles — anon toujours refusé", () => {
   it("restore_audit_entry_transactional (Lot 8)", async () => {
     await expectAnonDenied("restore_audit_entry_transactional", { p_audit_log_id: ZERO_UUID });
   });
+
+  it("sync_external_standings_transactional (Lot 11.5)", async () => {
+    await expectAnonDenied("sync_external_standings_transactional", {
+      p_external_competition_id: ZERO_UUID, p_status: "empty", p_standings: null,
+      p_error_message: null, p_changed_by_player_id: ZERO_UUID, p_changed_by_name: "x",
+    });
+  });
 });
 
 describe("export_backup_snapshot — accès réservé, jamais anon", () => {

@@ -24,6 +24,9 @@ const DELETE_ORDER = [
   "backup_artifacts",
   "backups",
   "audit_log",
+  "opponent_external_mappings",
+  "external_standings",
+  "external_competitions",
   "votes",
   "match_awards",
   "goals",
@@ -184,6 +187,26 @@ async function seed() {
     { player_id: ids.p1, season_id: ids.season, amount_due: 50, amount_paid: 20 },
     { player_id: ids.p2, season_id: ids.season, amount_due: 50, amount_paid: 50 },
   ]);
+
+  // Configuration FLA connue (roadmap V3, Lot 11.5, §1) — état "réel vide" par défaut :
+  // la compétition existe, aucun classement encore synchronisé. Voir load-fla-demo-fixtures.js
+  // pour basculer vers un classement fictif de démonstration.
+  const { data: flaCompetition, error: flaError } = await supabase
+    .from("external_competitions")
+    .insert({
+      provider: "fla",
+      external_championship_id: "13",
+      external_season_id: "2",
+      internal_season_id: ids.season,
+      competition_name: "Foot à 11 - Week-end - 2ème division",
+      internal_team_name: "CHARENTON FC",
+      source_url: "https://football-loisir-amateur.fr/championships/13/rankings?season=2",
+      sync_enabled: true,
+    })
+    .select("id")
+    .single();
+  if (flaError) throw new Error("external_competitions: " + flaError.message);
+  ids.flaCompetition = flaCompetition.id;
 
   return { ids, pins: Object.fromEntries(players.map((p) => [p.key, p.pin])) };
 }
