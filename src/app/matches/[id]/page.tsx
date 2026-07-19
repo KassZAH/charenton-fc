@@ -74,6 +74,20 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
     .filter((p) => goalkeeperIds.includes(p.id))
     .map((p) => p.nickname || p.first_name);
 
+  // Lot 18 : un lot de saisie groupée non annulé reste affiché (avec son option d'annulation) même
+  // après que le match soit passé à "completed" — la page ne doit jamais faire disparaître le
+  // bouton "Annuler tout le lot" juste parce que le statut vient de changer.
+  // batch_id (Lot 18) n'existe pas encore dans les types générés (projet isolé uniquement pour l'instant).
+  const goalsWithBatchId = (await getMatchGoals(match.id)) as unknown as { batch_id: string | null; credited_to: string }[];
+  const activeBatchGoal = goalsWithBatchId.find((g) => g.batch_id);
+  const activeBatch = activeBatchGoal
+    ? {
+        batchId: activeBatchGoal.batch_id!,
+        teamScore: goalsWithBatchId.filter((g) => g.credited_to === "charenton").length,
+        opponentScore: match.opponent_score,
+      }
+    : null;
+
   const flaCompetition = await getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId);
   const [flaStandings, flaMappings] = flaCompetition
     ? await Promise.all([getExternalStandings(flaCompetition.id), getOpponentMappings(flaCompetition.id)])
@@ -242,12 +256,14 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <MatchSquadSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
       )}
 
-      {isElevatedRole(user.role) && ["scheduled", "draft", "postponed"].includes(match.status) && (
-        <BatchGoalEntryForm
-          matchId={match.id}
-          players={allActivePlayers.map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
-        />
-      )}
+      {isElevatedRole(user.role) &&
+        (["scheduled", "draft", "postponed"].includes(match.status) || activeBatch) && (
+          <BatchGoalEntryForm
+            matchId={match.id}
+            players={allActivePlayers.map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+            initialBatch={activeBatch}
+          />
+        )}
 
       {(match.status === "completed" || match.status === "live") && (
         <>

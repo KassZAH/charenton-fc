@@ -25,15 +25,30 @@ function NumberField({ value, onChange, label }: { value: number; onChange: (n: 
  * suivi en direct. Aperçu obligatoire avant validation, transaction unique
  * côté serveur, annulation du lot complet possible juste après.
  */
-export function BatchGoalEntryForm({ matchId, players }: { matchId: string; players: PlayerOption[] }) {
+type ActiveBatch = { batchId: string; teamScore: number; opponentScore: number | null } | null;
+
+export function BatchGoalEntryForm({
+  matchId,
+  players,
+  initialBatch = null,
+}: {
+  matchId: string;
+  players: PlayerOption[];
+  initialBatch?: ActiveBatch;
+}) {
   const [scorerCounts, setScorerCounts] = useState<Record<string, number>>({});
   const [unknownScorerCount, setUnknownScorerCount] = useState(0);
   const [cscAdverseCount, setCscAdverseCount] = useState(0);
   const [cscCharentonCounts, setCscCharentonCounts] = useState<Record<string, number>>({});
   const [assistCounts, setAssistCounts] = useState<Record<string, number>>({});
-  const [opponentScore, setOpponentScore] = useState(0);
-  const [step, setStep] = useState<"form" | "preview" | "done">("form");
-  const [result, setResult] = useState<{ batchId: string; teamScore: number } | null>(null);
+  // Un lot déjà enregistré (potentiellement par une action précédente sur cette même page, avant
+  // le rafraîchissement serveur déclenché par revalidatePath) réaffiche directement l'état "done"
+  // avec son option d'annulation — jamais un formulaire vide qui ferait perdre le bouton d'annulation.
+  const [opponentScore, setOpponentScore] = useState(initialBatch?.opponentScore ?? 0);
+  const [step, setStep] = useState<"form" | "preview" | "done">(initialBatch ? "done" : "form");
+  const [result, setResult] = useState<{ batchId: string; teamScore: number } | null>(
+    initialBatch ? { batchId: initialBatch.batchId, teamScore: initialBatch.teamScore } : null
+  );
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [idempotencyKey] = useState(() => crypto.randomUUID());
