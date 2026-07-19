@@ -369,7 +369,17 @@ Fusion fast-forward `lot-11-5-fla-standings` → `master` (commit `696d26b`), CI
 
 # Macro-release A (roadmap V3) — Match Day v1, Lots 12 à 18
 
-**Statut : implémenté en preview, en attente de validation utilisateur.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` — un seul lot à la fois n'était plus la règle pour ce groupe, mais chaque lot garde son propre commit, son propre gate, et n'a jamais mélangé son contenu avec le suivant.
+**Statut : déployée en production, en attente de validation utilisateur finale.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` — un seul lot à la fois n'était plus la règle pour ce groupe, mais chaque lot garde son propre commit, son propre gate, et n'a jamais mélangé son contenu avec le suivant.
+
+- Lot 12 déployé en production, en attente de validation utilisateur finale.
+- Lot 13 déployé en production, en attente de validation utilisateur finale.
+- Lot 14 déployé en production, en attente de validation utilisateur finale.
+- Lot 15 déployé en production, en attente de validation utilisateur finale.
+- Lot 16 déployé en production, en attente de validation utilisateur finale.
+- Lot 17 déployé en production, en attente de validation utilisateur finale.
+- Lot 18 déployé en production, en attente de validation utilisateur finale.
+
+Déploiement production vérifié : les 9 migrations appliquées au projet Supabase partagé après backup protégé préalable (`before_macro_a_match_day_v1_production`), fusion fast-forward `macro-a-match-day-v1` → `master` (commit `9a55f22`), CI verte, Vercel `target: production`/`READY` confirmé sur le commit exact, vérificateur de déploiement 13/13 conforme en production. Aucun lot n'est encore marqué `TERMINÉ` dans la Roadmap V3 — en attente de la validation finale.
 
 **Lot 12 — Alertes de préparation du match.** `getMatchReadiness` distingue désormais "pas encore de réponse" (jamais un faux "manque") d'un manque réel — l'ancien comportement aurait affiché "aucun gardien confirmé" même avant toute réponse. Visible à tous les rôles pour tout match à venir, plus seulement le jour J en tant qu'admin.
 
@@ -389,7 +399,7 @@ Fusion fast-forward `lot-11-5-fla-standings` → `master` (commit `696d26b`), CI
 
 **Deux correctifs de complétude/UX trouvés pendant la préparation de ce rapport, avant toute validation utilisateur :** `match_squad_entries` (Lot 17) absent du registre de sauvegarde — détecté manuellement contre le projet isolé, le test automatisé du Lot 6 ne pouvant pas encore le voir (il compare toujours au schéma du projet partagé, où cette table n'existe pas encore à ce stade). Le formulaire de saisie groupée perdait son option d'annulation immédiatement après un succès, la page parente cessant de le rendre dès que `revalidatePath` reflétait le nouveau statut `completed` — trouvé par le scénario E2E, pas par les tests unitaires/intégration.
 
-Branche `macro-a-match-day-v1`, preview isolée déployée et validée techniquement — voir `roadmap-v3-discussion/macro-a-match-day-v1/` pour le rapport complet.
+Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22`) — voir `roadmap-v3-discussion/macro-a-match-day-v1/` pour le rapport complet, y compris le rapport de déploiement production.
 
 ---
 
@@ -473,7 +483,7 @@ Migration nécessaire : non.
 
 # PHASE 5 — Cycle de vie du match et mode « Match en cours »
 
-**Statut global : implémenté en preview (Macro-release A, Lots 12-18 — voir section dédiée juste avant PHASE 4), en attente de validation utilisateur.**
+**Statut global : déployé en production (Macro-release A, Lots 12-18 — voir section dédiée juste avant PHASE 4), en attente de validation utilisateur finale.**
 
 Cette section décrivait initialement une phase entièrement à construire ; elle a été réalisée dans son ensemble par la Macro-release A. Correction au passage : `matches_status_check` autorisait déjà `draft`/`cancelled`/`postponed` depuis la toute première migration baseline — l'affirmation ci-dessous ("aucune contrainte check") était inexacte, seul `live` manquait réellement. Le reste de cette entrée (analyse d'origine) est conservé tel quel pour l'historique du raisonnement, mais n'est plus l'état courant du dépôt.
 
