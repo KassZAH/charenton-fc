@@ -18,6 +18,11 @@ import { getActiveSeasonId } from "@/lib/data/seasons";
 import { getMyDue } from "@/lib/data/dues";
 import { isElevatedRole } from "@/types/models";
 import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
+import { OpponentStandingSummary } from "@/components/fla/OpponentStandingSummary";
+import { buildOpponentStandingLookup } from "@/lib/data/opponent-standings-lookup";
+import { getExternalCompetition, getExternalStandings } from "@/lib/data/external-standings";
+import { getOpponentMappings } from "@/lib/data/opponent-mappings";
+import { FLA_CONFIG } from "@/lib/fla/config";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
 function shortDateBadge(dateLabel: string) {
@@ -62,6 +67,20 @@ export default async function HomePage() {
   const isHome = nextMatch?.home_or_away === "home";
   const opponentLabel = nextMatch?.opponent_name ?? "Adversaire à confirmer";
   const dateLabel = nextMatch ? formatMatchDate(nextMatch.match_date) : "";
+
+  // Affiché uniquement si le prochain match existe et qu'une donnée fiable existe — carte déjà
+  // compacte, jamais de ligne "Classement à venir" ici pour ne pas la surcharger.
+  let opponentStandingResult = null;
+  if (nextMatch?.opponent_name) {
+    const flaCompetition = await getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId);
+    if (flaCompetition) {
+      const [flaStandings, flaMappings] = await Promise.all([
+        getExternalStandings(flaCompetition.id),
+        getOpponentMappings(flaCompetition.id),
+      ]);
+      opponentStandingResult = buildOpponentStandingLookup(flaMappings, flaStandings)(nextMatch.opponent_name);
+    }
+  }
 
   const isMatchToday = !!nextMatch && nextMatch.match_date === todayDateString();
   const hasKickedOff = isMatchToday && !!nextMatch!.kickoff_time && currentTimeString() >= nextMatch!.kickoff_time!;
@@ -158,6 +177,9 @@ export default async function HomePage() {
             <p className="text-scoreboard text-lg font-extrabold text-cream">
               {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
             </p>
+            {opponentStandingResult && opponentStandingResult.kind === "matched" && (
+              <OpponentStandingSummary result={opponentStandingResult} isOwner={user.isOwner} />
+            )}
             <p className="mt-1 text-sm text-steel">
               {dateLabel}
               {nextMatch.kickoff_time ? ` · ${formatTime(nextMatch.kickoff_time)}` : ""}

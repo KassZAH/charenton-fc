@@ -4,10 +4,23 @@ import { getUpcomingMatches, getPastMatches, type MatchWithOpponent } from "@/li
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
 import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
+import { OpponentStandingSummary } from "@/components/fla/OpponentStandingSummary";
+import { buildOpponentStandingLookup } from "@/lib/data/opponent-standings-lookup";
+import { getExternalCompetition, getExternalStandings } from "@/lib/data/external-standings";
+import { getOpponentMappings } from "@/lib/data/opponent-mappings";
+import { FLA_CONFIG } from "@/lib/fla/config";
 
 export default async function MatchesPage() {
   const user = await requireUser();
-  const [upcoming, past] = await Promise.all([getUpcomingMatches(), getPastMatches()]);
+  const [upcoming, past, flaCompetition] = await Promise.all([
+    getUpcomingMatches(),
+    getPastMatches(),
+    getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId),
+  ]);
+  const [flaStandings, flaMappings] = flaCompetition
+    ? await Promise.all([getExternalStandings(flaCompetition.id), getOpponentMappings(flaCompetition.id)])
+    : [[], []];
+  const lookupOpponentStanding = buildOpponentStandingLookup(flaMappings, flaStandings);
 
   return (
     <ResponsivePageContainer size="wide">
@@ -45,7 +58,7 @@ export default async function MatchesPage() {
       <ul className="mb-6 space-y-2">
         {upcoming.length === 0 && <li className="text-sm text-steel/70">Aucun match à venir.</li>}
         {upcoming.map((match) => (
-          <MatchRow key={match.id} match={match} />
+          <MatchRow key={match.id} match={match} standingResult={match.opponent_name ? lookupOpponentStanding(match.opponent_name) : null} isOwner={user.isOwner} />
         ))}
       </ul>
 
@@ -53,14 +66,22 @@ export default async function MatchesPage() {
       <ul className="space-y-2">
         {past.length === 0 && <li className="text-sm text-steel/70">Aucun match joué.</li>}
         {past.map((match) => (
-          <MatchRow key={match.id} match={match} />
+          <MatchRow key={match.id} match={match} standingResult={match.opponent_name ? lookupOpponentStanding(match.opponent_name) : null} isOwner={user.isOwner} />
         ))}
       </ul>
     </ResponsivePageContainer>
   );
 }
 
-function MatchRow({ match }: { match: MatchWithOpponent }) {
+function MatchRow({
+  match,
+  standingResult,
+  isOwner,
+}: {
+  match: MatchWithOpponent;
+  standingResult: ReturnType<ReturnType<typeof buildOpponentStandingLookup>> | null;
+  isOwner: boolean;
+}) {
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
 
@@ -78,6 +99,7 @@ function MatchRow({ match }: { match: MatchWithOpponent }) {
             {formatMatchDate(match.match_date)}
             {match.kickoff_time ? ` · ${formatTime(match.kickoff_time)}` : ""}
           </p>
+          {standingResult && <OpponentStandingSummary result={standingResult} isOwner={isOwner} />}
         </div>
         {match.status === "completed" ? (
           <span className="text-sm font-bold tabular-nums text-gold">

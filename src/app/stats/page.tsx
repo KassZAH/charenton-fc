@@ -13,6 +13,11 @@ import { getAwardLeaderboards } from "@/lib/data/awards";
 import { isElevatedRole } from "@/types/models";
 import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { StatSelector, type StatCategory } from "./StatSelector";
+import { StatsTabs } from "@/components/fla/StatsTabs";
+import { FlaStandingsSection } from "@/components/fla/FlaStandingsSection";
+import { getExternalCompetition, getExternalStandings } from "@/lib/data/external-standings";
+import { getOpponentMappings } from "@/lib/data/opponent-mappings";
+import { FLA_CONFIG } from "@/lib/fla/config";
 
 const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
   wins: "victoire(s)",
@@ -22,7 +27,7 @@ const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
 
 export default async function StatsPage() {
   const user = await requireUser();
-  const [scorers, assists, contributions, presences, carded, team, highlights, awardLeaderboards] = await Promise.all([
+  const [scorers, assists, contributions, presences, carded, team, highlights, awardLeaderboards, flaCompetition] = await Promise.all([
     getTopScorers(),
     getTopAssists(),
     getTopGoalContributions(),
@@ -31,7 +36,12 @@ export default async function StatsPage() {
     getTeamStats(),
     getTeamHighlights(),
     getAwardLeaderboards(),
+    getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId),
   ]);
+
+  const [flaStandings, flaMappings] = flaCompetition
+    ? await Promise.all([getExternalStandings(flaCompetition.id), getOpponentMappings(flaCompetition.id)])
+    : [[], []];
 
   const categories: StatCategory[] = [
     { key: "scorers", title: "Buteurs", rows: scorers },
@@ -82,47 +92,61 @@ export default async function StatsPage() {
         )}
       </div>
 
-      <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
-        <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-steel">Équipe</h2>
-        <div className="grid grid-cols-4 gap-2 text-center">
-          <Stat label="Joués" value={team.played} />
-          <Stat label="Gagnés" value={team.wins} />
-          <Stat label="Nuls" value={team.draws} />
-          <Stat label="Perdus" value={team.losses} />
-        </div>
-        <table className="mt-4 w-full border-t border-white/10 text-sm">
-          <tbody>
-            <TeamStatRow label="Buts marqués" value={team.goalsFor} />
-            <TeamStatRow label="Buts encaissés" value={team.goalsAgainst} />
-            <TeamStatRow label="Diff. de buts" value={team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff} />
-            <TeamStatRow label="Cartons jaunes" value={team.yellowCards} />
-            <TeamStatRow label="Cartons rouges" value={team.redCards} last />
-          </tbody>
-        </table>
+      <StatsTabs
+        clubStats={
+          <>
+            <section className="mb-6 rounded-2xl border border-gold/15 bg-navy-mid p-4">
+              <h2 className="mb-3 text-xs font-bold uppercase tracking-widest text-steel">Équipe</h2>
+              <div className="grid grid-cols-4 gap-2 text-center">
+                <Stat label="Joués" value={team.played} />
+                <Stat label="Gagnés" value={team.wins} />
+                <Stat label="Nuls" value={team.draws} />
+                <Stat label="Perdus" value={team.losses} />
+              </div>
+              <table className="mt-4 w-full border-t border-white/10 text-sm">
+                <tbody>
+                  <TeamStatRow label="Buts marqués" value={team.goalsFor} />
+                  <TeamStatRow label="Buts encaissés" value={team.goalsAgainst} />
+                  <TeamStatRow label="Diff. de buts" value={team.goalDiff > 0 ? `+${team.goalDiff}` : team.goalDiff} />
+                  <TeamStatRow label="Cartons jaunes" value={team.yellowCards} />
+                  <TeamStatRow label="Cartons rouges" value={team.redCards} last />
+                </tbody>
+              </table>
 
-        {highlights.currentStreak && (
-          <p className="mt-1 text-sm text-cream/80">
-            Série en cours : {highlights.currentStreak.count} {STREAK_LABELS[highlights.currentStreak.type]}
-          </p>
-        )}
-        {highlights.bestWinStreak > 1 && (
-          <p className="text-sm text-cream/80">Meilleure série de victoires : {highlights.bestWinStreak}</p>
-        )}
-        {highlights.biggestWin && (
-          <p className="mt-1 text-sm text-cream/80">
-            Plus grosse victoire : {highlights.biggestWin.teamScore}–{highlights.biggestWin.opponentScore} vs{" "}
-            {highlights.biggestWin.opponentName}
-          </p>
-        )}
-        {highlights.biggestLoss && (
-          <p className="text-sm text-cream/80">
-            Plus grosse défaite : {highlights.biggestLoss.teamScore}–{highlights.biggestLoss.opponentScore} vs{" "}
-            {highlights.biggestLoss.opponentName}
-          </p>
-        )}
-      </section>
+              {highlights.currentStreak && (
+                <p className="mt-1 text-sm text-cream/80">
+                  Série en cours : {highlights.currentStreak.count} {STREAK_LABELS[highlights.currentStreak.type]}
+                </p>
+              )}
+              {highlights.bestWinStreak > 1 && (
+                <p className="text-sm text-cream/80">Meilleure série de victoires : {highlights.bestWinStreak}</p>
+              )}
+              {highlights.biggestWin && (
+                <p className="mt-1 text-sm text-cream/80">
+                  Plus grosse victoire : {highlights.biggestWin.teamScore}–{highlights.biggestWin.opponentScore} vs{" "}
+                  {highlights.biggestWin.opponentName}
+                </p>
+              )}
+              {highlights.biggestLoss && (
+                <p className="text-sm text-cream/80">
+                  Plus grosse défaite : {highlights.biggestLoss.teamScore}–{highlights.biggestLoss.opponentScore} vs{" "}
+                  {highlights.biggestLoss.opponentName}
+                </p>
+              )}
+            </section>
 
-      <StatSelector categories={categories} />
+            <StatSelector categories={categories} />
+          </>
+        }
+        flaStandings={
+          <FlaStandingsSection
+            competition={flaCompetition}
+            standings={flaStandings}
+            mappings={flaMappings}
+            isOwner={user.isOwner}
+          />
+        }
+      />
     </ResponsivePageContainer>
   );
 }

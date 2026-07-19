@@ -21,6 +21,11 @@ import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
 import { WhatsAppShareButton } from "@/components/ui/WhatsAppShareButton";
 import { PlayerSelect } from "@/components/ui/PlayerSelect";
 import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
+import { OpponentStandingSummary } from "@/components/fla/OpponentStandingSummary";
+import { buildOpponentStandingLookup } from "@/lib/data/opponent-standings-lookup";
+import { getExternalCompetition, getExternalStandings } from "@/lib/data/external-standings";
+import { getOpponentMappings } from "@/lib/data/opponent-mappings";
+import { FLA_CONFIG } from "@/lib/fla/config";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
@@ -57,6 +62,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   ]);
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
+
+  const flaCompetition = await getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId);
+  const [flaStandings, flaMappings] = flaCompetition
+    ? await Promise.all([getExternalStandings(flaCompetition.id), getOpponentMappings(flaCompetition.id)])
+    : [[], []];
+  const opponentStandingResult = match.opponent_name ? buildOpponentStandingLookup(flaMappings, flaStandings)(match.opponent_name) : null;
+
   const activeInjuryReturnDateLabel = injuryReturnLabelForDate(activeInjury, match.match_date);
   const captainName = captain ? captain.nickname || captain.first_name : null;
   const matchLabel = `${isHome ? "Charenton FC" : opponentLabel} vs ${isHome ? opponentLabel : "Charenton FC"}`;
@@ -113,6 +125,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       <h1 className="text-scoreboard mt-1 text-xl font-extrabold text-cream">
         {isHome ? "Charenton FC" : opponentLabel} vs {isHome ? opponentLabel : "Charenton FC"}
       </h1>
+      {opponentStandingResult && (
+        <p className="mt-0.5">
+          <OpponentStandingSummary result={opponentStandingResult} isOwner={user.isOwner} emptyFallback="coming-soon" />
+        </p>
+      )}
       <p className="mt-2 text-sm text-steel">{formatMatchDate(match.match_date)}</p>
       {match.meeting_time && (
         <p className="text-sm text-steel">🕒 RDV : {formatTime(match.meeting_time)}</p>
