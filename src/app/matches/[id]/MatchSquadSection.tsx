@@ -1,15 +1,37 @@
 import { getActivePlayers } from "@/lib/data/players";
 import { getMatchSquad } from "@/lib/data/match-squad";
 import { saveMatchSquadDraft, publishMatchSquad, unlockMatchSquad } from "@/lib/data/match-squad-actions";
+import { getActiveRestrictionsByPlayerId } from "@/lib/data/player-restrictions";
+import { RESTRICTION_TYPE_LABELS, type PlayerRestriction, type RestrictionType } from "@/types/models";
 
 /**
  * Groupe convoqué (roadmap V3, Lot 17) — plan distinct de la présence
  * réelle. Lecture ouverte à tous ; édition réservée au Coach/Propriétaire,
  * verrouillée une fois publiée.
+ *
+ * Lot 19 : alerte non bloquante pour le coach quand un joueur convoqué a une restriction
+ * active — jamais un blocage de la sélection, juste un signal ⚠️ à côté du nom.
  */
 export async function MatchSquadSection({ matchId, isAdmin }: { matchId: string; isAdmin: boolean }) {
-  const [players, squad] = await Promise.all([getActivePlayers(), getMatchSquad(matchId)]);
+  const [players, squad, restrictionsByPlayerId] = await Promise.all([
+    getActivePlayers(),
+    getMatchSquad(matchId),
+    isAdmin ? getActiveRestrictionsByPlayerId() : Promise.resolve(new Map<string, PlayerRestriction>()),
+  ]);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
+
+  function restrictionAlert(playerId: string) {
+    const restriction = restrictionsByPlayerId.get(playerId);
+    if (!restriction || !isAdmin) return null;
+    return (
+      <span
+        className="ml-1 text-gold"
+        title={restriction.restriction_types.map((t: RestrictionType) => RESTRICTION_TYPE_LABELS[t]).join(" · ")}
+      >
+        ⚠️
+      </span>
+    );
+  }
   const isLocked = squad.lockedAt !== null;
 
   if (isLocked || !isAdmin) {
@@ -70,6 +92,7 @@ export async function MatchSquadSection({ matchId, isAdmin }: { matchId: string;
               <label key={p.id} className="flex items-center gap-2 rounded-lg border border-white/10 bg-navy-card px-2 py-1.5 text-sm text-cream">
                 <input type="checkbox" name="called_up_player_id" value={p.id} defaultChecked={calledUpSet.has(p.id)} />
                 {p.nickname || p.first_name}
+                {restrictionAlert(p.id)}
               </label>
             ))}
           </div>

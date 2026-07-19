@@ -13,12 +13,14 @@ import { getPlayerBadges } from "@/lib/data/badges";
 import { getTeamRecordWithWithoutPlayer } from "@/lib/data/stats-advanced";
 import { getVisiblePlayerGoals } from "@/lib/data/player-goals";
 import { getActiveInjury } from "@/lib/data/injuries";
+import { getActiveRestriction, getPlayerRestrictionHistory, canViewRestriction } from "@/lib/data/player-restrictions";
 import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { canView } from "@/lib/visibility";
 import { formatMatchDate, formatShortDate, formatShortDateOnly } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
 import { PlayerCardButton } from "./PlayerCardButton";
 import { CareerCardButton } from "./CareerCardButton";
+import { RestrictionPanel } from "./RestrictionPanel";
 
 function initials(firstName: string, lastName: string | null) {
   return (firstName[0] + (lastName?.[0] ?? "")).toUpperCase();
@@ -31,7 +33,7 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
   const player = await getPlayerById(id);
   if (!player) notFound();
 
-  const [stats, advanced, awardWins, history, badges, withWithout, goals, activeInjury, ownerPlayerId] =
+  const [stats, advanced, awardWins, history, badges, withWithout, goals, activeInjury, ownerPlayerId, activeRestriction, restrictionHistory] =
     await Promise.all([
       getPlayerStats(player.id),
       getPlayerAdvancedStats(player.id),
@@ -42,8 +44,17 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
       getVisiblePlayerGoals(player.id, { playerId: user.playerId, role: user.role }),
       getActiveInjury(player.id),
       getOwnerPlayerId(),
+      getActiveRestriction(player.id),
+      getPlayerRestrictionHistory(player.id),
     ]);
   const isOwnerAccount = player.id === ownerPlayerId;
+  const isAdminViewer = isElevatedRole(user.role);
+  const canViewActiveRestriction = activeRestriction
+    ? canViewRestriction(activeRestriction.visibility, {
+        isCoach: isAdminViewer,
+        isOwnRestriction: user.playerId === player.id,
+      })
+    : false;
 
   const viewer = { playerId: user.playerId, role: user.role };
   const canSeeMeasurements = canView(player.measurements_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
@@ -152,6 +163,14 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
             )}
         </div>
       )}
+
+      <RestrictionPanel
+        playerId={player.id}
+        activeRestriction={activeRestriction}
+        history={restrictionHistory}
+        isAdmin={isAdminViewer}
+        canViewActive={canViewActiveRestriction}
+      />
 
       {latestMeasurement && (latestMeasurement.weight_kg != null || latestMeasurement.height_cm != null) && (
         <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3 text-sm text-cream">

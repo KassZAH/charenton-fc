@@ -94,6 +94,51 @@ export const REINFORCEMENT_POSITION_LABELS: Record<ReinforcementPosition, string
 /** Durées rapides proposées à la déclaration d'une blessure — traduites en date estimée côté serveur. */
 export type InjuryDurationPreset = "next_match" | "1_week" | "2_weeks" | "1_month" | "custom_date" | "unknown";
 
+/** player_restrictions.restriction_types (élément du tableau) — contrainte check en base (Lot 19, roadmap V3). */
+export type RestrictionType =
+  | "no_goalkeeper"
+  | "no_defence"
+  | "no_attack"
+  | "no_intense_running"
+  | "limited_play_time"
+  | "progressive_return"
+  | "custom";
+
+export const RESTRICTION_TYPE_LABELS: Record<RestrictionType, string> = {
+  no_goalkeeper: "Pas gardien",
+  no_defence: "Pas défenseur",
+  no_attack: "Pas attaquant",
+  no_intense_running: "Pas de course intense",
+  limited_play_time: "Temps de jeu limité",
+  progressive_return: "Retour progressif",
+  custom: "Autre",
+};
+
+/** player_restrictions.status — contrainte check en base. */
+export type RestrictionStatus = "active" | "ended";
+
+/** player_restrictions.visibility — contrainte check en base. Jamais un niveau "public". */
+export type RestrictionVisibility = "private" | "coaches" | "team";
+
+/**
+ * player_restrictions n'est pas dans les types Supabase générés (jamais régénérés depuis le
+ * Lot 17, même choix que MatchSquadEntry dans match-squad.ts) — type manuel, lu/écrit via
+ * untypedDb comme les autres tables ajoutées depuis.
+ */
+export type PlayerRestriction = {
+  id: string;
+  player_id: string;
+  starts_at: string;
+  ends_at: string | null;
+  status: RestrictionStatus;
+  restriction_types: RestrictionType[];
+  comment: string | null;
+  visibility: RestrictionVisibility;
+  created_at: string;
+  created_by_player_id: string | null;
+  ended_at: string | null;
+};
+
 /** backups.trigger_reason — contrainte check en base (étendue au Lot 6, roadmap V3). */
 export type BackupTriggerReason =
   | "manual"
