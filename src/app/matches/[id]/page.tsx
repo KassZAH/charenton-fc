@@ -20,6 +20,7 @@ import { getActiveInjury, getActiveInjuriesByPlayerId, injuryReturnLabelForDate 
 import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
 import { WhatsAppShareButton } from "@/components/ui/WhatsAppShareButton";
 import { PlayerSelect } from "@/components/ui/PlayerSelect";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { AvailabilityButtons } from "./AvailabilityButtons";
 import { GoalsSection } from "./GoalsSection";
 import { CardsSection } from "./CardsSection";
@@ -87,7 +88,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   }
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <div className="flex items-start justify-between">
         <p className="text-xs font-bold uppercase tracking-widest text-gold">
           {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
@@ -226,7 +227,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           captainName={captainName}
         />
       )}
-    </div>
+    </ResponsivePageContainer>
   );
 }
 

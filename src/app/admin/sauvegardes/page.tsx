@@ -4,11 +4,22 @@ import { getBackupArtifactsMetadata, getBackupMetadata, getLiveTableCounts, type
 import { createManualBackup, exportAuditLogArtifactAction } from "@/lib/data/backups-actions";
 import { formatShortDate } from "@/lib/format";
 import { BACKUP_TRIGGER_LABELS, BACKUP_TYPE_LABELS } from "@/types/models";
-import { checksumPresenceStatus, CHECKSUM_STATUS_LABELS } from "@/lib/data/backup-integrity";
+import { checksumPresenceStatus, CHECKSUM_STATUS_LABELS, type ChecksumStatus } from "@/lib/data/backup-integrity";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { StatusBadge } from "@/components/ui/StatusBadge";
 import { DownloadBackupButton } from "./DownloadBackupButton";
 import { DeleteBackupForm } from "./DeleteBackupForm";
 import { VerifyIntegrityButton } from "./VerifyIntegrityButton";
 import { RepairIntegrityButton } from "./RepairIntegrityButton";
+
+const CHECKSUM_STATUS_VARIANT: Record<ChecksumStatus, "success" | "warning" | "error" | "info" | "neutral"> = {
+  ok: "success",
+  mismatch: "error",
+  "needs-finalization": "warning",
+  unverified: "info",
+  "legacy-unverifiable": "neutral",
+};
 
 function protectionLabel(protectedFlag: boolean | null): string {
   if (protectedFlag === null) return "Protégé — backup legacy";
@@ -30,7 +41,7 @@ export default async function BackupsPage() {
   );
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Sauvegardes</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
@@ -105,7 +116,7 @@ export default async function BackupsPage() {
       )}
 
       {backups.length === 0 ? (
-        <p className="text-sm text-steel/70">Aucune sauvegarde pour le moment.</p>
+        <EmptyState title="Aucune sauvegarde pour le moment" text="Crée la première avec le formulaire ci-dessus." />
       ) : (
         <ul className="space-y-2">
           {backups.map((b: BackupMetadata) => {
@@ -139,9 +150,7 @@ export default async function BackupsPage() {
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70">
                     {protectionLabel(b.protected)}
                   </span>
-                  <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70">
-                    {CHECKSUM_STATUS_LABELS[presenceStatus]}
-                  </span>
+                  <StatusBadge variant={CHECKSUM_STATUS_VARIANT[presenceStatus]} label={CHECKSUM_STATUS_LABELS[presenceStatus]} />
                   <span className="rounded-full border border-white/15 px-2 py-0.5 text-cream/70 tabular-nums">
                     {Object.keys((b.table_counts as Record<string, number>) ?? {}).length} tables · {totalRows(b.table_counts)} lignes
                   </span>
@@ -189,6 +198,6 @@ export default async function BackupsPage() {
           })}
         </ul>
       )}
-    </div>
+    </ResponsivePageContainer>
   );
 }

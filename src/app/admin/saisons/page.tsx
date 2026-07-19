@@ -4,10 +4,11 @@ import { getAllSeasons, getOpenMatchesInActiveSeason } from "@/lib/data/seasons"
 import { getMatchesNeedingReviewForSeason } from "@/lib/data/match-completeness";
 import { toggleSeasonLock } from "@/lib/data/seasons-actions";
 import { getActivePlayers } from "@/lib/data/players";
-import { setPlayerStatus } from "@/lib/data/players-actions";
 import { formatShortDateOnly, formatMatchDate } from "@/lib/format";
 import type { Player } from "@/types/models";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { CloseSeasonForm } from "./CloseSeasonForm";
+import { ArchivePlayerButton } from "./ArchivePlayerButton";
 
 /**
  * Choisir qui archiver est une action à enjeu : contrairement au reste de
@@ -32,7 +33,7 @@ export default async function SeasonsPage() {
   ]);
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Saisons</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
@@ -142,15 +143,11 @@ export default async function SeasonsPage() {
           {players.map((p) => (
             <li key={p.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2">
               <span className="text-sm text-cream">{p.nickname || p.first_name}</span>
-              <form action={setPlayerStatus.bind(null, p.id, "archived")}>
-                <button type="submit" className="text-xs font-medium text-steel/60">
-                  Archiver
-                </button>
-              </form>
+              <ArchivePlayerButton playerId={p.id} playerName={p.nickname || p.first_name} />
             </li>
           ))}
         </ul>
       </section>
-    </div>
+    </ResponsivePageContainer>
   );
 }
