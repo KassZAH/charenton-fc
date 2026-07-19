@@ -7,7 +7,6 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { assertMatchSeasonUnlocked, isMatchScopedTable, matchIdFromDeletedRowSnapshot } from "./season-lock";
 
 type TrackedTable = "matches" | "goals" | "cards" | "players";
-const SOFT_DELETE_TABLES = new Set<TrackedTable>(["goals", "cards"]);
 
 /**
  * Restaurer une modification touche une table connue seulement à l'exécution
@@ -41,6 +40,18 @@ async function resolveMatchId(
   return typeof matchId === "string" ? matchId : null;
 }
 
+/**
+ * Restauration transactionnelle (Lot 8, roadmap V3, RPC
+ * restore_audit_entry_transactional, migration 20260720000100) : verrou
+ * explicite sur l'entrée d'historique, refus d'une double restauration,
+ * allow-list stricte de colonnes par table (jamais old_data appliqué tel
+ * quel — corrige un écart de sécurité de l'ancienne implémentation, qui
+ * restaurait pin_hash/pin_length/session_version pour une fiche joueur),
+ * marquage restored_at dans la même transaction. Le verrouillage de saison
+ * reste vérifié ici, avant l'appel RPC : c'est une règle applicative
+ * (assertMatchSeasonUnlocked), pas une question d'atomicité de la
+ * restauration elle-même.
+ */
 export async function restoreChange(auditLogId: string) {
   await requireAdmin();
 
@@ -57,54 +68,15 @@ export async function restoreChange(auditLogId: string) {
   const recordId = entry.record_id;
   const oldData = entry.old_data as Record<string, unknown> | null;
 
-  // Un transfert de propriété a ses propres règles (joueur actif, promotion
-  // en coach, révocation des deux sessions) — un simple retour en arrière du
-  // champ owner_player_id les contournerait toutes. Refait via une nouvelle
-  // action de transfert, jamais via l'historique générique.
-  if (entry.table_name === "team_settings") {
-    throw new Error("Un transfert de propriété ne se restaure pas depuis l'historique — utilise un nouveau transfert.");
-  }
-
   if (isMatchScopedTable(tableName)) {
     const matchId = await resolveMatchId(tableName, recordId, entry.action, oldData);
     if (matchId) await assertMatchSeasonUnlocked(matchId);
   }
 
-  if (entry.action === "insert") {
-    // Annuler une création : soft-delete si la table le supporte, sinon suppression réelle.
-    if (SOFT_DELETE_TABLES.has(tableName)) {
-      const { error: undoError } = await untypedDb
-        .from(tableName)
-        .update({ deleted_at: new Date().toISOString() })
-        .eq("id", recordId);
-      if (undoError) throw new Error(undoError.message);
-    } else {
-      const { error: undoError } = await untypedDb.from(tableName).delete().eq("id", recordId);
-      if (undoError) throw new Error(undoError.message);
-    }
-  } else if (entry.action === "delete") {
-    // Annuler une suppression : réactiver le soft-delete, ou réinsérer si suppression réelle.
-    if (SOFT_DELETE_TABLES.has(tableName)) {
-      const { error: undoError } = await untypedDb
-        .from(tableName)
-        .update({ deleted_at: null })
-        .eq("id", recordId);
-      if (undoError) throw new Error(undoError.message);
-    } else if (oldData) {
-      const { error: undoError } = await untypedDb.from(tableName).insert(oldData);
-      if (undoError) throw new Error(undoError.message);
-    }
-  } else if (entry.action === "update") {
-    if (!oldData) throw new Error("Pas de valeur précédente à restaurer.");
-    const { error: undoError } = await untypedDb.from(tableName).update(oldData).eq("id", recordId);
-    if (undoError) throw new Error(undoError.message);
-  }
-
-  const { error: markError } = await supabaseAdmin
-    .from("audit_log")
-    .update({ restored_at: new Date().toISOString() })
-    .eq("id", auditLogId);
-  if (markError) throw new Error(markError.message);
+  const { error: rpcError } = await untypedDb.rpc("restore_audit_entry_transactional", {
+    p_audit_log_id: auditLogId,
+  });
+  if (rpcError) throw new Error(rpcError.message);
 
   revalidatePath("/history");
   revalidatePath("/matches");

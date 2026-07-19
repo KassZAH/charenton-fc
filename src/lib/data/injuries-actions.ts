@@ -1,36 +1,53 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
-import { logChange } from "./audit";
 import { getActiveInjury } from "./injuries";
 import type { InjuryDurationPreset } from "@/types/models";
 
-/** Retire toute trace de cette blessure sur les convocations (statuts posés à la main non concernés, ils ont injury_id=null). */
-async function clearInjuryCoverage(injuryId: string) {
-  const { error } = await supabaseAdmin.from("availability").delete().eq("injury_id", injuryId);
+/**
+ * Le générateur de types Supabase ne connaît pas cette RPC (Lot 8, roadmap
+ * V3) — cast vers le client non typé, même pattern que les RPC des Lots 6/7.
+ */
+const untypedDb = supabaseAdmin as unknown as SupabaseClient;
+
+type InjurySyncRow = { injury_id: string; availability_synced: number };
+
+/**
+ * Remplace l'ancienne séquence en 3 étapes non transactionnelle
+ * (update/insert injuries → delete+upsert availability → insert audit_log)
+ * par un seul appel RPC tout-ou-rien (upsert_injury_and_sync_availability,
+ * migration 20260720000000). p_injury_id=null crée une nouvelle blessure ;
+ * sinon met à jour la blessure existante et resynchronise sa couverture.
+ */
+async function syncInjuryAndAvailability(params: {
+  injuryId: string | null;
+  playerId: string;
+  newStatus: "active" | "closed" | "cancelled";
+  startedAt: string | null;
+  estimatedReturnDate: string | null;
+  actualReturnDate: string | null;
+  comment: string | null;
+  commentVisibility: string | null;
+  changedByPlayerId: string;
+  changedByName: string;
+}): Promise<InjurySyncRow> {
+  const { data, error } = await untypedDb.rpc("upsert_injury_and_sync_availability", {
+    p_injury_id: params.injuryId,
+    p_player_id: params.playerId,
+    p_new_status: params.newStatus,
+    p_started_at: params.startedAt,
+    p_estimated_return_date: params.estimatedReturnDate,
+    p_actual_return_date: params.actualReturnDate,
+    p_comment: params.comment,
+    p_comment_visibility: params.commentVisibility,
+    p_changed_by_player_id: params.changedByPlayerId,
+    p_changed_by_name: params.changedByName,
+  });
   if (error) throw new Error(error.message);
-}
-
-/** Marque "Blessé" tous les matchs à venir couverts par la période de la blessure (remplace toute réponse existante). */
-async function applyInjuryCoverage(playerId: string, injuryId: string, estimatedReturnDate: string | null) {
-  let query = supabaseAdmin
-    .from("matches")
-    .select("id")
-    .eq("status", "scheduled")
-    .is("deleted_at", null);
-  if (estimatedReturnDate) query = query.lte("match_date", estimatedReturnDate);
-
-  const { data: matches, error } = await query;
-  if (error) throw new Error(error.message);
-  if (!matches || matches.length === 0) return;
-
-  const { error: upsertError } = await supabaseAdmin.from("availability").upsert(
-    matches.map((m) => ({ match_id: m.id, player_id: playerId, status: "injured" as const, injury_id: injuryId })),
-    { onConflict: "match_id,player_id" }
-  );
-  if (upsertError) throw new Error(upsertError.message);
+  return (data as InjurySyncRow[])[0];
 }
 
 async function resolveEstimatedReturnDate(
@@ -76,6 +93,8 @@ export async function declareInjury(formData: FormData) {
 
   const existing = await getActiveInjury(user.playerId);
   if (existing) {
+    // Pré-vérification pour un message d'erreur clair — la garantie réelle contre le double-clic
+    // est l'index unique partiel injuries_one_active_per_player, appliqué dans la RPC elle-même.
     throw new Error("Une blessure est déjà active — clôture-la avant d'en déclarer une nouvelle.");
   }
 
@@ -87,27 +106,15 @@ export async function declareInjury(formData: FormData) {
 
   const estimatedReturnDate = await resolveEstimatedReturnDate(preset, customDate);
 
-  const { data: injury, error } = await supabaseAdmin
-    .from("injuries")
-    .insert({
-      player_id: user.playerId,
-      started_at: startedAt,
-      estimated_return_date: estimatedReturnDate,
-      comment,
-      comment_visibility: commentVisibility,
-      status: "active",
-    })
-    .select("*")
-    .single();
-  if (error) throw new Error(error.message);
-
-  await applyInjuryCoverage(user.playerId, injury.id, estimatedReturnDate);
-
-  await logChange({
-    tableName: "injuries",
-    recordId: injury.id,
-    action: "insert",
-    newData: injury,
+  await syncInjuryAndAvailability({
+    injuryId: null,
+    playerId: user.playerId,
+    newStatus: "active",
+    startedAt,
+    estimatedReturnDate,
+    actualReturnDate: null,
+    comment,
+    commentVisibility,
     changedByPlayerId: user.playerId,
     changedByName: user.name,
   });
@@ -123,20 +130,15 @@ export async function recoverFromInjury() {
   if (!injury) return;
 
   const today = new Date().toISOString().slice(0, 10);
-  const { error } = await supabaseAdmin
-    .from("injuries")
-    .update({ status: "closed", actual_return_date: today, updated_at: new Date().toISOString() })
-    .eq("id", injury.id);
-  if (error) throw new Error(error.message);
-
-  await clearInjuryCoverage(injury.id);
-
-  await logChange({
-    tableName: "injuries",
-    recordId: injury.id,
-    action: "update",
-    oldData: injury,
-    newData: { status: "closed", actual_return_date: today },
+  await syncInjuryAndAvailability({
+    injuryId: injury.id,
+    playerId: user.playerId,
+    newStatus: "closed",
+    startedAt: null,
+    estimatedReturnDate: null,
+    actualReturnDate: today,
+    comment: null,
+    commentVisibility: null,
     changedByPlayerId: user.playerId,
     changedByName: user.name,
   });
@@ -151,20 +153,15 @@ export async function cancelInjury() {
   const injury = await getActiveInjury(user.playerId);
   if (!injury) return;
 
-  const { error } = await supabaseAdmin
-    .from("injuries")
-    .update({ status: "cancelled", updated_at: new Date().toISOString() })
-    .eq("id", injury.id);
-  if (error) throw new Error(error.message);
-
-  await clearInjuryCoverage(injury.id);
-
-  await logChange({
-    tableName: "injuries",
-    recordId: injury.id,
-    action: "update",
-    oldData: injury,
-    newData: { status: "cancelled" },
+  await syncInjuryAndAvailability({
+    injuryId: injury.id,
+    playerId: user.playerId,
+    newStatus: "cancelled",
+    startedAt: null,
+    estimatedReturnDate: null,
+    actualReturnDate: null,
+    comment: null,
+    commentVisibility: null,
     changedByPlayerId: user.playerId,
     changedByName: user.name,
   });
@@ -183,21 +180,15 @@ export async function updateInjuryReturnDate(formData: FormData) {
   const customDate = String(formData.get("custom_date") ?? "") || null;
   const estimatedReturnDate = await resolveEstimatedReturnDate(preset, customDate);
 
-  const { error } = await supabaseAdmin
-    .from("injuries")
-    .update({ estimated_return_date: estimatedReturnDate, updated_at: new Date().toISOString() })
-    .eq("id", injury.id);
-  if (error) throw new Error(error.message);
-
-  await clearInjuryCoverage(injury.id);
-  await applyInjuryCoverage(user.playerId, injury.id, estimatedReturnDate);
-
-  await logChange({
-    tableName: "injuries",
-    recordId: injury.id,
-    action: "update",
-    oldData: { estimated_return_date: injury.estimated_return_date },
-    newData: { estimated_return_date: estimatedReturnDate },
+  await syncInjuryAndAvailability({
+    injuryId: injury.id,
+    playerId: user.playerId,
+    newStatus: "active",
+    startedAt: null,
+    estimatedReturnDate,
+    actualReturnDate: null,
+    comment: null,
+    commentVisibility: null,
     changedByPlayerId: user.playerId,
     changedByName: user.name,
   });
@@ -210,7 +201,9 @@ export async function updateInjuryReturnDate(formData: FormData) {
 /**
  * À appeler après la création d'un ou plusieurs matchs : les blessures déjà actives doivent
  * couvrir les nouveaux matchs s'ils tombent dans leur période, pas seulement ceux qui existaient
- * au moment de la déclaration.
+ * au moment de la déclaration. Pure resynchronisation en lecture-écriture, sans changement d'état
+ * de la blessure elle-même : ne passe pas par la RPC transactionnelle (pas de clôture/modification
+ * à auditer ici), reste un simple upsert idempotent comme avant le Lot 8.
  */
 export async function syncActiveInjuriesToUpcomingMatches() {
   const { data: activeInjuries, error } = await supabaseAdmin
@@ -220,7 +213,18 @@ export async function syncActiveInjuriesToUpcomingMatches() {
   if (error) throw new Error(error.message);
 
   for (const injury of activeInjuries ?? []) {
-    await applyInjuryCoverage(injury.player_id, injury.id, injury.estimated_return_date);
+    let query = supabaseAdmin.from("matches").select("id").eq("status", "scheduled").is("deleted_at", null);
+    if (injury.estimated_return_date) query = query.lte("match_date", injury.estimated_return_date);
+
+    const { data: matches, error: matchesError } = await query;
+    if (matchesError) throw new Error(matchesError.message);
+    if (!matches || matches.length === 0) continue;
+
+    const { error: upsertError } = await supabaseAdmin.from("availability").upsert(
+      matches.map((m) => ({ match_id: m.id, player_id: injury.player_id, status: "injured" as const, injury_id: injury.id })),
+      { onConflict: "match_id,player_id" }
+    );
+    if (upsertError) throw new Error(upsertError.message);
   }
 }
 
