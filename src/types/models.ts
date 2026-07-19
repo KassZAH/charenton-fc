@@ -153,6 +153,8 @@ export type Venue = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Mode Démo (post-Macro B) — jamais dans les listes réelles par défaut. */
+  is_demo: boolean;
 };
 
 /** match_equipment_items.status — contrainte check en base (Lot 24, roadmap V3). Remplace `brought` (conservé pour transition, non lu par le code applicatif). */
@@ -163,6 +165,8 @@ export type ChecklistTemplate = {
   id: string;
   label: string;
   created_at: string;
+  /** Mode Démo (post-Macro B) — jamais dans les listes réelles par défaut. */
+  is_demo: boolean;
 };
 
 /** player_checklist_preferences — pas dans les types générés (Lot 24, roadmap V3). */
@@ -213,6 +217,8 @@ export type MatchTemplate = {
   notes: string | null;
   created_at: string;
   updated_at: string;
+  /** Mode Démo (post-Macro B) — jamais dans les listes réelles par défaut. */
+  is_demo: boolean;
 };
 
 /** backups.trigger_reason — contrainte check en base (étendue au Lot 6, roadmap V3). */

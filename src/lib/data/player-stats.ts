@@ -2,7 +2,19 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { attachOpponents, type MatchWithOpponent } from "./matches";
 import { getActiveAwards } from "./awards";
+import { getDemoMatchIds } from "./demo-scope";
 import type { Award } from "@/types/models";
+
+/**
+ * `goals`/`cards`/`match_players`/`votes` n'ont pas de `season_id` propre — seul `match_id` les
+ * relie à une saison. Toutes les statistiques réelles de ce fichier doivent exclure les matchs du
+ * Mode Démo, sinon un but/carton/présence fictif compterait comme réel. Retourne un filtre "not
+ * in (...)" prêt à l'emploi, ou null si aucune saison Démo n'existe (chemin normal, no-op).
+ */
+async function demoMatchExclusionFilter(): Promise<string | null> {
+  const demoMatchIds = await getDemoMatchIds();
+  return demoMatchIds.length > 0 ? `(${demoMatchIds.join(",")})` : null;
+}
 
 export type PlayerStats = {
   matchesPlayed: number;
@@ -14,36 +26,23 @@ export type PlayerStats = {
 
 /** Recalculé à la volée depuis goals, cards et match_players — jamais stocké. */
 export async function getPlayerStats(playerId: string): Promise<PlayerStats> {
+  const exclude = await demoMatchExclusionFilter();
+
+  let goalsQuery = supabaseAdmin.from("goals").select("*", { count: "exact", head: true }).eq("scorer_player_id", playerId).eq("credited_to", "charenton").is("deleted_at", null);
+  let assistsQuery = supabaseAdmin.from("goals").select("*", { count: "exact", head: true }).eq("assist_player_id", playerId).eq("credited_to", "charenton").is("deleted_at", null);
+  let presenceQuery = supabaseAdmin.from("match_players").select("*", { count: "exact", head: true }).eq("player_id", playerId).eq("was_present", true);
+  let yellowQuery = supabaseAdmin.from("cards").select("*", { count: "exact", head: true }).eq("player_id", playerId).eq("card_type", "yellow").is("deleted_at", null);
+  let redQuery = supabaseAdmin.from("cards").select("*", { count: "exact", head: true }).eq("player_id", playerId).eq("card_type", "red").is("deleted_at", null);
+  if (exclude) {
+    goalsQuery = goalsQuery.not("match_id", "in", exclude);
+    assistsQuery = assistsQuery.not("match_id", "in", exclude);
+    presenceQuery = presenceQuery.not("match_id", "in", exclude);
+    yellowQuery = yellowQuery.not("match_id", "in", exclude);
+    redQuery = redQuery.not("match_id", "in", exclude);
+  }
+
   const [goalsRes, assistsRes, presenceRes, yellowRes, redRes] = await Promise.all([
-    supabaseAdmin
-      .from("goals")
-      .select("*", { count: "exact", head: true })
-      .eq("scorer_player_id", playerId)
-      .eq("credited_to", "charenton")
-      .is("deleted_at", null),
-    supabaseAdmin
-      .from("goals")
-      .select("*", { count: "exact", head: true })
-      .eq("assist_player_id", playerId)
-      .eq("credited_to", "charenton")
-      .is("deleted_at", null),
-    supabaseAdmin
-      .from("match_players")
-      .select("*", { count: "exact", head: true })
-      .eq("player_id", playerId)
-      .eq("was_present", true),
-    supabaseAdmin
-      .from("cards")
-      .select("*", { count: "exact", head: true })
-      .eq("player_id", playerId)
-      .eq("card_type", "yellow")
-      .is("deleted_at", null),
-    supabaseAdmin
-      .from("cards")
-      .select("*", { count: "exact", head: true })
-      .eq("player_id", playerId)
-      .eq("card_type", "red")
-      .is("deleted_at", null),
+    goalsQuery, assistsQuery, presenceQuery, yellowQuery, redQuery,
   ]);
 
   if (goalsRes.error) throw new Error(goalsRes.error.message);
@@ -83,10 +82,16 @@ const EMPTY_ADVANCED_STATS: PlayerAdvancedStats = {
 
 /** Recalculé à la volée depuis match_players et goals — jamais stocké. */
 export async function getPlayerAdvancedStats(playerId: string): Promise<PlayerAdvancedStats> {
-  const [{ data: playedRows, error: playedError }, totalCompletedRes] = await Promise.all([
-    supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true),
-    supabaseAdmin.from("matches").select("*", { count: "exact", head: true }).eq("status", "completed").is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+
+  let playedQuery = supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true);
+  let totalCompletedQuery = supabaseAdmin.from("matches").select("*", { count: "exact", head: true }).eq("status", "completed").is("deleted_at", null);
+  if (exclude) {
+    playedQuery = playedQuery.not("match_id", "in", exclude);
+    totalCompletedQuery = totalCompletedQuery.not("id", "in", exclude);
+  }
+
+  const [{ data: playedRows, error: playedError }, totalCompletedRes] = await Promise.all([playedQuery, totalCompletedQuery]);
   if (playedError) throw new Error(playedError.message);
   if (totalCompletedRes.error) throw new Error(totalCompletedRes.error.message);
 
@@ -161,10 +166,11 @@ export type PlayerAwardWin = { award: Award; wins: number };
  * garde le nombre de fois où `playerId` en fait partie — jamais stocké.
  */
 export async function getPlayerAwardWins(playerId: string): Promise<PlayerAwardWin[]> {
-  const [awards, { data: votes, error }] = await Promise.all([
-    getActiveAwards(),
-    supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id"),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let votesQuery = supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id");
+  if (exclude) votesQuery = votesQuery.not("match_id", "in", exclude);
+
+  const [awards, { data: votes, error }] = await Promise.all([getActiveAwards(), votesQuery]);
   if (error) throw new Error(error.message);
 
   const groups = new Map<string, Map<string, number>>();
@@ -198,11 +204,11 @@ export type PlayerMatchHistoryEntry = {
 };
 
 export async function getPlayerMatchHistory(playerId: string): Promise<PlayerMatchHistoryEntry[]> {
-  const { data: matchPlayerRows, error } = await supabaseAdmin
-    .from("match_players")
-    .select("match_id")
-    .eq("player_id", playerId)
-    .eq("was_present", true);
+  const exclude = await demoMatchExclusionFilter();
+  let matchPlayerQuery = supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true);
+  if (exclude) matchPlayerQuery = matchPlayerQuery.not("match_id", "in", exclude);
+
+  const { data: matchPlayerRows, error } = await matchPlayerQuery;
   if (error) throw new Error(error.message);
 
   const matchIds = [...new Set((matchPlayerRows ?? []).map((r) => r.match_id))];

@@ -2,6 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getActivePlayers } from "./players";
 import { todayDateString } from "@/lib/clock";
+import { getDemoMatchIds } from "./demo-scope";
 
 export function currentMvpMonth(): { year: number; month: number } {
   const [y, m] = todayDateString().split("-").map(Number);
@@ -17,13 +18,16 @@ export type MvpCandidate = { playerId: string; name: string; score: number };
  */
 export async function getMonthlyMvpCandidates(year: number, month: number): Promise<MvpCandidate[]> {
   const monthPrefix = `${year}-${String(month).padStart(2, "0")}`;
-  const { data: matches, error } = await supabaseAdmin
+  const demoMatchIds = await getDemoMatchIds();
+  let matchQuery = supabaseAdmin
     .from("matches")
     .select("id, team_score, opponent_score")
     .eq("status", "completed")
     .is("deleted_at", null)
     .gte("match_date", `${monthPrefix}-01`)
     .lt("match_date", nextMonthPrefix(year, month));
+  if (demoMatchIds.length > 0) matchQuery = matchQuery.not("id", "in", `(${demoMatchIds.join(",")})`);
+  const { data: matches, error } = await matchQuery;
   if (error) throw new Error(error.message);
 
   const matchIds = (matches ?? []).map((m) => m.id);

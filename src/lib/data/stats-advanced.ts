@@ -2,6 +2,13 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getActivePlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
+import { getDemoMatchIds } from "./demo-scope";
+
+/** Voir player-stats.ts. Uniquement pour les vues "toutes saisons" — getMatchBreakdowns/getSeasonProjection restent utilisables tels quels en mode Démo via un seasonId explicite. */
+async function demoMatchExclusionFilter(): Promise<string | null> {
+  const demoMatchIds = await getDemoMatchIds();
+  return demoMatchIds.length > 0 ? `(${demoMatchIds.join(",")})` : null;
+}
 
 export type RecordLine = {
   played: number;
@@ -35,13 +42,15 @@ export type FormResult = {
 
 /** Forme sur les derniers matchs — le plus ancien en premier, prêt à afficher en séquence. */
 export async function getRecentForm(limit = 5): Promise<FormResult[]> {
-  const { data: matches, error } = await supabaseAdmin
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin
     .from("matches")
     .select("id, match_date, opponent_id, team_score, opponent_score")
     .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: false })
-    .limit(limit);
+    .is("deleted_at", null);
+  if (exclude) query = query.not("id", "in", exclude);
+
+  const { data: matches, error } = await query.order("match_date", { ascending: false }).limit(limit);
   if (error) throw new Error(error.message);
 
   const opponentIds = [...new Set((matches ?? []).map((m) => m.opponent_id).filter((id): id is string => !!id))];
@@ -97,7 +106,12 @@ export async function getMatchBreakdowns(seasonId: string | null): Promise<Match
     .select("id, match_date, home_or_away, team_score, opponent_score")
     .eq("status", "completed")
     .is("deleted_at", null);
-  if (seasonId) matchQuery = matchQuery.eq("season_id", seasonId);
+  if (seasonId) {
+    matchQuery = matchQuery.eq("season_id", seasonId);
+  } else {
+    const exclude = await demoMatchExclusionFilter();
+    if (exclude) matchQuery = matchQuery.not("id", "in", exclude);
+  }
   const { data: matches, error } = await matchQuery.order("match_date", { ascending: true });
   if (error) throw new Error(error.message);
 
@@ -200,10 +214,15 @@ export async function getUpcomingMilestones(): Promise<UpcomingMilestone[]> {
   const players = await getActivePlayers();
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
 
-  const [goalsRes, presRes] = await Promise.all([
-    supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null),
-    supabaseAdmin.from("match_players").select("player_id").eq("was_present", true),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let goalsQuery = supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null);
+  let presQuery = supabaseAdmin.from("match_players").select("player_id").eq("was_present", true);
+  if (exclude) {
+    goalsQuery = goalsQuery.not("match_id", "in", exclude);
+    presQuery = presQuery.not("match_id", "in", exclude);
+  }
+
+  const [goalsRes, presRes] = await Promise.all([goalsQuery, presQuery]);
   if (goalsRes.error) throw new Error(goalsRes.error.message);
   if (presRes.error) throw new Error(presRes.error.message);
 
@@ -290,10 +309,15 @@ export type WithWithoutRecord = { withPlayer: RecordLine; withoutPlayer: RecordL
 
 /** Bilan d'équipe avec/sans un joueur — jamais présenté sans indiquer que l'échantillon peut être limité. */
 export async function getTeamRecordWithWithoutPlayer(playerId: string): Promise<WithWithoutRecord | null> {
-  const [{ data: matches, error: matchesError }, { data: presenceRows, error: presenceError }] = await Promise.all([
-    supabaseAdmin.from("matches").select("id, team_score, opponent_score").eq("status", "completed").is("deleted_at", null),
-    supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let matchesQuery = supabaseAdmin.from("matches").select("id, team_score, opponent_score").eq("status", "completed").is("deleted_at", null);
+  let presenceQuery = supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true);
+  if (exclude) {
+    matchesQuery = matchesQuery.not("id", "in", exclude);
+    presenceQuery = presenceQuery.not("match_id", "in", exclude);
+  }
+
+  const [{ data: matches, error: matchesError }, { data: presenceRows, error: presenceError }] = await Promise.all([matchesQuery, presenceQuery]);
   if (matchesError) throw new Error(matchesError.message);
   if (presenceError) throw new Error(presenceError.message);
 

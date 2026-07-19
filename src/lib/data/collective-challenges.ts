@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getDemoMatchIds } from "./demo-scope";
 
 export type CollectiveChallenge = {
   key: string;
@@ -22,7 +23,12 @@ export async function getCollectiveChallenges(seasonId: string | null): Promise<
     .select("id, team_score, opponent_score")
     .eq("status", "completed")
     .is("deleted_at", null);
-  if (seasonId) matchQuery = matchQuery.eq("season_id", seasonId);
+  if (seasonId) {
+    matchQuery = matchQuery.eq("season_id", seasonId);
+  } else {
+    const demoMatchIds = await getDemoMatchIds();
+    if (demoMatchIds.length > 0) matchQuery = matchQuery.not("id", "in", `(${demoMatchIds.join(",")})`);
+  }
   const { data: matches, error } = await matchQuery.order("match_date", { ascending: true });
   if (error) throw new Error(error.message);
 

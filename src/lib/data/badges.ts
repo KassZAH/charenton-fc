@@ -1,5 +1,6 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
+import { getDemoMatchIds } from "./demo-scope";
 
 export type BadgeKey =
   | "first_goal"
@@ -60,15 +61,22 @@ function longestStreak<T>(items: T[], isHit: (item: T) => boolean): number {
  * risque à rappeler plusieurs fois.
  */
 export async function checkAndAwardBadges(playerId: string): Promise<void> {
+  const demoMatchIds = await getDemoMatchIds();
+  const exclude = demoMatchIds.length > 0 ? `(${demoMatchIds.join(",")})` : null;
+
+  let playedQuery = supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true);
+  let goalsQuery = supabaseAdmin.from("goals").select("match_id, scorer_player_id, assist_player_id").eq("credited_to", "charenton").is("deleted_at", null);
+  let cardsQuery = supabaseAdmin.from("cards").select("card_type").eq("player_id", playerId).is("deleted_at", null);
+  let votesQuery = supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id");
+  if (exclude) {
+    playedQuery = playedQuery.not("match_id", "in", exclude);
+    goalsQuery = goalsQuery.not("match_id", "in", exclude);
+    cardsQuery = cardsQuery.not("match_id", "in", exclude);
+    votesQuery = votesQuery.not("match_id", "in", exclude);
+  }
+
   const [{ data: playedRows }, { data: goalRows }, { data: cardRows }, { data: voteRows }] = await Promise.all([
-    supabaseAdmin.from("match_players").select("match_id").eq("player_id", playerId).eq("was_present", true),
-    supabaseAdmin
-      .from("goals")
-      .select("match_id, scorer_player_id, assist_player_id")
-      .eq("credited_to", "charenton")
-      .is("deleted_at", null),
-    supabaseAdmin.from("cards").select("card_type").eq("player_id", playerId).is("deleted_at", null),
-    supabaseAdmin.from("votes").select("match_id, award_id, voted_player_id"),
+    playedQuery, goalsQuery, cardsQuery, votesQuery,
   ]);
 
   const playedMatchIds = (playedRows ?? []).map((r) => r.match_id);
@@ -100,12 +108,9 @@ export async function checkAndAwardBadges(playerId: string): Promise<void> {
     if (max > 0 && (counts.get(playerId) ?? 0) === max) awardWins++;
   }
 
-  const { data: allMatches } = await supabaseAdmin
-    .from("matches")
-    .select("id")
-    .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: true });
+  let allMatchesQuery = supabaseAdmin.from("matches").select("id").eq("status", "completed").is("deleted_at", null);
+  if (exclude) allMatchesQuery = allMatchesQuery.not("id", "in", exclude);
+  const { data: allMatches } = await allMatchesQuery.order("match_date", { ascending: true });
   const orderedMatchIds = (allMatches ?? []).map((m) => m.id);
   const playedSet = new Set(playedMatchIds);
   const orderedPlayedIds = orderedMatchIds.filter((id) => playedSet.has(id));

@@ -26,8 +26,12 @@ export function buildContextualLabels(signals: ContextualSignals): string[] {
   return labels;
 }
 
-export async function getChecklistTemplates(): Promise<ChecklistTemplate[]> {
-  const { data, error } = await untypedDb.from("checklist_templates").select("*").order("label", { ascending: true });
+/** `includeDemo=true` réservé aux écrans du Mode Démo — jamais un rappel fictif dans la checklist réelle par défaut. */
+export async function getChecklistTemplates(includeDemo = false): Promise<ChecklistTemplate[]> {
+  let query = untypedDb.from("checklist_templates").select("*");
+  if (!includeDemo) query = query.eq("is_demo", false);
+
+  const { data, error } = await query.order("label", { ascending: true });
   if (error) throw new Error(error.message);
   return data ?? [];
 }

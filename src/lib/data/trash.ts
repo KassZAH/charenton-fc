@@ -2,17 +2,18 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getAllPlayers } from "./players";
 import { formatMatchDate, formatShortDate } from "@/lib/format";
+import { getDemoMatchIds } from "./demo-scope";
 
 export type TrashedMatch = { id: string; label: string; deletedAt: string };
 export type TrashedGoal = { id: string; matchId: string; label: string; deletedAt: string };
 export type TrashedCard = { id: string; matchId: string; label: string; deletedAt: string };
 
 export async function getTrashedMatches(): Promise<TrashedMatch[]> {
-  const { data: matches, error } = await supabaseAdmin
-    .from("matches")
-    .select("id, match_date, opponent_id, deleted_at")
-    .not("deleted_at", "is", null)
-    .order("deleted_at", { ascending: false });
+  const demoMatchIds = await getDemoMatchIds();
+  let query = supabaseAdmin.from("matches").select("id, match_date, opponent_id, deleted_at").not("deleted_at", "is", null);
+  if (demoMatchIds.length > 0) query = query.not("id", "in", `(${demoMatchIds.join(",")})`);
+
+  const { data: matches, error } = await query.order("deleted_at", { ascending: false });
   if (error) throw new Error(error.message);
 
   const opponentIds = [...new Set((matches ?? []).map((m) => m.opponent_id).filter((id): id is string => !!id))];

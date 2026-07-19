@@ -2,6 +2,13 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getAllPlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
+import { getDemoMatchIds } from "./demo-scope";
+
+/** Voir player-stats.ts — même raison : goals/match_players/cards n'ont pas de season_id propre. */
+async function demoMatchExclusionFilter(): Promise<string | null> {
+  const demoMatchIds = await getDemoMatchIds();
+  return demoMatchIds.length > 0 ? `(${demoMatchIds.join(",")})` : null;
+}
 
 /**
  * Toutes les stats sont recalculées à la volée depuis les événements
@@ -22,10 +29,11 @@ function countBy(rows: { id: string | null }[], nameById: Map<string, string>): 
 }
 
 export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
-  const [players, { data: goals, error }] = await Promise.all([
-    getAllPlayers(),
-    supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin.from("goals").select("scorer_player_id").eq("credited_to", "charenton").is("deleted_at", null);
+  if (exclude) query = query.not("match_id", "in", exclude);
+
+  const [players, { data: goals, error }] = await Promise.all([getAllPlayers(), query]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
   const rows = (goals ?? []).map((g) => ({ id: g.scorer_player_id }));
@@ -33,10 +41,11 @@ export async function getTopScorers(limit = 10): Promise<PlayerCount[]> {
 }
 
 export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
-  const [players, { data: goals, error }] = await Promise.all([
-    getAllPlayers(),
-    supabaseAdmin.from("goals").select("assist_player_id").eq("credited_to", "charenton").is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin.from("goals").select("assist_player_id").eq("credited_to", "charenton").is("deleted_at", null);
+  if (exclude) query = query.not("match_id", "in", exclude);
+
+  const [players, { data: goals, error }] = await Promise.all([getAllPlayers(), query]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
   const rows = (goals ?? []).map((g) => ({ id: g.assist_player_id }));
@@ -45,14 +54,11 @@ export async function getTopAssists(limit = 10): Promise<PlayerCount[]> {
 
 /** Buts + passes décisives cumulés (contribution directe aux buts). */
 export async function getTopGoalContributions(limit = 10): Promise<PlayerCount[]> {
-  const [players, { data: goals, error }] = await Promise.all([
-    getAllPlayers(),
-    supabaseAdmin
-      .from("goals")
-      .select("scorer_player_id, assist_player_id")
-      .eq("credited_to", "charenton")
-      .is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin.from("goals").select("scorer_player_id, assist_player_id").eq("credited_to", "charenton").is("deleted_at", null);
+  if (exclude) query = query.not("match_id", "in", exclude);
+
+  const [players, { data: goals, error }] = await Promise.all([getAllPlayers(), query]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
   const counts = new Map<string, number>();
@@ -67,10 +73,11 @@ export async function getTopGoalContributions(limit = 10): Promise<PlayerCount[]
 }
 
 export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
-  const [players, { data: rows, error }] = await Promise.all([
-    getAllPlayers(),
-    supabaseAdmin.from("match_players").select("player_id").eq("was_present", true),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin.from("match_players").select("player_id").eq("was_present", true);
+  if (exclude) query = query.not("match_id", "in", exclude);
+
+  const [players, { data: rows, error }] = await Promise.all([getAllPlayers(), query]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
   const mapped = (rows ?? []).map((r) => ({ id: r.player_id }));
@@ -78,10 +85,11 @@ export async function getTopPresences(limit = 10): Promise<PlayerCount[]> {
 }
 
 export async function getMostCarded(limit = 10): Promise<PlayerCount[]> {
-  const [players, { data: cards, error }] = await Promise.all([
-    getAllPlayers(),
-    supabaseAdmin.from("cards").select("player_id").is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin.from("cards").select("player_id").is("deleted_at", null);
+  if (exclude) query = query.not("match_id", "in", exclude);
+
+  const [players, { data: cards, error }] = await Promise.all([getAllPlayers(), query]);
   if (error) throw new Error(error.message);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
   const rows = (cards ?? []).map((c) => ({ id: c.player_id }));
@@ -101,14 +109,15 @@ export type TeamStats = {
 };
 
 export async function getTeamStats(): Promise<TeamStats> {
-  const [{ data: matches, error }, { data: cards, error: cardsError }] = await Promise.all([
-    supabaseAdmin
-      .from("matches")
-      .select("team_score, opponent_score")
-      .eq("status", "completed")
-      .is("deleted_at", null),
-    supabaseAdmin.from("cards").select("card_type").is("deleted_at", null),
-  ]);
+  const exclude = await demoMatchExclusionFilter();
+  let matchesQuery = supabaseAdmin.from("matches").select("id, team_score, opponent_score").eq("status", "completed").is("deleted_at", null);
+  let cardsQuery = supabaseAdmin.from("cards").select("card_type").is("deleted_at", null);
+  if (exclude) {
+    matchesQuery = matchesQuery.not("id", "in", exclude);
+    cardsQuery = cardsQuery.not("match_id", "in", exclude);
+  }
+
+  const [{ data: matches, error }, { data: cards, error: cardsError }] = await Promise.all([matchesQuery, cardsQuery]);
   if (error) throw new Error(error.message);
   if (cardsError) throw new Error(cardsError.message);
 
@@ -167,12 +176,15 @@ function resultType(teamScore: number, opponentScore: number): "wins" | "draws" 
 }
 
 export async function getTeamHighlights(): Promise<TeamHighlights> {
-  const { data: matches, error } = await supabaseAdmin
+  const exclude = await demoMatchExclusionFilter();
+  let query = supabaseAdmin
     .from("matches")
     .select("id, match_date, opponent_id, team_score, opponent_score")
     .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: true });
+    .is("deleted_at", null);
+  if (exclude) query = query.not("id", "in", exclude);
+
+  const { data: matches, error } = await query.order("match_date", { ascending: true });
   if (error) throw new Error(error.message);
 
   const played = matches ?? [];

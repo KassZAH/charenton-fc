@@ -6,8 +6,12 @@ import type { Venue } from "@/types/models";
 /** venues n'est pas dans les types générés (voir models.ts) — même cast que match-squad.ts/player-restrictions.ts. */
 const untypedDb = supabaseAdmin as unknown as SupabaseClient;
 
-export async function getVenues(): Promise<Venue[]> {
-  const { data, error } = await untypedDb.from("venues").select("*").order("name", { ascending: true });
+/** `includeDemo=true` réservé aux écrans du Mode Démo — jamais un terrain fictif dans la liste réelle par défaut. */
+export async function getVenues(includeDemo = false): Promise<Venue[]> {
+  let query = untypedDb.from("venues").select("*");
+  if (!includeDemo) query = query.eq("is_demo", false);
+
+  const { data, error } = await query.order("name", { ascending: true });
   if (error) throw new Error(error.message);
   return data ?? [];
 }

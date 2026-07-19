@@ -6,8 +6,12 @@ import type { MatchTemplate } from "@/types/models";
 /** match_templates n'est pas dans les types générés (voir models.ts). */
 const untypedDb = supabaseAdmin as unknown as SupabaseClient;
 
-export async function getMatchTemplates(): Promise<MatchTemplate[]> {
-  const { data, error } = await untypedDb.from("match_templates").select("*").order("name", { ascending: true });
+/** `includeDemo=true` réservé aux écrans du Mode Démo — jamais un modèle fictif dans la liste réelle par défaut. */
+export async function getMatchTemplates(includeDemo = false): Promise<MatchTemplate[]> {
+  let query = untypedDb.from("match_templates").select("*");
+  if (!includeDemo) query = query.eq("is_demo", false);
+
+  const { data, error } = await query.order("name", { ascending: true });
   if (error) throw new Error(error.message);
   return data ?? [];
 }

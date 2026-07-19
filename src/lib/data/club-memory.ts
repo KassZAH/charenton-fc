@@ -2,6 +2,7 @@ import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { getAllPlayers } from "./players";
 import { formatMatchDate } from "@/lib/format";
+import { getDemoMatchIds } from "./demo-scope";
 import { HALL_OF_FAME_CATEGORY_LABELS, type HallOfFameEntry, type ClubQuote, type JerseyHistoryEntry } from "@/types/models";
 
 export type TimelineEntry = {
@@ -22,12 +23,15 @@ type MatchMemoryRow = {
 };
 
 async function getCompletedMatchesWithScorers() {
-  const { data: matches, error } = await supabaseAdmin
+  const demoMatchIds = await getDemoMatchIds();
+  let query = supabaseAdmin
     .from("matches")
     .select("id, match_date, opponent_id, team_score, opponent_score, home_or_away, description")
     .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: true });
+    .is("deleted_at", null);
+  if (demoMatchIds.length > 0) query = query.not("id", "in", `(${demoMatchIds.join(",")})`);
+
+  const { data: matches, error } = await query.order("match_date", { ascending: true });
   if (error) throw new Error(error.message);
 
   const scopedMatches = (matches ?? []) as MatchMemoryRow[];
@@ -74,7 +78,7 @@ export async function getClubTimeline(): Promise<TimelineEntry[]> {
   const [{ scopedMatches, opponentNameById, goals }, teamSettingsRes, seasonsRes, hallOfFameRes] = await Promise.all([
     getCompletedMatchesWithScorers(),
     supabaseAdmin.from("team_settings").select("founded_date, founding_note").maybeSingle(),
-    supabaseAdmin.from("seasons").select("id, name, end_date, is_active").order("end_date", { ascending: true }),
+    supabaseAdmin.from("seasons").select("id, name, end_date, is_active").eq("is_demo", false).order("end_date", { ascending: true }),
     supabaseAdmin
       .from("hall_of_fame_entries")
       .select("id, display_name, player_id, category, inducted_at")

@@ -1,6 +1,7 @@
 import "server-only";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { todayDateString } from "@/lib/clock";
+import { getDemoSeasonIds } from "./demo-scope";
 import type { Match } from "@/types/models";
 
 export type MatchWithOpponent = Match & { opponent_name: string | null };
@@ -31,15 +32,23 @@ export async function attachOpponents(matches: Match[]): Promise<MatchWithOppone
 // disparaître silencieusement de ces listes — seuls 'cancelled' et 'draft' en sont exclus.
 const UPCOMING_STATUSES = ["scheduled", "live", "postponed"] as const;
 
+/** "(id1,id2,...)" pour `.not("season_id", "in", ...)`, ou null si aucune saison Démo (no-op, chemin le plus courant). */
+async function demoSeasonExclusionFilter(): Promise<string | null> {
+  const demoSeasonIds = await getDemoSeasonIds();
+  return demoSeasonIds.length > 0 ? `(${demoSeasonIds.join(",")})` : null;
+}
+
 export async function getNextMatch(): Promise<MatchWithOpponent | null> {
-  const { data, error } = await supabaseAdmin
+  const exclude = await demoSeasonExclusionFilter();
+  let query = supabaseAdmin
     .from("matches")
     .select("*")
     .in("status", UPCOMING_STATUSES)
     .is("deleted_at", null)
-    .gte("match_date", todayDateString())
-    .order("match_date", { ascending: true })
-    .limit(1);
+    .gte("match_date", todayDateString());
+  if (exclude) query = query.not("season_id", "in", exclude);
+
+  const { data, error } = await query.order("match_date", { ascending: true }).limit(1);
   if (error) throw new Error(error.message);
   if (!data || data.length === 0) return null;
   const [withOpponent] = await attachOpponents(data);
@@ -47,37 +56,37 @@ export async function getNextMatch(): Promise<MatchWithOpponent | null> {
 }
 
 export async function getUpcomingMatches(): Promise<MatchWithOpponent[]> {
-  const { data, error } = await supabaseAdmin
+  const exclude = await demoSeasonExclusionFilter();
+  let query = supabaseAdmin
     .from("matches")
     .select("*")
     .in("status", UPCOMING_STATUSES)
     .is("deleted_at", null)
-    .gte("match_date", todayDateString())
-    .order("match_date", { ascending: true });
+    .gte("match_date", todayDateString());
+  if (exclude) query = query.not("season_id", "in", exclude);
+
+  const { data, error } = await query.order("match_date", { ascending: true });
   if (error) throw new Error(error.message);
   return attachOpponents(data ?? []);
 }
 
 /** Matchs "scheduled" dont la date est déjà passée — oubliés, jamais finalisés. Réservé aux admins. */
 export async function getUnfinalizedPastMatches(): Promise<MatchWithOpponent[]> {
-  const { data, error } = await supabaseAdmin
-    .from("matches")
-    .select("*")
-    .eq("status", "scheduled")
-    .is("deleted_at", null)
-    .lt("match_date", todayDateString())
-    .order("match_date", { ascending: false });
+  const exclude = await demoSeasonExclusionFilter();
+  let query = supabaseAdmin.from("matches").select("*").eq("status", "scheduled").is("deleted_at", null).lt("match_date", todayDateString());
+  if (exclude) query = query.not("season_id", "in", exclude);
+
+  const { data, error } = await query.order("match_date", { ascending: false });
   if (error) throw new Error(error.message);
   return attachOpponents(data ?? []);
 }
 
 export async function getPastMatches(): Promise<MatchWithOpponent[]> {
-  const { data, error } = await supabaseAdmin
-    .from("matches")
-    .select("*")
-    .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: false });
+  const exclude = await demoSeasonExclusionFilter();
+  let query = supabaseAdmin.from("matches").select("*").eq("status", "completed").is("deleted_at", null);
+  if (exclude) query = query.not("season_id", "in", exclude);
+
+  const { data, error } = await query.order("match_date", { ascending: false });
   if (error) throw new Error(error.message);
   return attachOpponents(data ?? []);
 }

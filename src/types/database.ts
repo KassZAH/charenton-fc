@@ -1255,6 +1255,7 @@ export type Database = {
           end_date: string | null
           id: string
           is_active: boolean
+          is_demo: boolean
           is_locked: boolean
           locked_at: string | null
           name: string
@@ -1265,6 +1266,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_locked?: boolean
           locked_at?: string | null
           name: string
@@ -1275,6 +1277,7 @@ export type Database = {
           end_date?: string | null
           id?: string
           is_active?: boolean
+          is_demo?: boolean
           is_locked?: boolean
           locked_at?: string | null
           name?: string

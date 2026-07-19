@@ -32,6 +32,7 @@ export default async function PlusPage() {
         <MenuSection title="Gestion de l'équipe">
           <MenuLink href="/admin" label="Gestion de l'équipe" emoji="⚙️" />
           {user.isOwner && <MenuLink href="/admin/coachs" label="Gestion des coachs" emoji="👑" />}
+          <MenuLink href="/demo" label="Mode Démo" emoji="🎭" />
         </MenuSection>
       )}
 

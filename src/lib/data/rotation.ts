@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabase/server";
 import { requireFreshCoach } from "@/lib/auth/current-user";
 import { getActivePlayers } from "./players";
 import { getMatchAvailabilitySummary } from "./availability";
+import { getDemoSeasonIds } from "./demo-scope";
 
 /**
  * Roadmap V3, Macro-release B (Lot 21) — rotation équitable et fiabilité positive. Jamais de
@@ -33,14 +34,21 @@ export function computePresenceConsistency(presentResponses: { playedMatch: bool
   return Math.round((followed / presentResponses.length) * 100);
 }
 
+/**
+ * Exclut toujours les saisons Mode Démo (jamais un match fictif mêlé à la rotation/fiabilité
+ * réelle) — seul point d'entrée de tous les calculs de ce fichier, corrigé une fois ici plutôt
+ * que dans chaque fonction consommatrice.
+ */
 async function getRecentCompletedMatchIds(lookback: number): Promise<string[]> {
-  const { data, error } = await supabaseAdmin
+  const demoSeasonIds = await getDemoSeasonIds();
+  let query = supabaseAdmin
     .from("matches")
     .select("id")
     .eq("status", "completed")
-    .is("deleted_at", null)
-    .order("match_date", { ascending: false })
-    .limit(lookback);
+    .is("deleted_at", null);
+  if (demoSeasonIds.length > 0) query = query.not("season_id", "in", `(${demoSeasonIds.join(",")})`);
+
+  const { data, error } = await query.order("match_date", { ascending: false }).limit(lookback);
   if (error) throw new Error(error.message);
   return (data ?? []).map((m) => m.id);
 }
