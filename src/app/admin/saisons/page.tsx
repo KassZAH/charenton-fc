@@ -6,7 +6,20 @@ import { toggleSeasonLock } from "@/lib/data/seasons-actions";
 import { getActivePlayers } from "@/lib/data/players";
 import { setPlayerStatus } from "@/lib/data/players-actions";
 import { formatShortDateOnly, formatMatchDate } from "@/lib/format";
+import type { Player } from "@/types/models";
 import { CloseSeasonForm } from "./CloseSeasonForm";
+
+/**
+ * Choisir qui archiver est une action à enjeu : contrairement au reste de
+ * l'app (nickname || first_name, ambigu si plusieurs joueurs partagent un
+ * prénom générique — cas du dataset fictif du Lot 7 : "Coach"/"Joueur" pour
+ * tout le monde), cette liste affiche toujours le nom complet, avec le
+ * pseudo en avant s'il existe.
+ */
+function archivePlayerLabel(p: Player): string {
+  const fullName = [p.first_name, p.last_name].filter(Boolean).join(" ");
+  return p.nickname ? `${p.nickname} (${fullName})` : fullName;
+}
 
 export default async function SeasonsPage() {
   const user = await requireFreshCoach();
@@ -114,7 +127,7 @@ export default async function SeasonsPage() {
             oldSeasonName={activeSeason.name}
             activePlayers={players
               .filter((p) => p.id !== user.playerId)
-              .map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+              .map((p) => ({ id: p.id, name: archivePlayerLabel(p) }))}
           />
         </section>
       )}
