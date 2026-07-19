@@ -36,6 +36,7 @@ import { AwardsSection } from "./AwardsSection";
 import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
 import { GoalkeeperSection } from "./GoalkeeperSection";
+import { MatchSquadSection } from "./MatchSquadSection";
 import { CarpoolSection } from "./CarpoolSection";
 import { EquipmentSection } from "./EquipmentSection";
 import { DuplicateMatchForm } from "./DuplicateMatchForm";
@@ -234,6 +235,10 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {isUpcoming && isElevatedRole(user.role) && (
         <ReinforcementSection matchId={match.id} origin={origin} matchLabel={matchLabel} />
+      )}
+
+      {match.status !== "completed" && match.status !== "cancelled" && (
+        <MatchSquadSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
       )}
 
       {(match.status === "completed" || match.status === "live") && (

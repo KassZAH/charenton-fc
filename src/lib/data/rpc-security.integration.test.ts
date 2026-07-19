@@ -75,6 +75,17 @@ describe("RPC sensibles — anon toujours refusé", () => {
   it("set_match_goalkeepers (Lot 13)", async () => {
     await expectAnonDenied("set_match_goalkeepers", { p_match_id: ZERO_UUID, p_goalkeeper_player_ids: [] });
   });
+
+  it("set_match_squad (Lot 17)", async () => {
+    await expectAnonDenied("set_match_squad", {
+      p_match_id: ZERO_UUID, p_called_up_player_ids: [], p_waitlist_player_ids: [],
+      p_planned_goalkeeper_player_id: null, p_publish: false, p_changed_by_player_id: ZERO_UUID, p_changed_by_name: "x",
+    });
+  });
+
+  it("unlock_match_squad (Lot 17)", async () => {
+    await expectAnonDenied("unlock_match_squad", { p_match_id: ZERO_UUID, p_changed_by_player_id: ZERO_UUID, p_changed_by_name: "x" });
+  });
 });
 
 describe("export_backup_snapshot — accès réservé, jamais anon", () => {
