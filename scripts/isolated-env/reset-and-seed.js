@@ -56,6 +56,11 @@ const DELETE_ORDER = [
   // de contrainte unique sur match_checklist_items en générant plusieurs fois le même item de
   // modèle pour un même joueur/match).
   "checklist_templates",
+  // Même raison : match_templates/venues (Lot 22) n'ont aucune clé étrangère qui les ferait
+  // cascader depuis players/matches — sans ces deux lignes, les fixtures E2E (terrains, modèles)
+  // s'accumulent d'un run à l'autre. match_templates d'abord (référence venues).
+  "match_templates",
+  "venues",
 ];
 const NEVER_MATCHING_UUID = "00000000-0000-0000-0000-000000000000";
 

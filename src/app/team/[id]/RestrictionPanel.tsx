@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { createPlayerRestriction, endPlayerRestriction } from "@/lib/data/player-restrictions-actions";
-import { formatShortDateOnly } from "@/lib/format";
+import { formatShortDateOnly, formatShortDate } from "@/lib/format";
 import { useToast } from "@/components/ui/ToastProvider";
 import { RESTRICTION_TYPE_LABELS, type PlayerRestriction, type RestrictionType } from "@/types/models";
 
@@ -177,7 +177,10 @@ export function RestrictionPanel({
               <li key={r.id} className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs text-steel">
                 {r.restriction_types.map((t) => RESTRICTION_TYPE_LABELS[t]).join(" · ")} —{" "}
                 {formatShortDateOnly(r.starts_at)}
-                {r.ended_at && ` → ${formatShortDateOnly(r.ended_at)}`}
+                {/* ended_at est un timestamptz complet (moment de clôture), pas une colonne `date`
+                    comme starts_at/ends_at — formatShortDateOnly y ajoutait "T00:00:00" en double,
+                    produisant "Invalid Date" (trouvé par le gate E2E de fin de macro-release). */}
+                {r.ended_at && ` → ${formatShortDate(r.ended_at)}`}
               </li>
             ))}
           </ul>
