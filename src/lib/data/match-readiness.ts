@@ -47,7 +47,7 @@ export async function getMatchReadiness(matchId: string): Promise<MatchReadiness
     designatedGoalkeeperIds.length > 0
       ? present.some((s) => designatedGoalkeeperIds.includes(s.player.id))
       : present.some((s) => s.player.primary_position === "Gardien");
-  const carpoolSufficient = carpool.riders.length <= carpool.totalSeats;
+  const carpoolSufficient = !carpool.hasDeficit;
   const unassignedEquipment = equipment.filter((e) => !e.assigned_player_id).map((e) => e.label);
 
   const warnings: string[] = [];
@@ -67,7 +67,7 @@ export async function getMatchReadiness(matchId: string): Promise<MatchReadiness
     enoughPlayers,
     hasGoalkeeper,
     carpoolSufficient,
-    ridersWaiting: carpool.riders.length,
+    ridersWaiting: carpool.unassignedRiders.length,
     unassignedEquipment,
     warnings,
   };

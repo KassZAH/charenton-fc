@@ -155,6 +155,15 @@ export type Venue = {
   updated_at: string;
 };
 
+/** carpool_assignments — pas dans les types générés (Lot 23, roadmap V3). */
+export type CarpoolAssignment = {
+  id: string;
+  match_id: string;
+  driver_player_id: string;
+  passenger_player_id: string;
+  created_at: string;
+};
+
 /** match_templates.home_or_away — contrainte check en base. */
 export type MatchTemplateHomeOrAway = "home" | "away";
 

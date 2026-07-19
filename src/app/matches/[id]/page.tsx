@@ -243,7 +243,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       )}
 
       {isUpcoming && carpoolSummary && (
-        <CarpoolSection matchId={match.id} myInfo={myCarpoolInfo} summary={carpoolSummary} />
+        <CarpoolSection matchId={match.id} myInfo={myCarpoolInfo} summary={carpoolSummary} isAdmin={isElevatedRole(user.role)} />
       )}
 
       {isUpcoming && <EquipmentSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />}

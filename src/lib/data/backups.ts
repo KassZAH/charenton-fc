@@ -47,6 +47,7 @@ export const BACKUP_TABLES = [
   "player_restrictions",
   "venues",
   "match_templates",
+  "carpool_assignments",
 ] as const;
 
 /** Tables du schéma public volontairement absentes de BACKUP_TABLES, avec la raison exacte (Lot 6, roadmap V3). */

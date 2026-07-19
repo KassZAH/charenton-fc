@@ -66,6 +66,8 @@ export type Database = {
           available_seats: number | null
           can_drive: boolean | null
           comment: string | null
+          departure_point: string | null
+          departure_time: string | null
           first_responded_at: string | null
           goalkeeper_available: boolean | null
           id: string
@@ -83,6 +85,8 @@ export type Database = {
           available_seats?: number | null
           can_drive?: boolean | null
           comment?: string | null
+          departure_point?: string | null
+          departure_time?: string | null
           first_responded_at?: string | null
           goalkeeper_available?: boolean | null
           id?: string
@@ -100,6 +104,8 @@ export type Database = {
           available_seats?: number | null
           can_drive?: boolean | null
           comment?: string | null
+          departure_point?: string | null
+          departure_time?: string | null
           first_responded_at?: string | null
           goalkeeper_available?: boolean | null
           id?: string
