@@ -75,3 +75,56 @@ jobs:
         # utilisés pour le déploiement) — uniquement les secrets INTEGRATION_* dédiés, distincts, réservés au
         # projet isolé. Le garde-fou de scripts/isolated-env/guard.js refuse de toute façon toute autre référence.
         run: npm run test:integration
+
+  e2e:
+    name: E2E Playwright — projet Supabase isolé
+    runs-on: ubuntu-latest
+    needs: unit
+    # Un seul run à la fois : globalSetup remet le dataset isolé à zéro, deux runs concurrents se
+    # marcheraient dessus (même raison que le job d'intégration ci-dessus).
+    concurrency:
+      group: ci-e2e-${{ github.ref }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Vérifier la présence des secrets de l'environnement isolé
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.INTEGRATION_SUPABASE_URL }}" ] || [ -z "${{ secrets.INTEGRATION_SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tests E2E ignorés — secrets absents
+        if: steps.check_secrets.outputs.has_secrets != 'true'
+        run: |
+          echo "::warning::Tests E2E ignorés : INTEGRATION_SUPABASE_URL / INTEGRATION_SUPABASE_SERVICE_ROLE_KEY absents des secrets du dépôt. Voir .env.integration.local.example."
+
+      - name: Installer Chromium
+        if: steps.check_secrets.outputs.has_secrets == 'true'
+        run: npx playwright install --with-deps chromium
+
+      - name: Tests E2E (projet isolé uniquement)
+        if: steps.check_secrets.outputs.has_secrets == 'true'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.INTEGRATION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.INTEGRATION_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.INTEGRATION_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_REF: ${{ secrets.INTEGRATION_SUPABASE_PROJECT_REF }}
+          SESSION_SECRET: ${{ secrets.INTEGRATION_SESSION_SECRET }}
+        run: npm run test:e2e
+
+      - name: Rapport Playwright
+        if: always() && steps.check_secrets.outputs.has_secrets == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7

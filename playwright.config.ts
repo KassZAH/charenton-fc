@@ -55,8 +55,11 @@ export default defineConfig({
         reuseExistingServer: !process.env.CI,
         timeout: 60_000,
         env: {
+          // process.env d'abord (CI : secrets injectés par le workflow), .env.integration.local
+          // ensuite en local ne l'écrase que s'il est absent de l'environnement du process.
           ...isolatedEnv,
+          ...process.env,
           PORT: "3100",
-        },
+        } as Record<string, string>,
       },
 });
