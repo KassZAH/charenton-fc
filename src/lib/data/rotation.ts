@@ -159,6 +159,64 @@ export async function getPlayerReliabilitySignals(playerId: string, lookback = 8
   return { respondsOnTimeRate, presenceConsistencyRate };
 }
 
+export type CaptainSuggestion = {
+  playerId: string;
+  playerName: string;
+  reason: string;
+};
+
+/**
+ * Suggestion facultative de rotation du capitanat (§7.3, roadmap V2 ; Lot 24) — parmi les
+ * joueurs disponibles pour CE match, celui qui a été capitaine le moins souvent récemment.
+ * Jamais assigné automatiquement : setCaptain() reste un geste explicite du coach.
+ */
+export async function getCaptainSuggestion(matchId: string, lookback = 5): Promise<CaptainSuggestion | null> {
+  await requireFreshCoach();
+  return computeCaptainSuggestion(matchId, lookback);
+}
+
+/** Cœur logique séparé de la garde requireFreshCoach() — voir computeRotationSuggestions ci-dessus. */
+export async function computeCaptainSuggestion(matchId: string, lookback = 5): Promise<CaptainSuggestion | null> {
+  const [recentMatchIds, currentSummary] = await Promise.all([
+    getRecentCompletedMatchIds(lookback),
+    getMatchAvailabilitySummary(matchId),
+  ]);
+
+  const availableForThisMatch = currentSummary.filter((a) => a.status === "present");
+  if (availableForThisMatch.length === 0) return null;
+
+  let captainCounts = new Map<string, number>();
+  if (recentMatchIds.length > 0) {
+    const { data: rows, error } = await supabaseAdmin
+      .from("matches")
+      .select("captain_player_id")
+      .in("id", recentMatchIds)
+      .not("captain_player_id", "is", null);
+    if (error) throw new Error(error.message);
+    captainCounts = new Map();
+    for (const row of rows ?? []) {
+      if (!row.captain_player_id) continue;
+      captainCounts.set(row.captain_player_id, (captainCounts.get(row.captain_player_id) ?? 0) + 1);
+    }
+  }
+
+  const sorted = [...availableForThisMatch].sort(
+    (a, b) => (captainCounts.get(a.player.id) ?? 0) - (captainCounts.get(b.player.id) ?? 0)
+  );
+  const chosen = sorted[0];
+  const chosenCount = captainCounts.get(chosen.player.id) ?? 0;
+  const playerName = chosen.player.nickname || chosen.player.first_name;
+
+  return {
+    playerId: chosen.player.id,
+    playerName,
+    reason:
+      chosenCount === 0
+        ? `${playerName} n'a pas été capitaine lors des ${lookback} derniers matchs.`
+        : `${playerName} a été capitaine ${chosenCount} fois sur les ${lookback} derniers matchs, moins souvent que les autres joueurs disponibles.`,
+  };
+}
+
 export type CollectiveResponseTrend = {
   matchesConsidered: number;
   onTimeRate: number | null;

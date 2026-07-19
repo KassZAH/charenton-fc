@@ -48,6 +48,9 @@ export const BACKUP_TABLES = [
   "venues",
   "match_templates",
   "carpool_assignments",
+  "checklist_templates",
+  "player_checklist_preferences",
+  "match_checklist_items",
 ] as const;
 
 /** Tables du schéma public volontairement absentes de BACKUP_TABLES, avec la raison exacte (Lot 6, roadmap V3). */

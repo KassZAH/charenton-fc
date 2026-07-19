@@ -77,6 +77,14 @@ export default async function AdminPage() {
             📐 Modèles de match
           </Link>
         </li>
+        <li>
+          <Link
+            href="/admin/checklist"
+            className="block rounded-xl border border-white/10 bg-navy-card p-3 text-sm font-semibold text-cream"
+          >
+            ✅ Checklist d&apos;équipe
+          </Link>
+        </li>
         {user.isOwner && (
           <li>
             <Link

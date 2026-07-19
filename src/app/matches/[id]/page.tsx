@@ -13,6 +13,9 @@ import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
 import { getMatchReadiness } from "@/lib/data/match-readiness";
 import { getMatchCompleteness } from "@/lib/data/match-completeness";
 import { getMatchGoalkeepers } from "@/lib/data/roster";
+import { getCaptainSuggestion } from "@/lib/data/rotation";
+import { getMatchChecklistForPlayer } from "@/lib/data/checklist";
+import { ChecklistSection } from "./ChecklistSection";
 import { buildItineraryUrl } from "@/lib/maps";
 import { formatMatchDate, formatTime, formatShortDateTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS, MATCH_STATUS_LABELS } from "@/lib/labels";
@@ -59,15 +62,17 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const host = headerList.get("host");
   const origin = `${host?.startsWith("localhost") ? "http" : "https"}://${host}`;
 
-  const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo, goalkeeperIds, allActivePlayers] = await Promise.all([
-    getMyAvailability(match.id, user.playerId),
-    getActiveInjury(user.playerId),
-    match.captain_player_id ? getPlayerById(match.captain_player_id) : Promise.resolve(null),
-    isUpcoming ? getMatchCarpoolSummary(match.id) : Promise.resolve(null),
-    isUpcoming ? getMyCarpoolInfo(match.id, user.playerId) : Promise.resolve(null),
-    getMatchGoalkeepers(match.id),
-    getActivePlayers(),
-  ]);
+  const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo, goalkeeperIds, allActivePlayers, myChecklist] =
+    await Promise.all([
+      getMyAvailability(match.id, user.playerId),
+      getActiveInjury(user.playerId),
+      match.captain_player_id ? getPlayerById(match.captain_player_id) : Promise.resolve(null),
+      isUpcoming ? getMatchCarpoolSummary(match.id) : Promise.resolve(null),
+      isUpcoming ? getMyCarpoolInfo(match.id, user.playerId) : Promise.resolve(null),
+      getMatchGoalkeepers(match.id),
+      getActivePlayers(),
+      isUpcoming ? getMatchChecklistForPlayer(match.id, user.playerId) : Promise.resolve([]),
+    ]);
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
   const goalkeeperNames = allActivePlayers
@@ -246,6 +251,8 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
         <CarpoolSection matchId={match.id} myInfo={myCarpoolInfo} summary={carpoolSummary} isAdmin={isElevatedRole(user.role)} />
       )}
 
+      {isUpcoming && <ChecklistSection matchId={match.id} items={myChecklist} />}
+
       {isUpcoming && <EquipmentSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />}
 
       {isUpcoming && isElevatedRole(user.role) && (
@@ -330,12 +337,13 @@ async function AdminSection({
   captainName: string | null;
   responseDeadline: string | null;
 }) {
-  const [summary, activeInjuriesByPlayerId, players, readiness, completeness] = await Promise.all([
+  const [summary, activeInjuriesByPlayerId, players, readiness, completeness, captainSuggestion] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
     getActiveInjuriesByPlayerId(),
     getActivePlayers(),
     isCompleted ? Promise.resolve(null) : getMatchReadiness(matchId),
     isCompleted ? getMatchCompleteness(matchId, teamScore) : Promise.resolve(null),
+    isCompleted ? Promise.resolve(null) : getCaptainSuggestion(matchId),
   ]);
 
   const grouped: Record<AvailabilityStatus | "none", typeof summary> = {
@@ -428,6 +436,10 @@ async function AdminSection({
           </div>
         ))}
       </div>
+
+      {captainSuggestion && (
+        <p className="mt-4 text-xs text-gold">💡 Suggestion (privée) : {captainSuggestion.reason}</p>
+      )}
 
       <form action={setCaptain.bind(null, matchId)} className="mt-4 flex items-end gap-2">
         <div className="flex-1">

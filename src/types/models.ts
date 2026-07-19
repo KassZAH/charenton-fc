@@ -155,6 +155,38 @@ export type Venue = {
   updated_at: string;
 };
 
+/** match_equipment_items.status — contrainte check en base (Lot 24, roadmap V3). Remplace `brought` (conservé pour transition, non lu par le code applicatif). */
+export type EquipmentStatus = "unassigned" | "assigned" | "confirmed" | "brought" | "forgotten";
+
+/** checklist_templates — pas dans les types générés (Lot 24, roadmap V3). */
+export type ChecklistTemplate = {
+  id: string;
+  label: string;
+  created_at: string;
+};
+
+/** player_checklist_preferences — pas dans les types générés (Lot 24, roadmap V3). */
+export type PlayerChecklistPreference = {
+  id: string;
+  player_id: string;
+  label: string;
+  created_at: string;
+};
+
+/** match_checklist_items.source — contrainte check en base. */
+export type ChecklistItemSource = "template" | "personal" | "contextual";
+
+/** match_checklist_items — pas dans les types générés (Lot 24, roadmap V3). Strictement privé par joueur. */
+export type MatchChecklistItem = {
+  id: string;
+  match_id: string;
+  player_id: string;
+  label: string;
+  source: ChecklistItemSource;
+  checked: boolean;
+  created_at: string;
+};
+
 /** carpool_assignments — pas dans les types générés (Lot 23, roadmap V3). */
 export type CarpoolAssignment = {
   id: string;

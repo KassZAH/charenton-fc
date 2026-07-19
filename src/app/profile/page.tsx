@@ -14,6 +14,8 @@ import { addMeasurement, deleteMeasurement } from "@/lib/data/measurements-actio
 import { getPlayerGoals } from "@/lib/data/player-goals";
 import { addPlayerGoal, toggleGoalAchieved, deletePlayerGoal } from "@/lib/data/player-goals-actions";
 import { getActiveInjury, getPlayerInjuryHistory } from "@/lib/data/injuries";
+import { getPlayerChecklistPreferences } from "@/lib/data/checklist";
+import { addChecklistPreference, deleteChecklistPreference } from "@/lib/data/checklist-actions";
 import { formatShortDate } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
 import { InjuryPanel } from "./InjuryPanel";
@@ -33,12 +35,13 @@ export default async function ProfilePage() {
 
   const isAdmin = isElevatedRole(user.role);
 
-  const [measurements, activeInjury, injuryHistory, goals, headerList] = await Promise.all([
+  const [measurements, activeInjury, injuryHistory, goals, headerList, checklistPreferences] = await Promise.all([
     getPlayerMeasurements(player.id),
     getActiveInjury(player.id),
     getPlayerInjuryHistory(player.id),
     getPlayerGoals(player.id),
     headers(),
+    getPlayerChecklistPreferences(player.id),
   ]);
   const host = headerList.get("host");
   const protocol = host?.startsWith("localhost") ? "http" : "https";
@@ -300,6 +303,42 @@ export default async function ProfilePage() {
       </section>
 
       <InjuryPanel activeInjury={activeInjury} history={injuryHistory} />
+
+      <section className="mt-8 border-t border-white/10 pt-6">
+        <h2 className="mb-1 text-sm font-bold text-cream">Ma checklist personnelle</h2>
+        <p className="mb-3 text-xs text-steel/70">
+          Ajoute ici tes propres rappels récurrents (ex. clés, chaussures de rechange) — ils apparaîtront
+          automatiquement dans ta checklist privée pour chaque match à venir.
+        </p>
+        <form action={addChecklistPreference} className="mb-3 flex gap-2">
+          <input
+            type="text"
+            name="label"
+            required
+            placeholder="ex. Prendre les clés"
+            className="flex-1 rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
+          />
+          <button type="submit" className="rounded-lg bg-gold px-4 py-2 text-sm font-bold text-navy-deep">
+            Ajouter
+          </button>
+        </form>
+        {checklistPreferences.length === 0 ? (
+          <p className="text-sm text-steel/70">Aucun rappel personnel pour le moment.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {checklistPreferences.map((pref) => (
+              <li key={pref.id} className="flex items-center justify-between rounded-xl border border-white/10 bg-navy-card px-3 py-2">
+                <span className="text-sm text-cream">{pref.label}</span>
+                <form action={deleteChecklistPreference.bind(null, pref.id)}>
+                  <button type="submit" className="text-xs font-medium text-steel/60">
+                    Suppr.
+                  </button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       {isAdmin && (
         <section className="mt-8 border-t border-white/10 pt-6">

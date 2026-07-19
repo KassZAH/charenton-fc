@@ -674,6 +674,7 @@ export type Database = {
           id: string
           label: string
           match_id: string
+          status: string
         }
         Insert: {
           assigned_player_id?: string | null
@@ -682,6 +683,7 @@ export type Database = {
           id?: string
           label: string
           match_id: string
+          status?: string
         }
         Update: {
           assigned_player_id?: string | null
@@ -690,6 +692,7 @@ export type Database = {
           id?: string
           label?: string
           match_id?: string
+          status?: string
         }
         Relationships: [
           {
