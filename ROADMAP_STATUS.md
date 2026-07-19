@@ -330,6 +330,22 @@ Migration nécessaire : non. Déployable indépendamment : oui. Feature flag : n
 
 ---
 
+# Macro-release Lots 8-11 (roadmap V3) — implémentée en preview isolée, non déployée en production
+
+_Branche `macro-8-11-consolidation`, autorisation exceptionnelle de développement groupé (4 sous-lots, gate technique vert après chacun, commit distinct par lot). Rien n'est appliqué au projet Supabase partagé, rien n'est fusionné sur `master`, rien n'est déployé en production tant qu'une validation manuelle explicite n'a pas eu lieu — voir `roadmap-v3-discussion/macro-8-11-consolidation/` pour le détail complet._
+
+**Lot 8 — Transactions critiques restantes : implémenté en preview.** Complète la Phase 3.2 ci-dessus — `upsert_injury_and_sync_availability()` et `restore_audit_entry_transactional()`, deux RPC transactionnelles sur le projet isolé uniquement, remplaçant les séquences multi-étapes non transactionnelles de `injuries-actions.ts`/`audit-actions.ts`. Corrige un écart de sécurité réel découvert pendant l'audit (restauration de fiche joueur qui exposait `pin_hash`/`session_version` à une réécriture silencieuse). 20/20 assertions de test vertes sur le projet isolé.
+
+**Lot 9 — Socle de tests d'intégration : implémenté en preview.** `scripts/isolated-env/` (garde-fou de référence de projet + reset-and-seed idempotent), suite `*.integration.test.ts` séparée (19/19 vertes), CI GitHub Actions (`unit` toujours actif, `integration` conditionné à des secrets dédiés). Tests E2E navigateur délibérément différés (aucun outillage existant, décision documentée).
+
+**Lot 10 — Composants UI transversaux : implémenté en preview.** Six composants nouveaux (`ConfirmDialog`, `EmptyState`, `LoadingSkeleton`, `ErrorState`, `StatusBadge`, `ResponsivePageContainer`, `SectionAccordion`) intégrés dans un sous-ensemble représentatif (saisons, sauvegardes, fiche match, stats). `UndoToast` ajouté par extension du `ToastProvider` existant. `BottomSheet`/`AdminQuickActions` non créés faute d'usage réel identifié.
+
+**Lot 11 — Responsive desktop et accessibilité : implémenté en preview.** `ResponsivePageContainer` appliqué aux 7 pages prioritaires restantes (accueil, matchs, fiche match, stats en `max-w-5xl` ; gestion, coachs, corbeille, santé des données en `max-w-6xl`). `inputMode` ajouté sur les 14 champs numériques du dépôt. Audit exhaustif des cibles tactiles/`aria-describedby`/ordre de tabulation non repris dans ce lot — décision de périmètre assumée, documentée dans le commit.
+
+**Preview consolidée isolée** vérifiée : pointe exclusivement vers `cimbymuifzooxrnenznd` (jamais le projet partagé), dataset de démonstration propre, aucune variable Preview/Production générale modifiée.
+
+---
+
 # PHASE 4 — Socle UI/UX et navigation
 
 ## 4.1 Navigation à cinq onglets
