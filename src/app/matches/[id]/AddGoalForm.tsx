@@ -16,10 +16,14 @@ const KIND_OPTIONS: { value: GoalKind; label: string }[] = [
 
 export function AddGoalForm({ matchId, players }: { matchId: string; players: PlayerOption[] }) {
   const [kind, setKind] = useState<GoalKind>("classique");
+  // Stable pour toute la durée de vie de ce formulaire monté : un double-clic envoie deux fois la
+  // même clé, la seconde insertion est silencieusement ignorée côté serveur (Lot 16).
+  const [idempotencyKey] = useState(() => crypto.randomUUID());
   const action = addGoal.bind(null, matchId);
 
   return (
     <form action={action} className="mt-4 space-y-3 rounded-xl border border-white/10 bg-navy-card p-3">
+      <input type="hidden" name="idempotency_key" value={idempotencyKey} />
       <div>
         <label className="block text-xs font-medium text-cream/80" htmlFor="kind">
           Type

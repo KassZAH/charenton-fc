@@ -58,11 +58,16 @@ export async function CardsSection({ matchId, isAdmin }: { matchId: string; isAd
 }
 
 function AddCardForm({ matchId, players }: { matchId: string; players: Player[] }) {
+  // Générée à chaque rendu serveur du formulaire : un double-clic avant que la page ne se
+  // rafraîchisse envoie deux fois la même clé, la seconde insertion est silencieusement ignorée
+  // côté serveur (Lot 16).
+  const idempotencyKey = crypto.randomUUID();
   return (
     <form
       action={addCard.bind(null, matchId)}
       className="mt-4 space-y-3 rounded-xl border border-white/10 bg-navy-card p-3"
     >
+      <input type="hidden" name="idempotency_key" value={idempotencyKey} />
       <div>
         <label className="block text-xs font-medium text-cream/80" htmlFor="player_id">
           Joueur

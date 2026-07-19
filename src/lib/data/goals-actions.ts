@@ -1,11 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { checkAndAwardBadges } from "./badges";
 import { logChange } from "./audit";
 import { assertMatchSeasonUnlocked } from "./season-lock";
+import { isUniqueViolation } from "./idempotency";
+
+/** idempotency_key (Lot 16) n'existe pas encore dans les types générés (projet isolé uniquement pour l'instant). */
+const untypedDb = supabaseAdmin as unknown as SupabaseClient;
 
 export async function addGoal(matchId: string, formData: FormData) {
   const user = await requireAdmin();
@@ -14,6 +19,7 @@ export async function addGoal(matchId: string, formData: FormData) {
   const kind = String(formData.get("kind") ?? "classique");
   const minuteRaw = String(formData.get("minute") ?? "").trim();
   const minute = minuteRaw ? Number(minuteRaw) : null;
+  const idempotencyKey = String(formData.get("idempotency_key") ?? "") || null;
 
   let payload: {
     scorer_player_id: string | null;
@@ -47,12 +53,15 @@ export async function addGoal(matchId: string, formData: FormData) {
     };
   }
 
-  const { data: goal, error } = await supabaseAdmin
+  const { data: goal, error } = await untypedDb
     .from("goals")
-    .insert({ match_id: matchId, minute, ...payload })
+    .insert({ match_id: matchId, minute, idempotency_key: idempotencyKey, ...payload })
     .select("*")
     .single();
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isUniqueViolation(error)) return;
+    throw new Error(error.message);
+  }
 
   await logChange({
     tableName: "goals",
