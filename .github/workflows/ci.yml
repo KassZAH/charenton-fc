@@ -18,6 +18,14 @@ jobs:
   unit:
     name: Unit — typecheck, lint, tests, build
     runs-on: ubuntu-latest
+    env:
+      # Dummy — next build instancie le client Supabase au chargement de certains modules
+      # pendant la collecte des pages (voir src/lib/supabase/server.ts). Jamais utilisées
+      # pour un vrai appel réseau ici, mêmes valeurs que vitest.config.ts pour la suite
+      # unitaire. Jamais les secrets de production.
+      NEXT_PUBLIC_SUPABASE_URL: https://test.supabase.co
+      SUPABASE_SERVICE_ROLE_KEY: test-service-role-key
+      SESSION_SECRET: test-session-secret-never-used-for-a-real-session
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
