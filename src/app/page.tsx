@@ -110,8 +110,9 @@ export default async function HomePage() {
   const itineraryUrl =
     isMatchToday && nextMatch ? buildItineraryUrl(nextMatch.address, nextMatch.maps_url) : null;
 
-  const readiness =
-    isMatchToday && isAdmin && !hasKickedOff && nextMatch ? await getMatchReadiness(nextMatch.id) : null;
+  // Alertes de préparation visibles à tous les rôles dès qu'un prochain match existe (Lot 12) —
+  // pas seulement le jour J : un manque de gardien ou de matériel est utile à voir en avance.
+  const readiness = nextMatch && !hasKickedOff ? await getMatchReadiness(nextMatch.id) : null;
 
   const funnyLine = getFunnyLine({
     goals: myStats.goals,

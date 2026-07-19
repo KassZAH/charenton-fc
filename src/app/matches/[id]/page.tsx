@@ -392,7 +392,9 @@ async function AdminSection({
       {readiness && (
         <div className="mt-4 rounded-xl border border-white/10 bg-navy-card p-3">
           <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-steel/70">État de préparation</p>
-          {readiness.warnings.length === 0 ? (
+          {readiness.warnings.length === 0 && readiness.awaitingResponses ? (
+            <p className="text-sm text-steel/70">⏳ En attente des réponses des joueurs.</p>
+          ) : readiness.warnings.length === 0 ? (
             <p className="text-sm text-emerald-400">✅ Tout est prêt.</p>
           ) : (
             <ul className="space-y-1">
