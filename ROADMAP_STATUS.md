@@ -369,17 +369,17 @@ Fusion fast-forward `lot-11-5-fla-standings` → `master` (commit `696d26b`), CI
 
 # Macro-release A (roadmap V3) — Match Day v1, Lots 12 à 18
 
-**Statut : déployée en production, en attente de validation utilisateur finale.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` — un seul lot à la fois n'était plus la règle pour ce groupe, mais chaque lot garde son propre commit, son propre gate, et n'a jamais mélangé son contenu avec le suivant.
+**Statut : TERMINÉE — validée par l'utilisateur en production le 19/07/2026.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` — un seul lot à la fois n'était plus la règle pour ce groupe, mais chaque lot garde son propre commit, son propre gate, et n'a jamais mélangé son contenu avec le suivant.
 
-- Lot 12 déployé en production, en attente de validation utilisateur finale.
-- Lot 13 déployé en production, en attente de validation utilisateur finale.
-- Lot 14 déployé en production, en attente de validation utilisateur finale.
-- Lot 15 déployé en production, en attente de validation utilisateur finale.
-- Lot 16 déployé en production, en attente de validation utilisateur finale.
-- Lot 17 déployé en production, en attente de validation utilisateur finale.
-- Lot 18 déployé en production, en attente de validation utilisateur finale.
+- Lot 12 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 13 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 14 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 15 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 16 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 17 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 18 — TERMINÉ (déployé en production, validé par l'utilisateur).
 
-Déploiement production vérifié : les 9 migrations appliquées au projet Supabase partagé après backup protégé préalable (`before_macro_a_match_day_v1_production`), fusion fast-forward `macro-a-match-day-v1` → `master` (commit `9a55f22`), CI verte, Vercel `target: production`/`READY` confirmé sur le commit exact, vérificateur de déploiement 13/13 conforme en production. Aucun lot n'est encore marqué `TERMINÉ` dans la Roadmap V3 — en attente de la validation finale.
+Déploiement production vérifié : les 9 migrations appliquées au projet Supabase partagé après backup protégé préalable (`before_macro_a_match_day_v1_production`), fusion fast-forward `macro-a-match-day-v1` → `master` (commit `9a55f22`), CI verte, Vercel `target: production`/`READY` confirmé sur le commit exact, vérificateur de déploiement 13/13 conforme en production. Les Lots 12 à 18 sont marqués `TERMINÉ` dans la Roadmap V3 (`ROADMAP_EXECUTION_COMPLETE_CHARENTON_FC_V3.md`) après validation finale de l'utilisateur. Macro-release B non commencée.
 
 **Lot 12 — Alertes de préparation du match.** `getMatchReadiness` distingue désormais "pas encore de réponse" (jamais un faux "manque") d'un manque réel — l'ancien comportement aurait affiché "aucun gardien confirmé" même avant toute réponse. Visible à tous les rôles pour tout match à venir, plus seulement le jour J en tant qu'admin.
 
