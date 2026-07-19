@@ -72,6 +72,15 @@ async function main() {
   }
 
   // --- 3. Migrations locales/distantes alignées ---
+  // `supabase migration list --linked` dépend de l'état de lien ambiant de la CLI, indépendant des
+  // identifiants Supabase (env vars) utilisés pour le reste de ce script — s'auto-relie d'abord au
+  // projet réellement ciblé plutôt que de faire confiance à un lien CLI potentiellement resté sur
+  // un autre projet (piège déjà rencontré manuellement plusieurs fois dans ce projet).
+  try {
+    execSync(`npx supabase link --project-ref ${projectRef}`, { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
+  } catch (e) {
+    record("migrations", false, `impossible de lier la CLI au projet ${projectRef} : ${e.message.split("\n")[0]}`);
+  }
   try {
     const out = execSync("npx supabase migration list --linked", { encoding: "utf8", stdio: ["pipe", "pipe", "pipe"] });
     const braceIndex = out.indexOf("{");
