@@ -509,7 +509,9 @@ async function seedMainScenarioMatch(ids) {
     ...calledUp.map((k) => ({ match_id: match.id, player_id: ids[k], squad_status: "called_up", is_planned_goalkeeper: k === "p1" })),
     ...waitlist.map((k) => ({ match_id: match.id, player_id: ids[k], squad_status: "waitlist", is_planned_goalkeeper: false })),
   ]);
-  await supabase.from("matches").update({ squad_published_at: new Date().toISOString(), squad_locked_at: new Date().toISOString() }).eq("id", match.id);
+  // Volontairement laissé en brouillon (ni publié ni verrouillé) : c'est uniquement dans cette vue
+  // d'édition que la suggestion de rotation du coach est affichée (MatchSquadSection.tsx) — la
+  // verrouiller aurait masqué la fonctionnalité que ce match sert justement à démontrer.
 
   await supabase.from("availability").insert([
     { match_id: match.id, player_id: ids.p1, status: "present", first_responded_at: timestampOffset(0, 9), last_changed_at: timestampOffset(0, 9), late_response: false },
