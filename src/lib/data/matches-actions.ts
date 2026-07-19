@@ -103,6 +103,7 @@ export async function createMatch(formData: FormData) {
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
   const responseDeadline = String(formData.get("response_deadline") ?? "") || null;
+  const venueId = String(formData.get("venue_id") ?? "") || null;
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
@@ -125,6 +126,7 @@ export async function createMatch(formData: FormData) {
       location,
       address,
       maps_url: mapsUrl,
+      venue_id: venueId,
       home_or_away: homeOrAway,
       match_type: matchType,
       opponent_id: opponentId,
@@ -158,6 +160,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
   const matchType = String(formData.get("match_type") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim() || null;
   const responseDeadline = String(formData.get("response_deadline") ?? "") || null;
+  const venueId = String(formData.get("venue_id") ?? "") || null;
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
@@ -174,6 +177,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
       location,
       address,
       maps_url: mapsUrl,
+      venue_id: venueId,
       home_or_away: homeOrAway,
       match_type: matchType,
       opponent_id: opponentId,
@@ -375,6 +379,7 @@ export async function duplicateMatch(sourceMatchId: string, formData: FormData) 
       location: source.location,
       address: source.address,
       maps_url: source.maps_url,
+      venue_id: source.venue_id,
       home_or_away: source.home_or_away,
       match_type: source.match_type,
       opponent_id: source.opponent_id,

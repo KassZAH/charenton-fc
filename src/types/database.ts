@@ -802,6 +802,7 @@ export type Database = {
           status: string
           team_score: number | null
           updated_at: string | null
+          venue_id: string | null
         }
         Insert: {
           address?: string | null
@@ -825,6 +826,7 @@ export type Database = {
           status?: string
           team_score?: number | null
           updated_at?: string | null
+          venue_id?: string | null
         }
         Update: {
           address?: string | null
@@ -848,6 +850,7 @@ export type Database = {
           status?: string
           team_score?: number | null
           updated_at?: string | null
+          venue_id?: string | null
         }
         Relationships: [
           {

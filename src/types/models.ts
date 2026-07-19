@@ -139,6 +139,41 @@ export type PlayerRestriction = {
   ended_at: string | null;
 };
 
+/** venues — pas dans les types générés (Lot 22, roadmap V3), même convention que PlayerRestriction. */
+export type Venue = {
+  id: string;
+  name: string;
+  address: string | null;
+  maps_url: string | null;
+  parking_info: string | null;
+  changing_rooms_info: string | null;
+  access_code: string | null;
+  surface_type: string | null;
+  lighting: boolean | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+/** match_templates.home_or_away — contrainte check en base. */
+export type MatchTemplateHomeOrAway = "home" | "away";
+
+/** match_templates — pas dans les types générés (Lot 22, roadmap V3). */
+export type MatchTemplate = {
+  id: string;
+  name: string;
+  venue_id: string | null;
+  kickoff_time: string | null;
+  meeting_offset_minutes: number | null;
+  match_type: string | null;
+  home_or_away: MatchTemplateHomeOrAway | null;
+  max_players: number | null;
+  default_equipment_items: string[] | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 /** backups.trigger_reason — contrainte check en base (étendue au Lot 6, roadmap V3). */
 export type BackupTriggerReason =
   | "manual"

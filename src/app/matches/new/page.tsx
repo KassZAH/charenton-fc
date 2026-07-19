@@ -1,12 +1,14 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getOpponents } from "@/lib/data/opponents";
+import { getVenues } from "@/lib/data/venues";
 import { createMatch } from "@/lib/data/matches-actions";
 import { KickoffAndMeetingFields } from "../KickoffAndMeetingFields";
+import { VenuePicker } from "../VenuePicker";
 
 export default async function NewMatchPage() {
   await requireAdmin();
-  const opponents = await getOpponents();
+  const [opponents, venues] = await Promise.all([getOpponents(), getVenues()]);
 
   return (
     <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
@@ -76,43 +78,7 @@ export default async function NewMatchPage() {
           />
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-cream" htmlFor="location">
-            Lieu
-          </label>
-          <input
-            id="location"
-            type="text"
-            name="location"
-            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="address">
-              Adresse
-            </label>
-            <input
-              id="address"
-              type="text"
-              name="address"
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-cream" htmlFor="maps_url">
-              Lien Google Maps
-            </label>
-            <input
-              id="maps_url"
-              type="url"
-              name="maps_url"
-              placeholder="https://maps.google.com/..."
-              className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"
-            />
-          </div>
-        </div>
+        <VenuePicker venues={venues} />
 
         <div>
           <label className="block text-sm font-medium text-cream" htmlFor="home_or_away">

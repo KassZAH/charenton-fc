@@ -61,6 +61,22 @@ export default async function AdminPage() {
             🕓 Historique des modifications
           </Link>
         </li>
+        <li>
+          <Link
+            href="/admin/terrains"
+            className="block rounded-xl border border-white/10 bg-navy-card p-3 text-sm font-semibold text-cream"
+          >
+            🏟️ Terrains
+          </Link>
+        </li>
+        <li>
+          <Link
+            href="/admin/modeles"
+            className="block rounded-xl border border-white/10 bg-navy-card p-3 text-sm font-semibold text-cream"
+          >
+            📐 Modèles de match
+          </Link>
+        </li>
         {user.isOwner && (
           <li>
             <Link

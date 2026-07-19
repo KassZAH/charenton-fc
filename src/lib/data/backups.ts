@@ -45,6 +45,8 @@ export const BACKUP_TABLES = [
   "opponent_external_mappings",
   "match_squad_entries",
   "player_restrictions",
+  "venues",
+  "match_templates",
 ] as const;
 
 /** Tables du schéma public volontairement absentes de BACKUP_TABLES, avec la raison exacte (Lot 6, roadmap V3). */
