@@ -367,6 +367,32 @@ Fusion fast-forward `lot-11-5-fla-standings` → `master` (commit `696d26b`), CI
 
 ---
 
+# Macro-release A (roadmap V3) — Match Day v1, Lots 12 à 18
+
+**Statut : implémenté en preview, en attente de validation utilisateur.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` — un seul lot à la fois n'était plus la règle pour ce groupe, mais chaque lot garde son propre commit, son propre gate, et n'a jamais mélangé son contenu avec le suivant.
+
+**Lot 12 — Alertes de préparation du match.** `getMatchReadiness` distingue désormais "pas encore de réponse" (jamais un faux "manque") d'un manque réel — l'ancien comportement aurait affiché "aucun gardien confirmé" même avant toute réponse. Visible à tous les rôles pour tout match à venir, plus seulement le jour J en tant qu'admin.
+
+**Lot 13 — Gardien par match.** `match_players.goalkeeper` (présent en base depuis le début, jamais alimenté) devient la source réelle une fois la feuille de match confirmée ; repli documenté sur le poste principal déclaré avant cette confirmation. Plusieurs gardiens possibles, RPC `set_match_goalkeepers` transactionnelle.
+
+**Lot 14 — Cycle de vie d'un match.** `matches_status_check` autorisait déjà draft/scheduled/completed/cancelled/postponed depuis la migration baseline (note antérieure inexacte, corrigée) — seul `live` manquait. Nouvelles colonnes `started_at`/`ended_at`/`completion_status`/`validated_at`/`validated_by_player_id`, matrice de transitions explicite et testée en pur, `updateMatchResult` (résultat express historique) reste l'unique chemin vers `completed` depuis `scheduled`, désormais validé contre la matrice plutôt que sans contrôle.
+
+**Lot 15 — Match en cours minimal.** Nouvelle route `/matches/[id]/live` : score dérivé en direct des buts (jamais resaisi), chronomètre indicatif, réutilise les sections existantes (feuille de match, gardien, buts, cartons) plutôt que de les dupliquer.
+
+**Lot 16 — Concurrence et idempotence du live.** `idempotency_key` sur buts/cartons (index unique partiel) — un double-clic envoie deux fois la même clé, la seconde insertion est silencieusement ignorée. Vérifié avec deux vrais contextes Playwright ajoutant des événements en parallèle.
+
+**Lot 17 — Verrouillage du groupe convoqué.** Nouvelle table `match_squad_entries` (convoqués/liste d'attente/gardien prévu), publication+verrouillage transactionnels, déverrouillage réservé Coach/Propriétaire, présence réelle toujours indépendante. Deux bugs réels trouvés en testant la RPC en direct avant d'écrire le moindre code applicatif : comparaison SQL à NULL (jamais false), collision de nom entre une colonne `RETURNS TABLE` et une vraie colonne (même classe de bug qu'au Lot 8) — les deux corrigés et revérifiés avant d'écrire l'UI.
+
+**Lot 18 — Saisie groupée des buts.** `insert_goals_batch`/`cancel_goals_batch` : transaction unique, score toujours dérivé des buts insérés, idempotente, annulation complète du lot restaurant l'état antérieur exact. Mêmes deux classes de bugs qu'au Lot 17, trouvées et corrigées de la même façon avant l'UI.
+
+**Bootstrap d'automatisation (protocole §2) :** socle Playwright réutilisable (`e2e/`), 30 tests verts sur mobile et desktop, contre un vrai serveur local **et** contre la preview déployée — scénario consolidé complet (création, alertes, groupe convoqué publié/verrouillé/déverrouillé, lecture Joueur, démarrage live, deux contextes réels en concurrence, double-clic sans duplication, présence réelle indépendante, fin de match, saisie groupée + annulation, nettoyage vérifié par un 404 réel). Job CI conditionnel (`e2e`), même garde-fou de secrets que le job d'intégration existant. `scripts/verify-deployment.js` (`npm run verify:deployment`) : git, migrations, RLS, permissions anon, couverture des sauvegardes, compteurs, fixtures, santé HTTP — 14/14 conforme sur la preview déployée.
+
+**Deux correctifs de complétude/UX trouvés pendant la préparation de ce rapport, avant toute validation utilisateur :** `match_squad_entries` (Lot 17) absent du registre de sauvegarde — détecté manuellement contre le projet isolé, le test automatisé du Lot 6 ne pouvant pas encore le voir (il compare toujours au schéma du projet partagé, où cette table n'existe pas encore à ce stade). Le formulaire de saisie groupée perdait son option d'annulation immédiatement après un succès, la page parente cessant de le rendre dès que `revalidatePath` reflétait le nouveau statut `completed` — trouvé par le scénario E2E, pas par les tests unitaires/intégration.
+
+Branche `macro-a-match-day-v1`, preview isolée déployée et validée techniquement — voir `roadmap-v3-discussion/macro-a-match-day-v1/` pour le rapport complet.
+
+---
+
 # PHASE 4 — Socle UI/UX et navigation
 
 ## 4.1 Navigation à cinq onglets
@@ -447,21 +473,17 @@ Migration nécessaire : non.
 
 # PHASE 5 — Cycle de vie du match et mode « Match en cours »
 
-**Statut global : À IMPLÉMENTER (phase entière, aucune sous-partie construite)**
+**Statut global : implémenté en preview (Macro-release A, Lots 12-18 — voir section dédiée juste avant PHASE 4), en attente de validation utilisateur.**
 
-Ce qui existe aujourd'hui : `matches.status` est un simple `text` avec au minimum les valeurs `scheduled`/`completed` observées en usage (pas de `draft`/`live`/`cancelled`/`postponed` distincts dans le code applicatif actuel — à vérifier précisément avant d'étendre, aucune contrainte `check` ne limite les valeurs possibles aujourd'hui). Aucune colonne `started_at`, `ended_at`, `completion_status`, `validated_at`, `validated_by_player_id`. Pas de route `/matches/[id]/live`. La saisie après-match ("résultat express", §5.7) existe déjà et fonctionne bien — c'est le socle sur lequel toute la Phase 5 doit se greffer sans le casser.
+Cette section décrivait initialement une phase entièrement à construire ; elle a été réalisée dans son ensemble par la Macro-release A. Correction au passage : `matches_status_check` autorisait déjà `draft`/`cancelled`/`postponed` depuis la toute première migration baseline — l'affirmation ci-dessous ("aucune contrainte check") était inexacte, seul `live` manquait réellement. Le reste de cette entrée (analyse d'origine) est conservé tel quel pour l'historique du raisonnement, mais n'est plus l'état courant du dépôt.
+
+Ce qui existait avant ce lot : `matches.status` est un simple `text` avec au minimum les valeurs `scheduled`/`completed` observées en usage (pas de `draft`/`live`/`cancelled`/`postponed` distincts dans le code applicatif actuel — à vérifier précisément avant d'étendre, aucune contrainte `check` ne limite les valeurs possibles aujourd'hui). Aucune colonne `started_at`, `ended_at`, `completion_status`, `validated_at`, `validated_by_player_id`. Pas de route `/matches/[id]/live`. La saisie après-match ("résultat express", §5.7) existe déjà et fonctionne bien — c'est le socle sur lequel toute la Phase 5 doit se greffer sans le casser.
 
 `match_players.goalkeeper` (booléen) et `availability.goalkeeper_available` existent en base **depuis le début du projet** mais ne sont alimentés par aucune interface — confirmé par une recherche exhaustive dans le code (`grep goalkeeper` ne retourne que les définitions de type). `getMatchReadiness()` (`src/lib/data/match-readiness.ts`, fonctionnalité existante non documentée dans la V2, voir section dédiée plus bas) détecte déjà "aucun gardien confirmé" mais **via le poste principal du joueur** (`primary_position === "Gardien"`), pas via une désignation par match — un contournement fonctionnel qui masque en partie le manque, mais ne le comble pas (un joueur qui dépanne au poste de gardien un match donné sans avoir "Gardien" comme poste principal ne serait pas détecté).
 
-Fichiers concernés (nouveaux) : `src/app/matches/[id]/live/page.tsx`, `src/lib/data/matches-live-actions.ts` (nouveau), extension de `roster-actions.ts` pour le gardien.
-Tables/migrations : `matches` (colonnes de cycle de vie), potentiellement un enum contrôlé pour `completion_status`.
-Dépendances techniques : Phase 3 (transactions, verrouillage) et Phase 4 (composants, notamment pour l'écran live) doivent être solides avant d'attaquer cette phase — cohérent avec l'ordre de la V2 elle-même (Phases 3-4 → 5).
-Risque sur données existantes : **élevé si mal fait** — c'est la phase la plus délicate de toute la roadmap (concurrence, idempotence, ne jamais perdre un but saisi en direct). Nécessite la stratégie de concurrence décrite en §5.5 dès la première itération, pas en rattrapage.
-Effort estimé : **XL** pour la phase complète ; **L** pour un premier sous-lot minimal (démarrer/terminer un match + saisie de gardien, sans écran live temps réel).
-Tests à ajouter : voir liste exhaustive V2 §5, en particulier l'idempotence des événements et le double-clic concurrent.
-Migration nécessaire : oui, plusieurs.
-Déployable indépendamment : le sous-lot "gardien par match" (5.4) est isolable et à faible risque — bon candidat de premier sous-lot, indépendant du reste de la phase. Le mode live complet (5.2-5.5) ne l'est pas — c'est une refonte du cœur de la saisie de match.
-Feature flag léger : **fortement recommandé** — activer le mode live pour une poignée de matchs test avant un déploiement large, sans toucher au flux "résultat express" existant qui doit continuer à fonctionner en parallèle indéfiniment (§5.7 l'exige explicitement).
+Migration nécessaire : oui, appliquée au projet isolé uniquement pour l'instant (Lots 14, 16, 17, 18).
+Déployable indépendamment : oui, groupé dans la Macro-release A par choix de protocole plutôt que lot par lot.
+Feature flag léger : pas de flag applicatif séparé — le flux "résultat express" existant continue de fonctionner sans modification pour tout match jamais passé par `live` (vérifié).
 
 ---
 
