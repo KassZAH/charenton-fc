@@ -15,12 +15,15 @@ export function AdminAvailabilityRow({
   playerName,
   initialStatus,
   activeInjuryReturnDateLabel,
+  lateResponse,
 }: {
   matchId: string;
   playerId: string;
   playerName: string;
   initialStatus: AvailabilityStatus | null;
   activeInjuryReturnDateLabel?: string | null;
+  /** Lot 20, roadmap V3 — première réponse arrivée après la date limite, jamais un blocage. */
+  lateResponse?: boolean;
 }) {
   const [status, setStatus] = useState(initialStatus);
   const [isPending, startTransition] = useTransition();
@@ -79,7 +82,14 @@ export function AdminAvailabilityRow({
 
   return (
     <div className="flex items-center justify-between gap-2 rounded-lg border border-white/10 bg-navy-card px-3 py-2">
-      <span className="text-sm text-cream">{playerName}</span>
+      <span className="text-sm text-cream">
+        {playerName}
+        {lateResponse && (
+          <span className="ml-1 text-xs text-gold" title="Réponse arrivée après la date limite">
+            ⏰
+          </span>
+        )}
+      </span>
       <select
         value={status ?? ""}
         disabled={isPending}

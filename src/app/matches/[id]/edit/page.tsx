@@ -69,6 +69,19 @@ export default async function EditMatchPage({ params }: { params: Promise<{ id: 
         />
 
         <div>
+          <label className="block text-sm font-medium text-cream" htmlFor="response_deadline">
+            Date limite de réponse (facultatif)
+          </label>
+          <input
+            id="response_deadline"
+            type="datetime-local"
+            name="response_deadline"
+            defaultValue={match.response_deadline ? match.response_deadline.slice(0, 16) : ""}
+            className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
+          />
+        </div>
+
+        <div>
           <label className="block text-sm font-medium text-cream" htmlFor="location">
             Lieu
           </label>

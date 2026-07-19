@@ -66,9 +66,12 @@ export type Database = {
           available_seats: number | null
           can_drive: boolean | null
           comment: string | null
+          first_responded_at: string | null
           goalkeeper_available: boolean | null
           id: string
           injury_id: string | null
+          last_changed_at: string | null
+          late_response: boolean | null
           match_id: string
           needs_ride: boolean | null
           player_id: string
@@ -80,9 +83,12 @@ export type Database = {
           available_seats?: number | null
           can_drive?: boolean | null
           comment?: string | null
+          first_responded_at?: string | null
           goalkeeper_available?: boolean | null
           id?: string
           injury_id?: string | null
+          last_changed_at?: string | null
+          late_response?: boolean | null
           match_id: string
           needs_ride?: boolean | null
           player_id: string
@@ -94,9 +100,12 @@ export type Database = {
           available_seats?: number | null
           can_drive?: boolean | null
           comment?: string | null
+          first_responded_at?: string | null
           goalkeeper_available?: boolean | null
           id?: string
           injury_id?: string | null
+          last_changed_at?: string | null
+          late_response?: boolean | null
           match_id?: string
           needs_ride?: boolean | null
           player_id?: string
@@ -787,6 +796,7 @@ export type Database = {
           meeting_time: string | null
           opponent_id: string | null
           opponent_score: number | null
+          response_deadline: string | null
           season_id: string | null
           shirt: string | null
           status: string
@@ -809,6 +819,7 @@ export type Database = {
           meeting_time?: string | null
           opponent_id?: string | null
           opponent_score?: number | null
+          response_deadline?: string | null
           season_id?: string | null
           shirt?: string | null
           status?: string
@@ -831,6 +842,7 @@ export type Database = {
           meeting_time?: string | null
           opponent_id?: string | null
           opponent_score?: number | null
+          response_deadline?: string | null
           season_id?: string | null
           shirt?: string | null
           status?: string

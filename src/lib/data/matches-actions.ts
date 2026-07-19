@@ -13,6 +13,7 @@ import { getMatchEquipment } from "./equipment";
 import { getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "./injuries";
 import { assertMatchSeasonUnlocked } from "./season-lock";
 import { isTransitionAllowed } from "./match-lifecycle-rules";
+import { computeLateResponse } from "./response-deadline";
 import type { AvailabilityStatus, MatchStatus } from "@/types/models";
 
 /** ended_at/completion_status (Lot 14) n'existent pas encore dans les types générés (projet isolé uniquement pour l'instant). */
@@ -101,6 +102,7 @@ export async function createMatch(formData: FormData) {
   const mapsUrl = String(formData.get("maps_url") ?? "").trim() || null;
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
+  const responseDeadline = String(formData.get("response_deadline") ?? "") || null;
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
@@ -128,6 +130,7 @@ export async function createMatch(formData: FormData) {
       opponent_id: opponentId,
       season_id: activeSeason?.id ?? null,
       status: "scheduled",
+      response_deadline: responseDeadline,
     })
     .select("id")
     .single();
@@ -154,6 +157,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
   const homeOrAway = String(formData.get("home_or_away") ?? "home");
   const matchType = String(formData.get("match_type") ?? "") || null;
   const description = String(formData.get("description") ?? "").trim() || null;
+  const responseDeadline = String(formData.get("response_deadline") ?? "") || null;
 
   if (!matchDate) {
     throw new Error("La date du match est obligatoire.");
@@ -174,6 +178,7 @@ export async function updateMatchDetails(matchId: string, formData: FormData) {
       match_type: matchType,
       opponent_id: opponentId,
       description,
+      response_deadline: responseDeadline,
     })
     .eq("id", matchId);
   if (error) throw new Error(error.message);
@@ -247,18 +252,32 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
 
 const VALID_STATUSES: AvailabilityStatus[] = ["present", "uncertain", "absent", "injured"];
 
-async function upsertAvailability(matchId: string, playerId: string, status: AvailabilityStatus) {
+/**
+ * `recordResponseTiming` (Lot 20, roadmap V3) : uniquement quand le joueur répond lui-même
+ * (setAvailability) — jamais quand un admin corrige la réponse d'un autre joueur
+ * (setAvailabilityAsAdmin), qui ne doit jamais fabriquer une ponctualité que le joueur n'a pas
+ * lui-même produite. first_responded_at/late_response sont figés à la première réponse ;
+ * last_changed_at est mis à jour à chaque changement, réponse initiale ou non.
+ */
+async function upsertAvailability(
+  matchId: string,
+  playerId: string,
+  status: AvailabilityStatus,
+  recordResponseTiming: boolean
+) {
   if (!VALID_STATUSES.includes(status)) {
     throw new Error("Statut invalide.");
   }
 
   const { data: existing, error: findError } = await supabaseAdmin
     .from("availability")
-    .select("id")
+    .select("id, first_responded_at")
     .eq("match_id", matchId)
     .eq("player_id", playerId)
     .maybeSingle();
   if (findError) throw new Error(findError.message);
+
+  const timingPatch = recordResponseTiming ? await buildResponseTimingPatch(matchId, existing?.first_responded_at ?? null) : {};
 
   if (existing) {
     // injury_id remis à zéro : un statut posé à la main n'est plus rattaché à la
@@ -266,13 +285,13 @@ async function upsertAvailability(matchId: string, playerId: string, status: Ava
     // pour le cas "je joue quand même malgré la blessure", qui repasse par ici).
     const { error } = await supabaseAdmin
       .from("availability")
-      .update({ status, updated_at: new Date().toISOString(), injury_id: null })
+      .update({ status, updated_at: new Date().toISOString(), injury_id: null, ...timingPatch })
       .eq("id", existing.id);
     if (error) throw new Error(error.message);
   } else {
     const { error } = await supabaseAdmin
       .from("availability")
-      .insert({ match_id: matchId, player_id: playerId, status, injury_id: null });
+      .insert({ match_id: matchId, player_id: playerId, status, injury_id: null, ...timingPatch });
     if (error) throw new Error(error.message);
   }
 
@@ -280,9 +299,20 @@ async function upsertAvailability(matchId: string, playerId: string, status: Ava
   revalidatePath("/");
 }
 
+async function buildResponseTimingPatch(matchId: string, existingFirstRespondedAt: string | null) {
+  const now = new Date();
+  const patch: Record<string, unknown> = { last_changed_at: now.toISOString() };
+  if (!existingFirstRespondedAt) {
+    const { data: match } = await supabaseAdmin.from("matches").select("response_deadline").eq("id", matchId).maybeSingle();
+    patch.first_responded_at = now.toISOString();
+    patch.late_response = computeLateResponse(now, match?.response_deadline ?? null);
+  }
+  return patch;
+}
+
 export async function setAvailability(matchId: string, status: AvailabilityStatus) {
   const user = await requireUser();
-  await upsertAvailability(matchId, user.playerId, status);
+  await upsertAvailability(matchId, user.playerId, status, true);
 }
 
 /** Permet à l'admin de corriger la réponse d'un autre joueur (désistement, erreur, etc.). */
@@ -292,7 +322,7 @@ export async function setAvailabilityAsAdmin(
   status: AvailabilityStatus
 ) {
   await requireAdmin();
-  await upsertAvailability(matchId, playerId, status);
+  await upsertAvailability(matchId, playerId, status, false);
 }
 
 export async function setCaptain(matchId: string, formData: FormData) {

@@ -8,6 +8,7 @@ function makeMatch(overrides: Partial<MatchWithOpponent> = {}): MatchWithOpponen
     season_id: null,
     opponent_id: null,
     captain_player_id: null,
+    response_deadline: null,
     opponent_name: "FC Poteaux",
     match_date: "2026-07-25",
     kickoff_time: "15:00:00",

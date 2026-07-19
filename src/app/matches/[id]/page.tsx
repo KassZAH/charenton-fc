@@ -14,7 +14,7 @@ import { getMatchReadiness } from "@/lib/data/match-readiness";
 import { getMatchCompleteness } from "@/lib/data/match-completeness";
 import { getMatchGoalkeepers } from "@/lib/data/roster";
 import { buildItineraryUrl } from "@/lib/maps";
-import { formatMatchDate, formatTime } from "@/lib/format";
+import { formatMatchDate, formatTime, formatShortDateTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS, MATCH_STATUS_LABELS } from "@/lib/labels";
 import { MatchLifecycleActions } from "./MatchLifecycleActions";
 import type { MatchStatus } from "@/types/models";
@@ -292,6 +292,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
           location={match.location}
           captainPlayerId={match.captain_player_id}
           captainName={captainName}
+          responseDeadline={match.response_deadline}
         />
       )}
     </ResponsivePageContainer>
@@ -312,6 +313,7 @@ async function AdminSection({
   location,
   captainPlayerId,
   captainName,
+  responseDeadline,
 }: {
   matchId: string;
   matchDate: string;
@@ -326,6 +328,7 @@ async function AdminSection({
   location: string | null;
   captainPlayerId: string | null;
   captainName: string | null;
+  responseDeadline: string | null;
 }) {
   const [summary, activeInjuriesByPlayerId, players, readiness, completeness] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
@@ -390,7 +393,12 @@ async function AdminSection({
 
   return (
     <section className="mt-8 border-t border-white/10 pt-6">
-      <h2 className="mb-3 text-sm font-bold text-cream">Réponses de l&apos;équipe</h2>
+      <h2 className="mb-1 text-sm font-bold text-cream">Réponses de l&apos;équipe</h2>
+      {responseDeadline && (
+        <p className="mb-3 text-xs text-steel/70">
+          Date limite de réponse : {formatShortDateTime(responseDeadline)}
+        </p>
+      )}
       <div className="space-y-4">
         {GROUP_ORDER.map((key) => (
           <div key={key}>
@@ -408,6 +416,7 @@ async function AdminSection({
                     playerId={g.player.id}
                     playerName={nameOf(g)}
                     initialStatus={g.status}
+                    lateResponse={g.lateResponse}
                     activeInjuryReturnDateLabel={injuryReturnLabelForDate(
                       activeInjuriesByPlayerId.get(g.player.id),
                       matchDate

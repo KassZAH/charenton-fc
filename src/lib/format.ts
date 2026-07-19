@@ -20,3 +20,8 @@ export function formatShortDate(isoString: string) {
 export function formatShortDateOnly(dateStr: string) {
   return new Date(`${dateStr}T00:00:00`).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
+
+/** Pour un timestamp complet avec heure (ex: matches.response_deadline, Lot 20). */
+export function formatShortDateTime(isoString: string) {
+  return new Date(isoString).toLocaleString("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+}

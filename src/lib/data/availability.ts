@@ -20,22 +20,26 @@ export async function getMyAvailability(
 export type PlayerAvailability = {
   player: Player;
   status: AvailabilityStatus | null;
+  /** Lot 20, roadmap V3 — vrai si la première réponse du joueur est arrivée après response_deadline. */
+  lateResponse: boolean;
 };
 
 /** Réponse de chaque joueur actif pour un match — utilisé par la vue organisateur. */
 export async function getMatchAvailabilitySummary(matchId: string): Promise<PlayerAvailability[]> {
   const [players, { data: rows, error }] = await Promise.all([
     getActivePlayers(),
-    supabaseAdmin.from("availability").select("player_id, status").eq("match_id", matchId),
+    supabaseAdmin.from("availability").select("player_id, status, late_response").eq("match_id", matchId),
   ]);
   if (error) throw new Error(error.message);
 
-  const statusByPlayerId = new Map(
-    (rows ?? []).map((r) => [r.player_id, r.status as AvailabilityStatus])
-  );
+  const rowByPlayerId = new Map((rows ?? []).map((r) => [r.player_id, r]));
 
-  return players.map((player) => ({
-    player,
-    status: statusByPlayerId.get(player.id) ?? null,
-  }));
+  return players.map((player) => {
+    const row = rowByPlayerId.get(player.id);
+    return {
+      player,
+      status: (row?.status as AvailabilityStatus | undefined) ?? null,
+      lateResponse: row?.late_response ?? false,
+    };
+  });
 }
