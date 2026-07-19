@@ -2,6 +2,7 @@ import { getActivePlayers } from "@/lib/data/players";
 import { getMatchSquad } from "@/lib/data/match-squad";
 import { saveMatchSquadDraft, publishMatchSquad, unlockMatchSquad } from "@/lib/data/match-squad-actions";
 import { getActiveRestrictionsByPlayerId } from "@/lib/data/player-restrictions";
+import { getRotationSuggestions } from "@/lib/data/rotation";
 import { RESTRICTION_TYPE_LABELS, type PlayerRestriction, type RestrictionType } from "@/types/models";
 
 /**
@@ -13,10 +14,11 @@ import { RESTRICTION_TYPE_LABELS, type PlayerRestriction, type RestrictionType }
  * active — jamais un blocage de la sélection, juste un signal ⚠️ à côté du nom.
  */
 export async function MatchSquadSection({ matchId, isAdmin }: { matchId: string; isAdmin: boolean }) {
-  const [players, squad, restrictionsByPlayerId] = await Promise.all([
+  const [players, squad, restrictionsByPlayerId, rotationSuggestions] = await Promise.all([
     getActivePlayers(),
     getMatchSquad(matchId),
     isAdmin ? getActiveRestrictionsByPlayerId() : Promise.resolve(new Map<string, PlayerRestriction>()),
+    isAdmin ? getRotationSuggestions(matchId) : Promise.resolve([]),
   ]);
   const nameById = new Map(players.map((p) => [p.id, p.nickname || p.first_name]));
 
@@ -84,6 +86,22 @@ export async function MatchSquadSection({ matchId, isAdmin }: { matchId: string;
       <p className="mb-3 text-xs text-steel/70">
         Prévisionnel, distinct de la présence réelle — publie pour verrouiller.
       </p>
+
+      {rotationSuggestions.length > 0 && (
+        <div className="mb-4 rounded-xl border border-gold/20 bg-gold/5 p-3">
+          <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-gold">
+            Suggestion de rotation (privé, tu restes décisionnaire)
+          </p>
+          <ul className="space-y-1">
+            {rotationSuggestions.map((s) => (
+              <li key={s.playerId} className="text-xs text-cream/80">
+                {s.reason}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <form action={saveMatchSquadDraft.bind(null, matchId)} className="space-y-4">
         <div>
           <p className="mb-1.5 text-xs font-bold uppercase tracking-wide text-steel/70">Convoqués</p>

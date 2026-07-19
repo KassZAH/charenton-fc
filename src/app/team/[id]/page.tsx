@@ -14,6 +14,7 @@ import { getTeamRecordWithWithoutPlayer } from "@/lib/data/stats-advanced";
 import { getVisiblePlayerGoals } from "@/lib/data/player-goals";
 import { getActiveInjury } from "@/lib/data/injuries";
 import { getActiveRestriction, getPlayerRestrictionHistory, canViewRestriction } from "@/lib/data/player-restrictions";
+import { getPlayerReliabilitySignals } from "@/lib/data/rotation";
 import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { canView } from "@/lib/visibility";
 import { formatMatchDate, formatShortDate, formatShortDateOnly } from "@/lib/format";
@@ -49,12 +50,16 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
     ]);
   const isOwnerAccount = player.id === ownerPlayerId;
   const isAdminViewer = isElevatedRole(user.role);
+  const isOwnProfile = user.playerId === player.id;
   const canViewActiveRestriction = activeRestriction
     ? canViewRestriction(activeRestriction.visibility, {
         isCoach: isAdminViewer,
-        isOwnRestriction: user.playerId === player.id,
+        isOwnRestriction: isOwnProfile,
       })
     : false;
+  // Lot 21, roadmap V3 — signaux privés, jamais un classement : visibles seulement au joueur concerné et aux coachs.
+  const reliabilitySignals =
+    isAdminViewer || isOwnProfile ? await getPlayerReliabilitySignals(player.id) : null;
 
   const viewer = { playerId: user.playerId, role: user.role };
   const canSeeMeasurements = canView(player.measurements_visibility as "private" | "coach" | "team" | "public", player.id, viewer);
@@ -171,6 +176,24 @@ export default async function PlayerDetailPage({ params }: { params: Promise<{ i
         isAdmin={isAdminViewer}
         canViewActive={canViewActiveRestriction}
       />
+
+      {reliabilitySignals && (reliabilitySignals.respondsOnTimeRate != null || reliabilitySignals.presenceConsistencyRate != null) && (
+        <section className="mb-6 rounded-2xl border border-white/10 bg-navy-card p-4">
+          <h2 className="mb-2 text-xs font-bold uppercase tracking-widest text-steel">
+            Fiabilité (privé — {isOwnProfile ? "visible par toi et les coachs" : "visible par les coachs"})
+          </h2>
+          <ul className="space-y-1.5">
+            {reliabilitySignals.respondsOnTimeRate != null && (
+              <li className="text-sm text-cream/80">Répond à temps {reliabilitySignals.respondsOnTimeRate}% du temps</li>
+            )}
+            {reliabilitySignals.presenceConsistencyRate != null && (
+              <li className="text-sm text-cream/80">
+                Présence confirmée suivie d&apos;effet {reliabilitySignals.presenceConsistencyRate}% du temps
+              </li>
+            )}
+          </ul>
+        </section>
+      )}
 
       {latestMeasurement && (latestMeasurement.weight_kg != null || latestMeasurement.height_cm != null) && (
         <div className="mb-6 flex items-center justify-between rounded-xl border border-white/10 bg-navy-card p-3 text-sm text-cream">

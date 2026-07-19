@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getDataHealth } from "@/lib/data/data-health";
+import { getCollectiveResponseTrend } from "@/lib/data/rotation";
 import { formatShortDate } from "@/lib/format";
 import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 
 export default async function DataHealthPage() {
   await requireAdmin();
-  const health = await getDataHealth();
+  const [health, responseTrend] = await Promise.all([getDataHealth(), getCollectiveResponseTrend()]);
 
   const consistentMatches = health.completedMatchesCount - health.matchesNeedingReview;
 
@@ -50,6 +51,13 @@ export default async function DataHealthPage() {
           </li>
         )}
       </ul>
+
+      {responseTrend.matchesConsidered > 0 && responseTrend.onTimeRate != null && (
+        <p className="mt-4 rounded-xl border border-white/10 bg-navy-card px-3 py-2 text-sm text-cream">
+          ⏱️ Réponses à temps sur les {responseTrend.matchesConsidered} derniers matchs : {responseTrend.onTimeRate}%
+          (tendance collective, jamais nominative)
+        </p>
+      )}
 
       <Link href="/admin/sauvegardes" className="mt-4 inline-block text-xs font-medium text-gold underline underline-offset-2">
         Gérer les sauvegardes →
