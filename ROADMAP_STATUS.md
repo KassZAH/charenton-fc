@@ -403,6 +403,39 @@ Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22
 
 ---
 
+# Macro-release B (roadmap V3) — Organisation d'équipe, Lots 19 à 24
+
+**Statut : IMPLÉMENTÉE EN PREVIEW, en attente de validation utilisateur unique puis d'autorisation de production.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` sur la branche `macro-b-team-organization` — pas encore fusionnée sur `master`, aucun déploiement production. Aucun lot n'est marqué `TERMINÉ` avant la production (protocole §14).
+
+- Lot 19 — implémenté en preview (isolé).
+- Lot 20 — implémenté en preview (isolé).
+- Lot 21 — implémenté en preview (isolé).
+- Lot 22 — implémenté en preview (isolé).
+- Lot 23 — implémenté en preview (isolé).
+- Lot 24 — implémenté en preview (isolé).
+
+**Lot 19 — Restrictions temporaires et historique de disponibilité.** `player_restrictions` (RLS activée, une seule restriction active par joueur via index unique partiel) — distincte des blessures (Lot 1) : jamais un dossier médical, seulement un cadre de reprise (pas gardien, pas de sprint, temps de jeu limité, retour progressif...). Alerte non bloquante ⚠️ dans la composition (`MatchSquadSection`), gérée par le coach sur la fiche joueur avec visibilité privée/coachs/équipe. Bug de contrainte CHECK trouvé par les tests d'intégration avant tout déploiement : `array_length(arr,1) > 0` vaut `NULL` (pas `false`) sur un tableau vide, laissant passer une restriction sans type — corrigé en `cardinality(arr) > 0`.
+
+**Lot 20 — Date limite et ponctualité des réponses.** `matches.response_deadline`, `availability.first_responded_at`/`last_changed_at`/`late_response` — figés à la première réponse du joueur, jamais recalculés par une correction admin (`setAvailabilityAsAdmin` ne doit jamais fabriquer une ponctualité que le joueur n'a pas produite lui-même). L'exclusion blessés/archivés/déjà répondu pour la relance était déjà couverte par le regroupement existant (`grouped.none`), pas dupliquée.
+
+**Lot 21 — Rotation équitable et fiabilité positive.** Suggestion de rotation expliquée pour le coach (jamais un score stocké ni un classement, jamais une sélection automatique — le coach reste décisionnaire), exclut les joueurs indisponibles pour le match courant. Signaux de fiabilité privés (ponctualité, suivi présent→réellement joué) visibles seulement du joueur concerné et des coachs. Tendance collective non nominative sur `/admin/sante`. Aucune migration (calcul entièrement à la demande).
+
+**Lot 22 — Terrains et modèles génériques de matchs.** `venues` (RLS, fusion de doublons) + `matches.venue_id` en transition — jamais à la place de `location`/`address`/`maps_url`, qui restent modifiables localement par match via `VenuePicker`. `match_templates` : structure réutilisable (terrain, horaires, type, matériel habituel) sans jamais copier présence/covoiturage/blessures/paiements à la génération d'un match. `duplicateMatch` existant conservé, étendu pour reporter aussi `venue_id`.
+
+**Lot 23 — Covoiturage avec affectations.** `carpool_assignments` (RLS, un conducteur par passager par match via contrainte unique) — places restantes calculées après affectation (pas seulement le total brut), point/heure de départ du conducteur, alerte de déficit corrigée. Contact via partage WhatsApp générique (`wa.me/?text=`, jamais de numéro de téléphone stocké — l'application n'en a jamais collecté). Un conducteur qui redevient passager/aucun libère automatiquement ses affectations.
+
+**Lot 24 — Matériel enrichi, rotation capitaine et checklist.** `match_equipment_items.status` (assigné/confirmé/apporté/oublié, transition depuis l'ancien booléen `brought`), suggestion basée sur l'historique et reprise du matériel du match précédent (jamais d'assignation copiée silencieusement — toujours un clic explicite de l'admin). Suggestion facultative de rotation du capitanat (jamais automatique, `setCaptain` reste un geste explicite). Checklist strictement privée par joueur (`checklist_templates`, `player_checklist_preferences`, `match_checklist_items`) — modèles d'équipe, préférences personnelles, items contextuels (capitaine, matériel assigné, cotisation restante) ; se réinitialise naturellement par match, ne modifie jamais `checked` déjà posé lors d'une régénération.
+
+**Bug d'infrastructure de test trouvé par le gate complet de fin de macro-release (avant toute preview) :** `scripts/isolated-env/reset-and-seed.js` n'effaçait jamais `checklist_templates`, `venues` ni `match_templates` — ces trois tables n'ont aucune clé étrangère qui les ferait cascader depuis `players`/`matches` (contrairement à `player_checklist_preferences`, `match_checklist_items` et `carpool_assignments`, qui cascadent). Les lignes s'accumulaient silencieusement d'un run de test à l'autre, provoquant une violation de contrainte unique sur `match_checklist_items` et des collisions de noms en E2E. Corrigé dans `DELETE_ORDER` avant tout déploiement.
+
+**Bug d'affichage trouvé par le scénario E2E central :** `RestrictionPanel` formatait `ended_at` (un `timestamptz` complet) avec `formatShortDateOnly` (prévue pour une colonne `date` seule), produisant "Invalid Date" dans l'historique des restrictions clôturées — corrigé en utilisant `formatShortDate`.
+
+**Gate complet de fin de macro-release (isolé, `cimbymuifzooxrnenznd`) :** `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` (163 passed), `npm run test:integration` (118 passed), `npm run test:e2e` (50 passed, mobile + desktop, y compris le nouveau scénario central `e2e/team-organization.spec.ts`), `npm run build`, `npm run verify:deployment --url <preview> --expect-isolated` (14/14 conforme). 9 migrations appliquées au projet isolé, aucune sur le projet partagé. Aucune fusion sur `master`, aucun déploiement production, Macro-release C non commencée.
+
+Preview consolidée : voir le rapport final de session pour l'URL, le hash et la checklist de validation utilisateur.
+
+---
+
 # PHASE 4 — Socle UI/UX et navigation
 
 ## 4.1 Navigation à cinq onglets

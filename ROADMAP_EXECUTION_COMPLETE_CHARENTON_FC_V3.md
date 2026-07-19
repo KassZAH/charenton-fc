@@ -631,6 +631,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+
 ### But
 Gérer reprise progressive sans dossier médical.
 
@@ -650,6 +652,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 ## Lot 20 — Date limite et ponctualité des réponses
 
 **Statut initial : À FAIRE**
+
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Relancer les bons joueurs et mesurer sans sanction.
@@ -671,6 +675,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+
 ### But
 Aider le coach sans score public ni sélection opaque.
 
@@ -690,6 +696,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 ## Lot 22 — Terrains et modèles génériques de matchs
 
 **Statut initial : À FAIRE**
+
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Réutiliser lieux et créneaux sans recopier les données individuelles.
@@ -711,6 +719,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+
 ### But
 Savoir qui voyage avec qui.
 
@@ -730,6 +740,8 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 ## Lot 24 — Matériel enrichi, rotation capitaine et checklist
 
 **Statut initial : À FAIRE**
+
+**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Centraliser les tâches du jour de match sans pression publique.
