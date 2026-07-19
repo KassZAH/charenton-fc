@@ -11,6 +11,7 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:e2e": "playwright test",
     "seed:isolated": "node scripts/isolated-env/reset-and-seed.js",
+    "seed:isolated:demo": "node scripts/isolated-env/seed-demo.js",
     "verify:deployment": "node scripts/verify-deployment.js"
   },
   "dependencies": {
