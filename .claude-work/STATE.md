@@ -1,33 +1,22 @@
 # STATE — Macro-release B (Organisation d'équipe)
 
-Branche : macro-b-team-organization
-Objectif : Lots 19 à 24 — TERMINÉ. Dataset de démonstration enrichi — TERMINÉ. En attente de
-validation utilisateur de la preview.
+Statut : DÉPLOYÉE EN PRODUCTION (commit master `a3c5320`). En attente de la validation finale de
+l'utilisateur avant marquage `TERMINÉ` dans la Roadmap V3. Macro-release C non commencée.
 
-## Lot courant
-Aucun — en attente de validation utilisateur puis autorisation de production. Macro C non commencée.
-
-## Commits (les plus récents)
-- 1359ae4 — dataset de démonstration riche (seed-demo.js + seeded-random.js + test dédié)
-- 41f0cd4 — fix : groupe convoqué du scénario principal laissé en brouillon (sinon suggestion de rotation masquée)
-
-## Dataset de démonstration
-- `npm run seed:isolated` — minimal, technique, inchangé (utilisé par tous les tests).
-- `npm run seed:isolated:demo` — riche, déterministe (graine fixe, mulberry32, jamais Math.random()),
-  14 comptes / 20 matchs / 4 terrains / 3 modèles / covoiturage / matériel / checklist / restrictions.
-  Idempotent (vérifié par 2 exécutions consécutives + test dédié).
-
-## Gate complet (dernière exécution après ajout du dataset démo)
-tsc ✓ | lint ✓ | unit ✓ (163) | integration ✓ (131, dont 13 nouvelles pour le seed démo) |
-e2e ✓ (50, mobile+desktop) | build ✓ | verify:deployment ✓ 14/14
-
-## Preview actuelle
-https://charenton-neqr4bu2x-memesiro.vercel.app — projet isolé confirmé, seed démo appliqué.
+## Dernières actions
+- Fusion fast-forward `macro-b-team-organization` → `master` (`10718f8`), backup protégé
+  pré-migration vérifié (`before_macro_b_team_organization_production`, checksum recalculé
+  indépendamment, identique), 10 migrations appliquées au projet partagé (53/53 alignées),
+  RLS/permissions/absence de fixtures confirmées, `verify:deployment` 13/13 sur
+  `https://charenton-fc.vercel.app`.
+- Commit doc supplémentaire (`a3c5320`) : statuts de lots mis à jour, Lot 24.5 (fiabilité de
+  présence) documenté sans code pour la Macro C, plan de migration Supabase local/Docker rédigé
+  (aucune exécution, projet isolé cloud toujours actif).
+- Rapport détaillé : `roadmap-v3-discussion/macro-b-team-organization/01-deploiement-production.md`.
 
 ## Blocages
 Aucun.
 
 ## Prochaine action
-Attendre la validation utilisateur de la preview (dataset démo). Après validation : autorisation
-de production unique, puis vagues internes (schéma additif → backend → UI → doc), backup protégé
-avant migration sur le projet partagé.
+Attendre la validation finale de l'utilisateur en production. Ne pas commencer la Macro-release C
+(Lot 24.5 + Lots 25-28) sans autorisation explicite.
