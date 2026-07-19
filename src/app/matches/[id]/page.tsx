@@ -37,6 +37,7 @@ import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
 import { GoalkeeperSection } from "./GoalkeeperSection";
 import { MatchSquadSection } from "./MatchSquadSection";
+import { BatchGoalEntryForm } from "./BatchGoalEntryForm";
 import { CarpoolSection } from "./CarpoolSection";
 import { EquipmentSection } from "./EquipmentSection";
 import { DuplicateMatchForm } from "./DuplicateMatchForm";
@@ -239,6 +240,13 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
 
       {match.status !== "completed" && match.status !== "cancelled" && (
         <MatchSquadSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
+      )}
+
+      {isElevatedRole(user.role) && ["scheduled", "draft", "postponed"].includes(match.status) && (
+        <BatchGoalEntryForm
+          matchId={match.id}
+          players={allActivePlayers.map((p) => ({ id: p.id, name: p.nickname || p.first_name }))}
+        />
       )}
 
       {(match.status === "completed" || match.status === "live") && (
