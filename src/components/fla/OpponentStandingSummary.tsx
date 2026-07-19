@@ -48,7 +48,7 @@ export function OpponentStandingSummary({
     accessibleParts.push(`${s.wins} victoire${s.wins! > 1 ? "s" : ""}`, `${s.draws} nul${s.draws! > 1 ? "s" : ""}`, `${s.losses} défaite${s.losses! > 1 ? "s" : ""}`);
   }
   if (hasGoals) {
-    desktopParts.push(`BM ${s.goals_for}`, `BE ${s.goals_against}`);
+    desktopParts.push(`${s.goals_for}:${s.goals_against}`);
     mobileParts.push(`${s.goals_for}:${s.goals_against}`);
     accessibleParts.push(`${s.goals_for} buts marqués`, `${s.goals_against} buts encaissés`);
   }
