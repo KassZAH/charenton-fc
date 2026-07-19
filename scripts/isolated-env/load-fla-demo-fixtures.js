@@ -19,7 +19,10 @@ const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.
 const DEMO_TEAMS = [
   { name: "AS FICTIF PARIS", position: 1, played: 8, wins: 7, draws: 1, losses: 0, gf: 24, ga: 6 },
   { name: "FICTIF FC NORD", position: 2, played: 8, wins: 6, draws: 1, losses: 1, gf: 20, ga: 9 },
-  { name: "UNION FICTIVE SUD", position: 3, played: 8, wins: 5, draws: 2, losses: 1, gf: 18, ga: 10 },
+  // Nommée comme l'adversaire fictif déjà seedé par reset-and-seed.js (match sur les 3 matchs de
+  // démonstration) : permet à l'association "automatic" ci-dessous d'être une vraie correspondance
+  // exacte normalisée, et donc de démontrer l'affichage réel sur /matches, /matches/[id] et l'accueil.
+  { name: "ADVERSAIRE TEST", position: 3, played: 8, wins: 5, draws: 2, losses: 1, gf: 18, ga: 10 },
   { name: "CHARENTON FC", position: 4, played: 8, wins: 4, draws: 2, losses: 2, gf: 15, ga: 12 },
   { name: "OLYMPIQUE FICTIF", position: 5, played: 8, wins: 3, draws: 2, losses: 3, gf: 13, ga: 13 },
   { name: "RACING TEST DEMO", position: 6, played: 8, wins: 2, draws: 2, losses: 4, gf: 10, ga: 16 },
@@ -77,17 +80,17 @@ function normalize(name) {
     .eq("id", competition.id);
   if (competitionUpdateError) throw new Error(competitionUpdateError.message);
 
-  // Trois associations de démonstration : automatique (l'opposant seedé "Adversaire Test" ne
-  // correspond à aucune équipe fictive -> ambiguous par construction ici), une confirmée
-  // manuellement, une sans correspondance — jamais une correspondance faible validée automatiquement.
+  // Trois associations de démonstration : automatique (correspondance exacte normalisée réelle avec
+  // l'adversaire "Adversaire Test" déjà seedé sur les 3 matchs de démonstration), une ambiguë, une
+  // sans correspondance — jamais une correspondance faible validée automatiquement.
   await supabase.from("opponent_external_mappings").delete().eq("external_competition_id", competition.id);
   const { error: mappingsError } = await supabase.from("opponent_external_mappings").insert([
     {
       external_competition_id: competition.id,
-      app_opponent_name: "AS FICTIF PARIS",
-      normalized_app_opponent_name: normalize("AS FICTIF PARIS"),
-      external_team_id: "demo-1",
-      external_team_name: "AS FICTIF PARIS",
+      app_opponent_name: "Adversaire Test",
+      normalized_app_opponent_name: normalize("Adversaire Test"),
+      external_team_id: "demo-3",
+      external_team_name: "ADVERSAIRE TEST",
       mapping_status: "automatic",
     },
     {
