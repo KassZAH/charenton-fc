@@ -405,14 +405,14 @@ Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22
 
 # Macro-release B (roadmap V3) — Organisation d'équipe, Lots 19 à 24
 
-**Statut : DÉPLOYÉE EN PRODUCTION, en attente de la validation finale de l'utilisateur.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` sur la branche `macro-b-team-organization`, fusionnée en fast-forward sur `master` (commit `10718f8`). Aucun lot n'est marqué `TERMINÉ` dans la Roadmap V3 avant cette validation finale (protocole §14).
+**Statut : TERMINÉE — validée par l'utilisateur en production le 19/07/2026.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` sur la branche `macro-b-team-organization`, fusionnée en fast-forward sur `master` (commit `10718f8`).
 
-- Lot 19 — déployé en production, en attente de validation utilisateur finale.
-- Lot 20 — déployé en production, en attente de validation utilisateur finale.
-- Lot 21 — déployé en production, en attente de validation utilisateur finale.
-- Lot 22 — déployé en production, en attente de validation utilisateur finale.
-- Lot 23 — déployé en production, en attente de validation utilisateur finale.
-- Lot 24 — déployé en production, en attente de validation utilisateur finale.
+- Lot 19 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 20 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 21 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 22 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 23 — TERMINÉ (déployé en production, validé par l'utilisateur).
+- Lot 24 — TERMINÉ (déployé en production, validé par l'utilisateur).
 
 **Lot 19 — Restrictions temporaires et historique de disponibilité.** `player_restrictions` (RLS activée, une seule restriction active par joueur via index unique partiel) — distincte des blessures (Lot 1) : jamais un dossier médical, seulement un cadre de reprise (pas gardien, pas de sprint, temps de jeu limité, retour progressif...). Alerte non bloquante ⚠️ dans la composition (`MatchSquadSection`), gérée par le coach sur la fiche joueur avec visibilité privée/coachs/équipe. Bug de contrainte CHECK trouvé par les tests d'intégration avant tout déploiement : `array_length(arr,1) > 0` vaut `NULL` (pas `false`) sur un tableau vide, laissant passer une restriction sans type — corrigé en `cardinality(arr) > 0`.
 
@@ -439,6 +439,22 @@ Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22
 **Observation non liée à cette macro-release, signalée par prudence** : deux comptes actifs nommés « Test Joueur » et « Test Admin » existent déjà sur le projet partagé (antérieurs à cette session, hors du périmètre de `players.first_name`/`last_name` couvert par le contrôle automatisé de fixtures, qui ne vérifie que la table `opponents`). Ni modifiés ni supprimés — à confirmer avec l'utilisateur si ce sont des comptes de test à archiver ou des comptes réels.
 
 Preview de validation (dataset de démonstration) : voir le rapport de session précédent pour l'URL. Production : `https://charenton-fc.vercel.app`.
+
+---
+
+# Mode Démo (hors Macro-release, post-Macro B) — présentation aux coachs
+
+**Statut : DÉPLOYÉ EN PRODUCTION le 19/07/2026** (branche `demo-mode-team-showcase`, fusionnée en fast-forward sur `master`, commit `7372dc9`). Fonctionnalité isolée, pas un lot de la Roadmap V3 — Macro-release C non commencée.
+
+Saison `is_demo` dédiée (« Saison 2025-2026 · Démo été »), jamais active (contrainte CHECK `seasons_demo_never_active`), référençant les vrais `player_id` actifs de production (jamais de faux compte créé, jamais d'attribut réel modifié — rôle/PIN/session_version/statut/poste vérifiés inchangés). 20 matchs fictifs (10 terminés, 1 en direct, 2 annulés, 1 reporté, 6 à venir dont 1 avec deadline dépassée), restrictions fictives (`player_restrictions.season_id`), terrains/modèles/checklist marqués `is_demo`. Accès `/demo` réservé Coach/Propriétaire (`requireFreshCoach`), bandeau MODE DÉMO sur les fiches de match concernées (`src/app/matches/[id]/layout.tsx`), sortie immédiate. Réinitialisation/suppression réservées Propriétaire, confirmation forte par phrase exacte, RPC `purge_demo_dataset` transactionnelle (refuse toute saison non `is_demo`, idempotente, audit minimal).
+
+Audit préalable exhaustif puis correction de l'isolation dans tous les points d'agrégation "toutes saisons confondues" trouvés (`src/lib/data/demo-scope.ts` + rotation/fiabilité/statistiques club et joueur/records/badges/MVP mensuel/défis collectifs/bingo de saison/mémoire du club/accueil/santé des données/corbeille) — vérifié par 15 assertions d'intégration dédiées comparant les compteurs et calculs réels avant/après création du Mode Démo (identiques bit à bit) plus une régression complète (146 intégration, 163 unitaires, 60 E2E).
+
+Aucune fonctionnalité email/notification push/webhook n'existe encore dans l'application à ce stade (Macro E/F non commencées) — la demande de les désactiver en mode Démo est donc sans objet, documentée comme telle plutôt qu'implémentée sur du vide. La synchronisation FLA n'est jamais déclenchée pour un adversaire fictif (aucun mapping externe créé pour les adversaires Démo). Les boutons de partage WhatsApp restent visibles sur une fiche de match Démo (partage manuel explicite par le coach, jamais un envoi automatique) — limitation connue, non bloquante, disclosée plutôt que masquée sous contrainte de temps.
+
+Déploiement production : backup protégé `before_demo_mode_team_showcase_production` (checksum vérifié indépendamment), 2 migrations appliquées (55/55 alignées), RLS et permissions confirmées sur `purge_demo_dataset`, dataset Démo créé via la commande serveur protégée (`npx tsx scripts/demo/run-create-demo-dataset.ts`, 24 vrais joueurs actifs référencés), `verify:deployment` 13/13 avant et après création du dataset, compteurs réels strictement inchangés (`players`=24, `dues`=9, `backups`=10 ; `matches` passé de 31 à 51, hausse entièrement attribuable aux 20 matchs Démo, vérifiée table par table).
+
+Préparation de la mise en pause du projet Supabase isolé documentée (`PAUSE_PROJET_SUPABASE_ISOLE.md`) — non exécutée par cet agent (action manuelle Dashboard). Plan de migration des tests vers Supabase local/Docker disponible (`PLAN_MIGRATION_TESTS_SUPABASE_LOCAL_DOCKER.md`), non exécuté.
 
 ---
 

@@ -631,7 +631,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Gérer reprise progressive sans dossier médical.
@@ -653,7 +653,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Relancer les bons joueurs et mesurer sans sanction.
@@ -675,7 +675,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Aider le coach sans score public ni sélection opaque.
@@ -697,7 +697,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Réutiliser lieux et créneaux sans recopier les données individuelles.
@@ -719,7 +719,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Savoir qui voyage avec qui.
@@ -741,7 +741,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : TERMINÉ** (Macro-release B, fusionné sur `master`, commit `10718f8`, validé par l'utilisateur le 19/07/2026). Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Centraliser les tâches du jour de match sans pression publique.
