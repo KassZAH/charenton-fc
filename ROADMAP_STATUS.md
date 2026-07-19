@@ -348,7 +348,7 @@ _Branche `macro-8-11-consolidation` fusionnée sur `master` en deux vagues fast-
 
 # Lot 11.5 (roadmap V3) — Classement FLA dans les statistiques et informations des adversaires
 
-**Statut : déployé en production, en attente de validation utilisateur finale.**
+**Statut : terminé et validé en production.**
 
 Autorisation FLA obtenue et documentée (`docs/fla-integration.md`, synthèse déclarative — aucune correspondance privée ni donnée personnelle reproduite). Nouveau modèle `LeagueStandingsProvider`/`FlaStandingsProvider` : parsing HTML côté serveur exclusivement (aucune API/endpoint JSON n'existe sur la source), domaine strictement limité à `football-loisir-amateur.fr`, redirections refusées, timeout court, taille de réponse plafonnée, aucune URL libre acceptée. Trois nouvelles tables (`external_competitions`, `external_standings`, `opponent_external_mappings`), RPC transactionnelle `sync_external_standings_transactional()` (remplacement du classement uniquement sur succès réel, cache préservé sur vide/indisponible/payload invalide, `EXECUTE` réservé à `service_role`). Association adversaire↔équipe externe par normalisation conservatrice (correspondance exacte → automatique, correspondance partielle → toujours ambiguë, jamais validée seule), gérable uniquement par le Propriétaire. Nouvel onglet « Classement FLA » sur `/stats` (à côté des stats du club, jamais mélangées), résumé de classement adverse sur `/matches`, `/matches/[id]` et l'accueil (`5e · 3V 2N 1D · 14:9`, rien affiché si aucune donnée fiable).
 
