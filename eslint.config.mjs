@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Scripts CLI Node autonomes (roadmap V3, Lot 9) — CommonJS par conception (pas de
+    // build step), en dehors du périmètre applicatif TS/ESM couvert par ce lint.
+    "scripts/**",
   ]),
 ]);
 

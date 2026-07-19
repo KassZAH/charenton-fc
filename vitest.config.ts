@@ -5,6 +5,10 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    // Les tests d'intégration (Lot 9, vitest.integration.config.ts) ont leur propre
+    // commande et leurs propres identifiants réels — jamais mélangés à la suite
+    // unitaire, qui n'utilise que les identifiants factices définis ci-dessous.
+    exclude: ["**/*.integration.test.ts", "**/node_modules/**"],
     env: {
       // Dummy — certains modules server-only instancient un client Supabase à l'import.
       // Ces valeurs ne sont jamais utilisées pour un vrai appel réseau dans les tests.

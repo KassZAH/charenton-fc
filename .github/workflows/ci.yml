@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+# Un seul run à la fois par branche/PR pour le job d'intégration : deux
+# exécutions concurrentes partageraient le même dataset fictif sur le même
+# projet Supabase isolé (roadmap V3, Lot 9). File d'attente plutôt
+# qu'annulation, pour ne jamais interrompre un run au milieu d'un
+# reset-and-seed.
+concurrency:
+  group: ci-integration-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  unit:
+    name: Unit — typecheck, lint, tests, build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx tsc --noEmit
+      - run: npm run lint
+      - run: npm test
+      - run: npm run build
+
+  integration:
+    name: Intégration — projet Supabase isolé
+    runs-on: ubuntu-latest
+    needs: unit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+
+      - name: Vérifier la présence des secrets de l'environnement isolé
+        id: check_secrets
+        run: |
+          if [ -z "${{ secrets.INTEGRATION_SUPABASE_URL }}" ] || [ -z "${{ secrets.INTEGRATION_SUPABASE_SERVICE_ROLE_KEY }}" ]; then
+            echo "has_secrets=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_secrets=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Tests d'intégration ignorés — secrets absents
+        if: steps.check_secrets.outputs.has_secrets != 'true'
+        run: |
+          echo "::warning::Tests d'intégration ignorés : INTEGRATION_SUPABASE_URL / INTEGRATION_SUPABASE_SERVICE_ROLE_KEY absents des secrets du dépôt. Voir .env.integration.local.example."
+
+      - name: Tests d'intégration (projet isolé uniquement)
+        if: steps.check_secrets.outputs.has_secrets == 'true'
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.INTEGRATION_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.INTEGRATION_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.INTEGRATION_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PROJECT_REF: ${{ secrets.INTEGRATION_SUPABASE_PROJECT_REF }}
+        # Jamais les secrets du projet partagé (NEXT_PUBLIC_SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY génériques,
+        # utilisés pour le déploiement) — uniquement les secrets INTEGRATION_* dédiés, distincts, réservés au
+        # projet isolé. Le garde-fou de scripts/isolated-env/guard.js refuse de toute façon toute autre référence.
+        run: npm run test:integration
