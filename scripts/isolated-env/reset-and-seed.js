@@ -50,6 +50,12 @@ const DELETE_ORDER = [
   "seasons",
   "opponents",
   "awards",
+  // checklist_templates n'a aucune clé étrangère (ni vers players, ni vers seasons/matches) — sans
+  // cette ligne, les lignes créées par un run de test s'accumulent silencieusement d'un run à
+  // l'autre (trouvé par le gate complet de la Macro-release B, Lot 24 : provoquait une violation
+  // de contrainte unique sur match_checklist_items en générant plusieurs fois le même item de
+  // modèle pour un même joueur/match).
+  "checklist_templates",
 ];
 const NEVER_MATCHING_UUID = "00000000-0000-0000-0000-000000000000";
 
