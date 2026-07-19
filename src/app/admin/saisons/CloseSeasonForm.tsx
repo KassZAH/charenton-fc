@@ -76,6 +76,7 @@ export function CloseSeasonForm({
         <input
           id="due_amount"
           type="number"
+          inputMode="decimal"
           name="due_amount"
           min="0"
           step="0.01"

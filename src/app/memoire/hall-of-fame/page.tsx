@@ -105,6 +105,7 @@ export default async function HallOfFamePage() {
                 <input
                   id="retired_number"
                   type="number"
+                  inputMode="numeric"
                   name="retired_number"
                   placeholder="Facultatif"
                   className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-sm text-cream placeholder:text-steel/50 focus:border-gold/50 focus:outline-none"

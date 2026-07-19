@@ -17,6 +17,7 @@ import { getThisDayInHistory } from "@/lib/data/club-memory";
 import { getActiveSeasonId } from "@/lib/data/seasons";
 import { getMyDue } from "@/lib/data/dues";
 import { isElevatedRole } from "@/types/models";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { AvailabilityButtons } from "./matches/[id]/AvailabilityButtons";
 
 function shortDateBadge(dateLabel: string) {
@@ -103,7 +104,7 @@ export default async function HomePage() {
   });
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <p className="text-xs font-bold uppercase tracking-widest text-gold">Salut {user.name}</p>
       <h1 className="text-scoreboard mb-4 text-2xl font-extrabold text-cream">Bienvenue sur l&apos;espace</h1>
 
@@ -288,7 +289,7 @@ export default async function HomePage() {
           )}
         </Link>
       )}
-    </div>
+    </ResponsivePageContainer>
   );
 }
 

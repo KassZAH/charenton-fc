@@ -5,6 +5,7 @@ import { getOwnerPlayerId } from "@/lib/data/team-settings";
 import { promoteToCoach, demoteToPlayer } from "@/lib/data/ownership-actions";
 import { OWNERSHIP_TRANSFER_ENABLED } from "@/lib/data/team-settings";
 import { isElevatedRole } from "@/types/models";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { TransferOwnershipForm } from "./TransferOwnershipForm";
 
 function displayName(p: { nickname: string | null; first_name: string }) {
@@ -22,7 +23,7 @@ export default async function CoachManagementPage() {
   const transferCandidates = players.filter((p) => p.id !== ownerPlayerId).map((p) => ({ id: p.id, displayName: displayName(p) }));
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="full">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Gestion des coachs</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
@@ -92,6 +93,6 @@ export default async function CoachManagementPage() {
           </p>
         )}
       </section>
-    </div>
+    </ResponsivePageContainer>
   );
 }

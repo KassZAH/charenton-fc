@@ -110,6 +110,7 @@ export default async function DuesPage() {
           Fixer la cotisation pour tout le monde
           <input
             type="number"
+            inputMode="decimal"
             name="bulk_amount_due"
             min={0}
             step="0.01"
@@ -152,6 +153,7 @@ function DueRow({
             Dû
             <input
               type="number"
+              inputMode="decimal"
               name="amount_due"
               min={0}
               step="0.01"
@@ -168,6 +170,7 @@ function DueRow({
             Payé
             <input
               type="number"
+              inputMode="decimal"
               name="amount_paid"
               min={0}
               step="0.01"

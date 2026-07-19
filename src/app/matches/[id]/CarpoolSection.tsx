@@ -107,6 +107,7 @@ export function CarpoolSection({
             Places disponibles
             <input
               type="number"
+              inputMode="numeric"
               name="available_seats"
               min={1}
               max={8}

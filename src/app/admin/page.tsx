@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getDataHealth } from "@/lib/data/data-health";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 
 export default async function AdminPage() {
   const user = await requireAdmin();
   const health = await getDataHealth();
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="full">
       <h1 className="text-scoreboard mb-4 text-xl font-extrabold text-cream">Gestion de l&apos;équipe</h1>
 
       {(health.matchesNeedingReview > 0 || health.backupIsStale) && (
@@ -71,6 +72,6 @@ export default async function AdminPage() {
           </li>
         )}
       </ul>
-    </div>
+    </ResponsivePageContainer>
   );
 }

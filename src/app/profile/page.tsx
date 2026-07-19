@@ -227,6 +227,7 @@ export default async function ProfilePage() {
             Poids (kg)
             <input
               type="number"
+              inputMode="decimal"
               step="0.1"
               name="weight_kg"
               className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"
@@ -236,6 +237,7 @@ export default async function ProfilePage() {
             Taille (cm)
             <input
               type="number"
+              inputMode="decimal"
               step="0.1"
               name="height_cm"
               className="mt-1 w-full rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-cream focus:border-gold/50 focus:outline-none"

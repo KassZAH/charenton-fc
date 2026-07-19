@@ -423,6 +423,7 @@ async function AdminSection({
           Score Charenton
           <input
             type="number"
+            inputMode="numeric"
             name="team_score"
             required
             min={0}
@@ -434,6 +435,7 @@ async function AdminSection({
           Score adverse
           <input
             type="number"
+            inputMode="numeric"
             name="opponent_score"
             required
             min={0}

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getDataHealth } from "@/lib/data/data-health";
 import { formatShortDate } from "@/lib/format";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 
 export default async function DataHealthPage() {
   await requireAdmin();
@@ -10,7 +11,7 @@ export default async function DataHealthPage() {
   const consistentMatches = health.completedMatchesCount - health.matchesNeedingReview;
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="full">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Santé des données</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
@@ -53,6 +54,6 @@ export default async function DataHealthPage() {
       <Link href="/admin/sauvegardes" className="mt-4 inline-block text-xs font-medium text-gold underline underline-offset-2">
         Gérer les sauvegardes →
       </Link>
-    </div>
+    </ResponsivePageContainer>
   );
 }

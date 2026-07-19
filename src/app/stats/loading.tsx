@@ -3,7 +3,7 @@ import { LoadingSkeleton } from "@/components/ui/LoadingSkeleton";
 
 export default function StatsLoading() {
   return (
-    <ResponsivePageContainer>
+    <ResponsivePageContainer size="wide">
       <LoadingSkeleton lines={6} />
     </ResponsivePageContainer>
   );

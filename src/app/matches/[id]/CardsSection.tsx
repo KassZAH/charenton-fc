@@ -103,6 +103,7 @@ function AddCardForm({ matchId, players }: { matchId: string; players: Player[] 
         <input
           id="minute"
           type="number"
+          inputMode="numeric"
           name="minute"
           min={0}
           max={130}

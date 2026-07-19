@@ -12,12 +12,15 @@ type FieldProps = {
 
 export function Field({ label, name, id, hint, className = "", ...rest }: FieldProps) {
   const fieldId = id ?? name;
+  // Clavier numérique mobile par défaut pour les champs numériques (roadmap V3, Lot 11) —
+  // reste explicitement surchageable via une prop inputMode fournie par l'appelant.
+  const inputMode = rest.inputMode ?? (rest.type === "number" ? "numeric" : undefined);
   return (
     <div>
       <label className="block text-sm font-medium text-cream" htmlFor={fieldId}>
         {label}
       </label>
-      <input id={fieldId} name={name} className={`${INPUT_CLASSES} ${className}`} {...rest} />
+      <input id={fieldId} name={name} className={`${INPUT_CLASSES} ${className}`} {...rest} inputMode={inputMode} />
       {hint && <p className="mt-1 text-xs text-steel/70">{hint}</p>}
     </div>
   );

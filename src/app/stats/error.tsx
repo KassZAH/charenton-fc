@@ -11,7 +11,7 @@ export default function StatsError({ error, reset }: { error: Error & { digest?:
   }, [error]);
 
   return (
-    <ResponsivePageContainer>
+    <ResponsivePageContainer size="wide">
       <ErrorState
         title="Impossible d'afficher les statistiques"
         text="Vérifie ta connexion et réessaie."

@@ -11,6 +11,7 @@ import {
 } from "@/lib/data/stats";
 import { getAwardLeaderboards } from "@/lib/data/awards";
 import { isElevatedRole } from "@/types/models";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 import { StatSelector, type StatCategory } from "./StatSelector";
 
 const STREAK_LABELS: Record<"wins" | "draws" | "losses", string> = {
@@ -46,7 +47,7 @@ export default async function StatsPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Stats</h1>
       </div>
@@ -122,7 +123,7 @@ export default async function StatsPage() {
       </section>
 
       <StatSelector categories={categories} />
-    </div>
+    </ResponsivePageContainer>
   );
 }
 

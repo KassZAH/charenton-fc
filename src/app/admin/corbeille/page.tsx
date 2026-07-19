@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdmin } from "@/lib/auth/current-user";
 import { getTrashedMatches, getTrashedGoals, getTrashedCards, formatDeletedAt } from "@/lib/data/trash";
 import { restoreTrashedMatch, restoreTrashedGoal, restoreTrashedCard } from "@/lib/data/trash-actions";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 
 export default async function TrashPage() {
   await requireAdmin();
@@ -10,7 +11,7 @@ export default async function TrashPage() {
   const isEmpty = matches.length === 0 && goals.length === 0 && cards.length === 0;
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="full">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Corbeille</h1>
         <Link href="/admin" className="text-xs font-medium text-steel underline underline-offset-2">
@@ -65,7 +66,7 @@ export default async function TrashPage() {
           ))}
         </Section>
       )}
-    </div>
+    </ResponsivePageContainer>
   );
 }
 

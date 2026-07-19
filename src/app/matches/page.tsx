@@ -3,13 +3,14 @@ import { requireUser } from "@/lib/auth/current-user";
 import { getUpcomingMatches, getPastMatches, type MatchWithOpponent } from "@/lib/data/matches";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { isElevatedRole } from "@/types/models";
+import { ResponsivePageContainer } from "@/components/ui/ResponsivePageContainer";
 
 export default async function MatchesPage() {
   const user = await requireUser();
   const [upcoming, past] = await Promise.all([getUpcomingMatches(), getPastMatches()]);
 
   return (
-    <div className="mx-auto max-w-md lg:max-w-2xl px-4 py-6">
+    <ResponsivePageContainer size="wide">
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-scoreboard text-xl font-extrabold text-cream">Matchs</h1>
         {isElevatedRole(user.role) && (
@@ -55,7 +56,7 @@ export default async function MatchesPage() {
           <MatchRow key={match.id} match={match} />
         ))}
       </ul>
-    </div>
+    </ResponsivePageContainer>
   );
 }
 
