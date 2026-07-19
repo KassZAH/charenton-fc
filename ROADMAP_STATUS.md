@@ -405,14 +405,14 @@ Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22
 
 # Macro-release B (roadmap V3) — Organisation d'équipe, Lots 19 à 24
 
-**Statut : IMPLÉMENTÉE EN PREVIEW, en attente de validation utilisateur unique puis d'autorisation de production.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` sur la branche `macro-b-team-organization` — pas encore fusionnée sur `master`, aucun déploiement production. Aucun lot n'est marqué `TERMINÉ` avant la production (protocole §14).
+**Statut : DÉPLOYÉE EN PRODUCTION, en attente de la validation finale de l'utilisateur.** Exécutée selon `PROTOCOLE_MACRO_RELEASES_CHARENTON_FC.md` sur la branche `macro-b-team-organization`, fusionnée en fast-forward sur `master` (commit `10718f8`). Aucun lot n'est marqué `TERMINÉ` dans la Roadmap V3 avant cette validation finale (protocole §14).
 
-- Lot 19 — implémenté en preview (isolé).
-- Lot 20 — implémenté en preview (isolé).
-- Lot 21 — implémenté en preview (isolé).
-- Lot 22 — implémenté en preview (isolé).
-- Lot 23 — implémenté en preview (isolé).
-- Lot 24 — implémenté en preview (isolé).
+- Lot 19 — déployé en production, en attente de validation utilisateur finale.
+- Lot 20 — déployé en production, en attente de validation utilisateur finale.
+- Lot 21 — déployé en production, en attente de validation utilisateur finale.
+- Lot 22 — déployé en production, en attente de validation utilisateur finale.
+- Lot 23 — déployé en production, en attente de validation utilisateur finale.
+- Lot 24 — déployé en production, en attente de validation utilisateur finale.
 
 **Lot 19 — Restrictions temporaires et historique de disponibilité.** `player_restrictions` (RLS activée, une seule restriction active par joueur via index unique partiel) — distincte des blessures (Lot 1) : jamais un dossier médical, seulement un cadre de reprise (pas gardien, pas de sprint, temps de jeu limité, retour progressif...). Alerte non bloquante ⚠️ dans la composition (`MatchSquadSection`), gérée par le coach sur la fiche joueur avec visibilité privée/coachs/équipe. Bug de contrainte CHECK trouvé par les tests d'intégration avant tout déploiement : `array_length(arr,1) > 0` vaut `NULL` (pas `false`) sur un tableau vide, laissant passer une restriction sans type — corrigé en `cardinality(arr) > 0`.
 
@@ -430,9 +430,15 @@ Branche `macro-a-match-day-v1` fusionnée en fast-forward sur `master` (`9a55f22
 
 **Bug d'affichage trouvé par le scénario E2E central :** `RestrictionPanel` formatait `ended_at` (un `timestamptz` complet) avec `formatShortDateOnly` (prévue pour une colonne `date` seule), produisant "Invalid Date" dans l'historique des restrictions clôturées — corrigé en utilisant `formatShortDate`.
 
-**Gate complet de fin de macro-release (isolé, `cimbymuifzooxrnenznd`) :** `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` (163 passed), `npm run test:integration` (118 passed), `npm run test:e2e` (50 passed, mobile + desktop, y compris le nouveau scénario central `e2e/team-organization.spec.ts`), `npm run build`, `npm run verify:deployment --url <preview> --expect-isolated` (14/14 conforme). 9 migrations appliquées au projet isolé, aucune sur le projet partagé. Aucune fusion sur `master`, aucun déploiement production, Macro-release C non commencée.
+**Gate complet de fin de macro-release (isolé, `cimbymuifzooxrnenznd`) :** `npm ci`, `npx tsc --noEmit`, `npm run lint`, `npm test` (163 passed), `npm run test:integration` (131 passed, avec le dataset de démonstration inclus), `npm run test:e2e` (50 passed, mobile + desktop, y compris le scénario central `e2e/team-organization.spec.ts`), `npm run build`, `npm run verify:deployment --expect-isolated` (14/14 conforme).
 
-Preview consolidée : voir le rapport final de session pour l'URL, le hash et la checklist de validation utilisateur.
+**Dataset de démonstration enrichi** (préparé avant la validation utilisateur, à la demande) : `npm run seed:isolated:demo` — 14 comptes, 20 matchs variés, historique de rotation/fiabilité, restrictions (active/clôturée/retour progressif), 4 terrains, 3 modèles, covoiturage, matériel et checklist. Déterministe (générateur pseudo-aléatoire à graine fixe, jamais `Math.random()`), idempotent, vérifié par 13 assertions d'intégration dédiées. `npm run seed:isolated` (minimal, technique) reste inchangé.
+
+**Déploiement production** : backup protégé préalable sur le projet partagé (`before_macro_b_team_organization_production`, format 2, checksum calculé puis **revérifié indépendamment** — identique pour le backup et son artefact `audit_log`). 10 migrations appliquées dans l'ordre (53/53 alignées, 0 écart) : RLS confirmée activée sur les 7 nouvelles tables, `EXECUTE` de `export_backup_snapshot()` toujours refusé à `anon` (vérifié empiriquement), toutes les nouvelles tables à 0 ligne avant tout usage réel (aucune fixture insérée). Fusion fast-forward `macro-b-team-organization` → `master` (commit `10718f8`), Vercel `target: production`/`READY` confirmé sur ce commit exact, `verify:deployment` 13/13 conforme contre `https://charenton-fc.vercel.app`. Comparaison avant/après complète : `players`=24, `matches`=31, `goals`=59, `cards`=53, `match_players`=441, `dues`=9, `opponents`=8, `votes`=433, `awards`=6 — tous inchangés ; `backups`=9 (8+1, le backup pré-migration). **Confirmation explicite : aucune mutation réelle (aucun match créé/modifié, aucun but/carton, aucune restriction/covoiturage/matériel réel) n'a été exécutée par cet agent pendant ce déploiement.**
+
+**Observation non liée à cette macro-release, signalée par prudence** : deux comptes actifs nommés « Test Joueur » et « Test Admin » existent déjà sur le projet partagé (antérieurs à cette session, hors du périmètre de `players.first_name`/`last_name` couvert par le contrôle automatisé de fixtures, qui ne vérifie que la table `opponents`). Ni modifiés ni supprimés — à confirmer avec l'utilisateur si ce sont des comptes de test à archiver ou des comptes réels.
+
+Preview de validation (dataset de démonstration) : voir le rapport de session précédent pour l'URL. Production : `https://charenton-fc.vercel.app`.
 
 ---
 

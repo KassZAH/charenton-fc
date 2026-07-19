@@ -45,7 +45,7 @@ En cas de divergence, l'agent corrige d'abord la documentation ou s'arrête si u
 |---|---:|---|
 | A - Match Day v1 | 12 à 18 | Préparation, gardiens, cycle de vie, live, concurrence, convoqués, saisie groupée |
 | B - Organisation d'équipe | 19 à 24 | Restrictions, deadlines, rotation, terrains, covoiturage, matériel, capitaine, checklist |
-| C - Collaboration et partage | 25 à 28 | Corrections, confirmations, annulation, invités, fusion sécurisée, liens et QR |
+| C - Collaboration et partage | 24.5, 25 à 28 | Fiabilité de présence, corrections, confirmations, annulation, invités, fusion sécurisée, liens et QR |
 | D - Stats et récompenses | 29 à 30 | Statistiques intelligentes et cycle formel des votes |
 | E - Vie du club et médias | 31 à 34 | Changelog, bugs, idées, défis, chronique, page publique, galerie et Storage |
 | F - PWA avancée | 35 à 36 | Notifications, préférences, service worker et hors ligne minimal |
@@ -423,9 +423,11 @@ Une seule validation doit couvrir :
 - covoiturage ;
 - matériel, capitaine et checklist.
 
-### Macro C - Lots 25 à 28
+### Macro C - Lots 24.5, 25 à 28
 
 Version : Collaboration et partage.
+
+Le Lot 24.5 (fiabilité de présence, ajouté le 2026-07-19 après la production de la Macro B) ouvre cette macro-release — commit et gate ciblé distincts, avant les Lots 25 à 28, dans la même preview consolidée.
 
 Le Lot 27 reste un commit et un sous-ensemble à haut risque. Toute fusion réelle est interdite pendant la preview.
 

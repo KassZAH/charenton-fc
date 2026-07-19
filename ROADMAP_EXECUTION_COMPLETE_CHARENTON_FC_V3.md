@@ -631,7 +631,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Gérer reprise progressive sans dossier médical.
@@ -653,7 +653,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Relancer les bons joueurs et mesurer sans sanction.
@@ -675,7 +675,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Aider le coach sans score public ni sélection opaque.
@@ -697,7 +697,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Réutiliser lieux et créneaux sans recopier les données individuelles.
@@ -719,7 +719,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Savoir qui voyage avec qui.
@@ -741,7 +741,7 @@ Après preview et corrections, déployer en production, mettre à jour `ROADMAP_
 
 **Statut initial : À FAIRE**
 
-**Statut : IMPLÉMENTÉ EN PREVIEW** (Macro-release B, branche `macro-b-team-organization`, projet Supabase isolé). Voir `ROADMAP_STATUS.md` pour le détail livré.
+**Statut : DÉPLOYÉ EN PRODUCTION** (Macro-release B, fusionné sur `master`, commit `10718f8`), en attente de validation utilisateur finale avant marquage TERMINÉ. Voir `ROADMAP_STATUS.md` pour le détail livré.
 
 ### But
 Centraliser les tâches du jour de match sans pression publique.
@@ -757,6 +757,37 @@ V2 : §7.3 à §7.5.
 
 ### Gate
 Après preview et corrections, déployer en production, mettre à jour `ROADMAP_STATUS.md`, produire le compte rendu, puis s’arrêter. Ne pas commencer le lot suivant sans validation explicite.
+
+
+## Lot 24.5 — Fiabilité de présence
+
+**Statut initial : À FAIRE**
+
+**Décision de planification (2026-07-19)** : ce lot est ajouté après la production de la Macro-release B, à la demande de l'utilisateur, pour documentation uniquement — aucun code n'est écrit à ce stade. Il sera exécuté en tout début de la Macro-release C, regroupé avec les Lots 25 à 28 dans une seule preview consolidée (même protocole de macro-release que les groupes précédents).
+
+### But
+Mesurer la fiabilité réelle de présence (ponctualité d'arrivée, pas seulement de réponse) sans jamais déclencher d'exclusion automatique ni de jugement public — dans la continuité du Lot 20 (ponctualité des *réponses*) et du Lot 21 (rotation et fiabilité positive), dont ce lot complète le signal avec la présence physique réelle le jour du match.
+
+### Périmètre
+- Heure de rendez-vous configurable par match (distincte du coup d'envoi et de l'heure de RDV existante — ici la référence utilisée pour juger une arrivée à l'heure).
+- Limite de titularisation configurable (heure au-delà de laquelle une arrivée compromet la place de titulaire, distincte d'un simple retard).
+- Statuts d'arrivée : à l'heure ; en retard prévenu ; en retard non prévenu ; après la limite de titularisation ; absence excusée ; absence non signalée.
+- Historique individuel de ces statuts, dans la continuité de l'historique de disponibilité (Lot 19) et de ponctualité de réponse (Lot 20) — jamais une table isolée de plus sans lien avec l'existant.
+- Synthèse de fiabilité strictement privée (joueur concerné + coachs), sur le même principe que les signaux de fiabilité du Lot 21 (jamais un classement public, jamais un score affiché aux autres joueurs).
+- Pondération : une absence non signalée pèse très fortement dans la synthèse, largement plus qu'un retard prévenu ou une absence excusée — la distinction entre "prévenu" et "non prévenu" est le signal le plus important de ce lot.
+- Seuil configurable de révision après un nombre défini d'absences non signalées consécutives (par défaut 3) : déclenche une alerte de révision destinée au coach, jamais une action automatique sur le joueur.
+- Aucune exclusion, suspension ou changement de statut automatique — le coach reste seul décisionnaire, comme pour toutes les suggestions des Lots 19-24.
+- Audit des corrections : toute correction manuelle d'un statut d'arrivée par un coach doit être tracée (qui, quand, ancien/nouveau statut) — même exigence que les autres tables sensibles déjà couvertes par `audit_log`.
+- Intégration à la rotation équitable (Lot 21) : la synthèse de fiabilité de présence doit alimenter `getRotationSuggestions`/`getPlayerReliabilitySignals` comme un signal supplémentaire, pas comme un système parallèle.
+
+### Test utilisateur obligatoire
+Créer plusieurs statuts d'arrivée pour un même joueur (à l'heure, retard prévenu, retard non prévenu, après limite titulaire, absence excusée, absence non signalée), vérifier la synthèse privée résultante, provoquer 3 absences non signalées consécutives et vérifier l'alerte de révision (sans aucune exclusion automatique), corriger un statut et vérifier sa trace d'audit.
+
+### Référence technique détaillée
+Nouveau — prolonge directement V2 §6.4 (deadline de réponse) et §6.6 (fiabilité organisationnelle positive), jamais documenté séparément avant cette décision de planification.
+
+### Gate
+Exécuté en même temps que les Lots 25 à 28 (Macro-release C) : un commit distinct pour ce lot, gate ciblé après son implémentation, gate complet unique en fin de macro-release, preview consolidée unique couvrant les cinq lots. Ne pas commencer avant le début effectif de la Macro-release C.
 
 
 ## Lot 25 — Demandes de correction et page À valider
