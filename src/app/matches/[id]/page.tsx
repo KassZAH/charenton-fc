@@ -12,6 +12,7 @@ import { getActivePlayers, getPlayerById } from "@/lib/data/players";
 import { getMatchCarpoolSummary, getMyCarpoolInfo } from "@/lib/data/carpool";
 import { getMatchReadiness } from "@/lib/data/match-readiness";
 import { getMatchCompleteness } from "@/lib/data/match-completeness";
+import { getMatchGoalkeepers } from "@/lib/data/roster";
 import { buildItineraryUrl } from "@/lib/maps";
 import { formatMatchDate, formatTime } from "@/lib/format";
 import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
@@ -32,6 +33,7 @@ import { CardsSection } from "./CardsSection";
 import { AwardsSection } from "./AwardsSection";
 import { AdminAvailabilityRow } from "./AdminAvailabilityRow";
 import { RosterSection } from "./RosterSection";
+import { GoalkeeperSection } from "./GoalkeeperSection";
 import { CarpoolSection } from "./CarpoolSection";
 import { EquipmentSection } from "./EquipmentSection";
 import { DuplicateMatchForm } from "./DuplicateMatchForm";
@@ -53,15 +55,20 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
   const host = headerList.get("host");
   const origin = `${host?.startsWith("localhost") ? "http" : "https"}://${host}`;
 
-  const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo] = await Promise.all([
+  const [myStatus, activeInjury, captain, carpoolSummary, myCarpoolInfo, goalkeeperIds, allActivePlayers] = await Promise.all([
     getMyAvailability(match.id, user.playerId),
     getActiveInjury(user.playerId),
     match.captain_player_id ? getPlayerById(match.captain_player_id) : Promise.resolve(null),
     isUpcoming ? getMatchCarpoolSummary(match.id) : Promise.resolve(null),
     isUpcoming ? getMyCarpoolInfo(match.id, user.playerId) : Promise.resolve(null),
+    getMatchGoalkeepers(match.id),
+    getActivePlayers(),
   ]);
   const isHome = match.home_or_away === "home";
   const opponentLabel = match.opponent_name ?? "Adversaire à confirmer";
+  const goalkeeperNames = allActivePlayers
+    .filter((p) => goalkeeperIds.includes(p.id))
+    .map((p) => p.nickname || p.first_name);
 
   const flaCompetition = await getExternalCompetition(FLA_CONFIG.provider, FLA_CONFIG.externalChampionshipId, FLA_CONFIG.externalSeasonId);
   const [flaStandings, flaMappings] = flaCompetition
@@ -139,6 +146,9 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       )}
       {match.location && <p className="text-sm text-steel">{match.location}</p>}
       {captainName && <p className="text-sm text-steel">🧢 Capitaine : {captainName}</p>}
+      {goalkeeperNames.length > 0 && (
+        <p className="text-sm text-steel">🧤 Gardien{goalkeeperNames.length > 1 ? "s" : ""} : {goalkeeperNames.join(", ")}</p>
+      )}
       <div className="mt-1 flex flex-wrap items-center gap-3">
         {match.status !== "completed" && (
           <a
@@ -221,6 +231,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       {match.status === "completed" && (
         <>
           {isElevatedRole(user.role) && <RosterSection matchId={match.id} />}
+          {isElevatedRole(user.role) && <GoalkeeperSection matchId={match.id} />}
           <GoalsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
           <CardsSection matchId={match.id} isAdmin={isElevatedRole(user.role)} />
           <AwardsSection matchId={match.id} myPlayerId={user.playerId} isAdmin={isElevatedRole(user.role)} />

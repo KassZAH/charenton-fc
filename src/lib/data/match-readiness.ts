@@ -2,6 +2,7 @@ import "server-only";
 import { getMatchAvailabilitySummary } from "./availability";
 import { getMatchCarpoolSummary } from "./carpool";
 import { getMatchEquipment } from "./equipment";
+import { getMatchGoalkeepers } from "./roster";
 
 const MIN_PLAYERS = 8;
 
@@ -27,10 +28,11 @@ export type MatchReadiness = {
  * Covoiturage et matériel sont déjà naturellement distincts (aucune ligne = aucune alerte).
  */
 export async function getMatchReadiness(matchId: string): Promise<MatchReadiness> {
-  const [summary, carpool, equipment] = await Promise.all([
+  const [summary, carpool, equipment, designatedGoalkeeperIds] = await Promise.all([
     getMatchAvailabilitySummary(matchId),
     getMatchCarpoolSummary(matchId),
     getMatchEquipment(matchId),
+    getMatchGoalkeepers(matchId),
   ]);
 
   const present = summary.filter((s) => s.status === "present");
@@ -38,7 +40,13 @@ export async function getMatchReadiness(matchId: string): Promise<MatchReadiness
   const respondedCount = summary.filter((s) => s.status !== null).length;
   const awaitingResponses = respondedCount === 0;
   const enoughPlayers = presentCount >= MIN_PLAYERS;
-  const hasGoalkeeper = present.some((s) => s.player.primary_position === "Gardien");
+  // Désignation réelle (Lot 13, match_players.goalkeeper) si la feuille de match existe déjà ;
+  // sinon repli temporaire documenté sur le poste principal déclaré, seul signal disponible avant
+  // toute confirmation de feuille — à retirer une fois le Lot 17 (groupe convoqué) construit.
+  const hasGoalkeeper =
+    designatedGoalkeeperIds.length > 0
+      ? present.some((s) => designatedGoalkeeperIds.includes(s.player.id))
+      : present.some((s) => s.player.primary_position === "Gardien");
   const carpoolSufficient = carpool.riders.length <= carpool.totalSeats;
   const unassignedEquipment = equipment.filter((e) => !e.assigned_player_id).map((e) => e.label);
 
