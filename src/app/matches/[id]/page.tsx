@@ -15,7 +15,9 @@ import { getMatchCompleteness } from "@/lib/data/match-completeness";
 import { getMatchGoalkeepers } from "@/lib/data/roster";
 import { buildItineraryUrl } from "@/lib/maps";
 import { formatMatchDate, formatTime } from "@/lib/format";
-import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS } from "@/lib/labels";
+import { AVAILABILITY_LABELS, MATCH_TYPE_LABELS, MATCH_STATUS_LABELS } from "@/lib/labels";
+import { MatchLifecycleActions } from "./MatchLifecycleActions";
+import type { MatchStatus } from "@/types/models";
 import { buildConvocationMessage, buildReminderMessage, buildResultMessage } from "@/lib/whatsapp";
 import { getActiveInjury, getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "@/lib/data/injuries";
 import { isElevatedRole, type AvailabilityStatus } from "@/types/models";
@@ -111,6 +113,11 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       <div className="flex items-start justify-between">
         <p className="text-xs font-bold uppercase tracking-widest text-gold">
           {(match.match_type && MATCH_TYPE_LABELS[match.match_type]) || "Match"}
+          {MATCH_STATUS_LABELS[match.status as MatchStatus] && (
+            <span className="ml-2 rounded-full border border-gold/30 px-2 py-0.5 text-[10px] text-gold">
+              {MATCH_STATUS_LABELS[match.status as MatchStatus]}
+            </span>
+          )}
         </p>
         {isElevatedRole(user.role) && (
           <div className="flex gap-2">
@@ -146,6 +153,7 @@ export default async function MatchDetailPage({ params }: { params: Promise<{ id
       )}
       {match.location && <p className="text-sm text-steel">{match.location}</p>}
       {captainName && <p className="text-sm text-steel">🧢 Capitaine : {captainName}</p>}
+      {isElevatedRole(user.role) && <MatchLifecycleActions matchId={match.id} status={match.status as MatchStatus} />}
       {goalkeeperNames.length > 0 && (
         <p className="text-sm text-steel">🧤 Gardien{goalkeeperNames.length > 1 ? "s" : ""} : {goalkeeperNames.join(", ")}</p>
       )}

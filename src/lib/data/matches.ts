@@ -27,11 +27,15 @@ export async function attachOpponents(matches: Match[]): Promise<MatchWithOppone
   }));
 }
 
+// 'live' et 'postponed' restent "à venir" (Lot 14) : un match en cours ou reporté ne doit jamais
+// disparaître silencieusement de ces listes — seuls 'cancelled' et 'draft' en sont exclus.
+const UPCOMING_STATUSES = ["scheduled", "live", "postponed"] as const;
+
 export async function getNextMatch(): Promise<MatchWithOpponent | null> {
   const { data, error } = await supabaseAdmin
     .from("matches")
     .select("*")
-    .eq("status", "scheduled")
+    .in("status", UPCOMING_STATUSES)
     .is("deleted_at", null)
     .gte("match_date", todayDateString())
     .order("match_date", { ascending: true })
@@ -46,7 +50,7 @@ export async function getUpcomingMatches(): Promise<MatchWithOpponent[]> {
   const { data, error } = await supabaseAdmin
     .from("matches")
     .select("*")
-    .eq("status", "scheduled")
+    .in("status", UPCOMING_STATUSES)
     .is("deleted_at", null)
     .gte("match_date", todayDateString())
     .order("match_date", { ascending: true });

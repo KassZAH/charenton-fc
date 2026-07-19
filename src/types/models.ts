@@ -65,7 +65,10 @@ export type PlayerStatus = "active" | "archived";
 export type AvailabilityStatus = "present" | "uncertain" | "absent" | "injured";
 
 /** matches.status — contrainte check en base */
-export type MatchStatus = "scheduled" | "completed" | "cancelled" | "postponed" | "draft";
+export type MatchStatus = "draft" | "scheduled" | "live" | "completed" | "cancelled" | "postponed";
+
+/** Distinct de MatchStatus : fiabilité des données une fois le match joué (roadmap V3, Lot 14). */
+export type MatchCompletionStatus = "not_started" | "incomplete" | "under_review" | "validated";
 
 /** cards.card_type — contrainte check en base */
 export type CardType = "yellow" | "red";

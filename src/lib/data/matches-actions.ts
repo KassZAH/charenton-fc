@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { requireAdmin, requireUser } from "@/lib/auth/current-user";
 import { supabaseAdmin } from "@/lib/supabase/server";
 import { logChange } from "./audit";
@@ -11,7 +12,11 @@ import { getMatchLineup } from "./lineup";
 import { getMatchEquipment } from "./equipment";
 import { getActiveInjuriesByPlayerId, injuryReturnLabelForDate } from "./injuries";
 import { assertMatchSeasonUnlocked } from "./season-lock";
-import type { AvailabilityStatus } from "@/types/models";
+import { isTransitionAllowed } from "./match-lifecycle-rules";
+import type { AvailabilityStatus, MatchStatus } from "@/types/models";
+
+/** ended_at/completion_status (Lot 14) n'existent pas encore dans les types générés (projet isolé uniquement pour l'instant). */
+const untypedMatches = supabaseAdmin as unknown as SupabaseClient;
 
 async function resolveOpponentId(formData: FormData): Promise<string | null> {
   const existingOpponentId = String(formData.get("opponent_id") ?? "") || null;
@@ -204,16 +209,25 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
     throw new Error("Scores invalides.");
   }
 
-  const { data: before } = await supabaseAdmin
+  const { data: before } = await untypedMatches
     .from("matches")
-    .select("team_score, opponent_score, status")
+    .select("team_score, opponent_score, status, ended_at")
     .eq("id", matchId)
     .maybeSingle();
+  if (!before) throw new Error("Match introuvable.");
 
-  const { error } = await supabaseAdmin
-    .from("matches")
-    .update({ team_score: teamScore, opponent_score: opponentScore, status: "completed" })
-    .eq("id", matchId);
+  const currentStatus = before.status as MatchStatus;
+  if (currentStatus !== "completed" && !isTransitionAllowed(currentStatus, "completed")) {
+    throw new Error(`Transition refusée : ${currentStatus} → completed.`);
+  }
+
+  const patch: Record<string, unknown> = { team_score: teamScore, opponent_score: opponentScore, status: "completed" };
+  if (!before.ended_at) patch.ended_at = new Date().toISOString();
+  // Le score vient d'être saisi ; les buteurs/récompenses restent typiquement à compléter juste
+  // après (voir getMatchCompleteness) — jamais marqué "validated" automatiquement ici.
+  if (currentStatus !== "completed") patch.completion_status = "incomplete";
+
+  const { error } = await untypedMatches.from("matches").update(patch).eq("id", matchId);
   if (error) throw new Error(error.message);
 
   await logChange({
@@ -221,7 +235,7 @@ export async function updateMatchResult(matchId: string, formData: FormData) {
     recordId: matchId,
     action: "update",
     oldData: before,
-    newData: { team_score: teamScore, opponent_score: opponentScore, status: "completed" },
+    newData: patch,
     changedByPlayerId: user.playerId,
     changedByName: user.name,
   });

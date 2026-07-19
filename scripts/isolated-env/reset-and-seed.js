@@ -136,6 +136,7 @@ async function seed() {
     .insert({
       season_id: ids.season, opponent_id: ids.opponent, match_date: "2026-08-10",
       match_type: "amical", home_or_away: "home", team_score: 3, opponent_score: 1, status: "completed",
+      completion_status: "validated",
     })
     .select("id")
     .single();
@@ -159,6 +160,7 @@ async function seed() {
     .insert({
       season_id: ids.season, opponent_id: ids.opponent, match_date: "2026-08-17",
       match_type: "championnat", home_or_away: "away", team_score: 2, opponent_score: 2, status: "completed",
+      completion_status: "incomplete",
     })
     .select("id")
     .single();
