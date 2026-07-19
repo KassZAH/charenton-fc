@@ -87,6 +87,13 @@ Implémenté intégralement, rien d'écarté.
 - **Visibilité de la "carte partageable"** — la carte carrière ne montre que des stats déjà considérées non sensibles (buts, passes, matchs, trophées), pas de réglage de visibilité séparé pour elle
 - **Fix de l'affichage du nom d'un détenteur de record archivé** : corrigé uniquement dans `records.ts` (bug concret identifié) — les autres pages qui recherchent un nom de joueur via les joueurs actifs uniquement (stats, historique du club, bingo, etc.) n'ont pas été auditées une par une, l'impact ne se voit que si un détenteur de record est archivé plus tard
 
+## Lot 11.5 — Classement FLA
+
+- **Synchronisation automatique programmée (cron)** — seule la synchronisation manuelle par le Propriétaire (limitée à une fois toutes les 15 minutes) est implémentée. Aucune tâche planifiée ne rafraîchit le classement automatiquement.
+- **Fréquence de synchronisation définitive** — les 15 minutes actuelles sont une limite technique prudente posée par précaution côté application, pas une fréquence validée avec la FLA ; à ajuster si une fréquence différente est convenue plus tard.
+- **Usage du logo FLA** — explicitement interdit tant que son usage n'est pas confirmé séparément par le propriétaire du projet ; seuls le nom de la compétition, l'attribution textuelle et un lien vers la source sont affichés.
+- **Automatisation future au-delà de ce lot** — évolution vers d'autres compétitions/fournisseurs, notifications de changement de classement, ou tout autre usage non explicitement demandé dans le cahier des charges du Lot 11.5, restent hors périmètre tant qu'ils ne sont pas explicitement demandés.
+
 ---
 
 _Lot 12 : pas encore commencé — voir `ROADMAP_Charenton.md` pour le détail, rien n'y a encore été écarté puisque rien n'a été construit._

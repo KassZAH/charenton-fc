@@ -346,6 +346,25 @@ _Branche `macro-8-11-consolidation` fusionnée sur `master` en deux vagues fast-
 
 ---
 
+# Lot 11.5 (roadmap V3) — Classement FLA dans les statistiques et informations des adversaires
+
+**Statut : implémenté en preview, en attente de validation utilisateur.**
+
+Autorisation FLA obtenue et documentée (`docs/fla-integration.md`, synthèse déclarative — aucune correspondance privée ni donnée personnelle reproduite). Nouveau modèle `LeagueStandingsProvider`/`FlaStandingsProvider` : parsing HTML côté serveur exclusivement (aucune API/endpoint JSON n'existe sur la source), domaine strictement limité à `football-loisir-amateur.fr`, redirections refusées, timeout court, taille de réponse plafonnée, aucune URL libre acceptée. Trois nouvelles tables sur le projet Supabase isolé uniquement (`external_competitions`, `external_standings`, `opponent_external_mappings`), RPC transactionnelle `sync_external_standings_transactional()` (remplacement du classement uniquement sur succès réel, cache préservé sur vide/indisponible/payload invalide, `EXECUTE` réservé à `service_role`). Association adversaire↔équipe externe par normalisation conservatrice (correspondance exacte → automatique, correspondance partielle → toujours ambiguë, jamais validée seule), gérable uniquement par le Propriétaire. Nouvel onglet « Classement FLA » sur `/stats` (à côté des stats du club, jamais mélangées), résumé de classement adverse sur `/matches`, `/matches/[id]` et l'accueil (`5e · 3V 2N 1D · BM 14 · BE 9`, rien affiché si aucune donnée fiable).
+
+Le classement réel de la compétition ciblée (championnat 13, saison 2) est actuellement **vide** (aucune équipe inscrite pour cette saison sur le site source) — confirmé par un vrai appel réseau en direct contre la source réelle, jamais une erreur ni un classement fabriqué. Deux modes de test dans le projet isolé : réel vide (`scripts/isolated-env/reset-and-seed.js`, état par défaut) et démonstration fictive à 8 équipes (`scripts/isolated-env/load-fla-demo-fixtures.js`, un adversaire automatique, un ambigu, un sans correspondance).
+
+Fichiers concernés : `src/lib/fla/`, `src/lib/data/external-standings*.ts`, `src/lib/data/opponent-mappings*.ts`, `src/lib/data/opponent-standings-lookup.ts`, `src/components/fla/`, `src/app/stats/page.tsx`, `src/app/matches/page.tsx`, `src/app/matches/[id]/page.tsx`, `src/app/page.tsx`, `supabase/migrations/20260721000000_*`/`20260721000100_*`.
+Tables/migrations : deux migrations additives, appliquées **au seul projet Supabase isolé** (`cimbymuifzooxrnenznd`) — confirmées absentes du projet partagé (`supabase migration list --linked` sur le projet partagé : `remote` vide pour les deux ; la table `external_competitions` n'existe même pas dessus).
+Tests : 24 tests unitaires (parsing contre deux pages HTML réelles sauvegardées, normalisation, association, résolution d'affichage) + 10 tests d'intégration sur le projet isolé (transactionnalité de la RPC, préservation du cache, refus anon) — gate complète (`npm ci`/`tsc`/`lint`/`test`/`test:integration`/`build`) verte.
+Migration nécessaire : oui pour le projet partagé, **pas encore appliquée** — attend la validation utilisateur puis une décision explicite de déploiement production, comme pour tous les lots précédents.
+Déployable indépendamment : oui.
+Feature flag léger : `sync_enabled` par compétition externe (colonne, pas une constante de code) — permet de couper la synchronisation d'une compétition sans toucher au code.
+
+Branche `lot-11-5-fla-standings`, preview isolée déployée et validée techniquement — voir `roadmap-v3-discussion/lot-11-5-fla-standings/` pour le rapport complet.
+
+---
+
 # PHASE 4 — Socle UI/UX et navigation
 
 ## 4.1 Navigation à cinq onglets
