@@ -40,6 +40,9 @@ export const BACKUP_TABLES = [
   "monthly_mvp_votes",
   "season_trophies",
   "player_goals",
+  "external_competitions",
+  "external_standings",
+  "opponent_external_mappings",
 ] as const;
 
 /** Tables du schéma public volontairement absentes de BACKUP_TABLES, avec la raison exacte (Lot 6, roadmap V3). */
