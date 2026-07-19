@@ -13,6 +13,12 @@
 # testing
 /coverage
 
+# playwright (roadmap V3, protocole macro-releases §2.1)
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
+
 # next.js
 /.next/
 /out/
